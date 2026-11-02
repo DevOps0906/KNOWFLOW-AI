@@ -1,0 +1,159 @@
+/*
+ * KNOWFLOW-AI 디자인 토큰 — 정답 소스 (Tailwind CSS v4 @theme, shadcn/ui 변수 이름)
+ * 분위기: 차분한 · 정밀한 · 종이 같은. 팔레트 후보 A(청록 잉크, 적용 중) / B(먹물 남색)는 DESIGN.md#3.
+ * 강조색(--color-primary)은 주 버튼·선택 상태·포커스 링에만. --color-highlight는 근거 하이라이트에만.
+ * 다크: <html class="dark">. 컴포넌트에는 hex·px를 직접 쓰지 않고 이 이름만 쓴다.
+ */
+
+@theme {
+  /* ── 색: shadcn/ui 이름 (라이트) ── */
+  --color-background: #ffffff;
+  --color-foreground: #1b1f23;
+  --color-card: #ffffff;
+  --color-card-foreground: #1b1f23;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #1b1f23;
+  --color-primary: #0f5f66;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #eef0f1;
+  --color-secondary-foreground: #1b1f23;
+  --color-muted: #f4f5f5;
+  --color-muted-foreground: #5b6470;
+  --color-accent: #e3f0f1;
+  --color-accent-foreground: #0b4a50;
+  --color-destructive: #b42318;
+  --color-destructive-foreground: #ffffff;
+  --color-border: #e3e6e8;
+  --color-input: #8a929b;
+  --color-ring: #0f5f66;
+  --color-sidebar: #f7f8f8;
+  --color-sidebar-foreground: #1b1f23;
+
+  /* ── 색: design-tokens 스킬 이름 (대비 검사용 짝) ── */
+  --color-bg: #ffffff;
+  --color-surface: #ffffff;
+  --color-text: #1b1f23;
+  --color-text-muted: #5b6470;
+  --color-primary-fg: #ffffff;
+  --color-danger: #b42318;
+  --color-danger-fg: #ffffff;
+  --color-danger-soft: #fbe9e7;
+  --color-success: #1e6b3c;
+  --color-success-fg: #ffffff;
+  --color-success-soft: #e7f3ea;
+  --color-warning: #8a5a00;
+  --color-warning-fg: #ffffff;
+  --color-warning-soft: #fbf1dc;
+  /* 근거 하이라이트 전용 (형광 노랑) */
+  --color-highlight: #ffe45c;
+  --color-highlight-fg: #1b1f23;
+  --color-highlight-soft: #fff4b8;
+  --color-scrim: rgb(0 0 0 / 0.4); /* Sheet·Dialog 뒤 어둠막 */
+
+  /* ── 크기 ── */
+  --size-touch: 2.75rem; /* 터치 최소 영역 44px: 겉모습은 그대로, ::after로 히트 영역만 넓힌다 */
+  --size-chat: 22.5rem; /* 태블릿 채팅 열 폭 */
+  --container-reading: 40rem; /* 리포트 본문 최대 폭 (max-w-reading) */
+  --leading-reading: 1.95; /* 세리프 읽기 영역 줄 간격 (leading-reading) */
+
+  /* ── 서체 ── */
+  --font-sans: "Pretendard Variable", Pretendard, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif;
+  --font-serif: "Noto Serif KR", "Nanum Myeongjo", "Batang", serif; /* 원문 뷰어·리포트 본문(읽기 영역만) */
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace; /* 숫자·금액: tabular-nums와 함께 */
+
+  /* ── 반경 (shadcn --radius 계열) ── */
+  --radius: 0.75rem;
+  --radius-control: 999px; /* 버튼·칩·입력은 알약형 */
+  --radius-row: 0.625rem;
+  --radius-panel: 1rem; /* 떠 있는 패널·Sheet·Dialog */
+
+  /* ── 그림자: 떠 있는 패널에만 ── */
+  --shadow-panel: 0 1px 2px rgb(27 31 35 / 0.05), 0 8px 24px -6px rgb(27 31 35 / 0.1);
+  --shadow-sheet: 0 -4px 40px rgb(27 31 35 / 0.18);
+
+  /* ── 반응형 구간: md=768, desk=1200 ── */
+  --breakpoint-desk: 75rem;
+
+  /* ── 폰트 크기: 모바일 기본 (~767) ── */
+  --text-display: 1.75rem;
+  --text-h1: 1.5rem;
+  --text-h2: 1.25rem;
+  --text-body: 0.9375rem;
+  --text-caption: 0.75rem;
+  --text-reading: 1.0625rem; /* 세리프 읽기 영역 */
+}
+
+/* 다크 (2차) — 같은 이름을 덮어쓴다 */
+.dark {
+  --color-background: #121518;
+  --color-foreground: #e9ecee;
+  --color-card: #1a1e22;
+  --color-card-foreground: #e9ecee;
+  --color-popover: #1a1e22;
+  --color-popover-foreground: #e9ecee;
+  --color-primary: #6cc4cc;
+  --color-primary-foreground: #0b1417;
+  --color-secondary: #22272c;
+  --color-secondary-foreground: #e9ecee;
+  --color-muted: #22272c;
+  --color-muted-foreground: #a1aab3;
+  --color-accent: #1e3438;
+  --color-accent-foreground: #bfe6ea;
+  --color-destructive: #f0857b;
+  --color-destructive-foreground: #230b08;
+  --color-border: #2e343a;
+  --color-input: #6e7882;
+  --color-ring: #6cc4cc;
+  --color-sidebar: #171b1e;
+  --color-sidebar-foreground: #e9ecee;
+
+  --color-bg: #121518;
+  --color-surface: #1a1e22;
+  --color-text: #e9ecee;
+  --color-text-muted: #a1aab3;
+  --color-primary-fg: #0b1417;
+  --color-danger: #f0857b;
+  --color-danger-fg: #230b08;
+  --color-danger-soft: #3c1d1a;
+  --color-success: #6fcb8e;
+  --color-success-fg: #08170d;
+  --color-success-soft: #17301f;
+  --color-warning: #e5b54d;
+  --color-warning-fg: #1f1503;
+  --color-warning-soft: #3a2e12;
+  --color-highlight: #6b5a12;
+  --color-highlight-fg: #fff3b8;
+  --color-highlight-soft: #4a3f12;
+  --color-scrim: rgb(0 0 0 / 0.6);
+
+  --shadow-panel: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -6px rgb(0 0 0 / 0.55);
+  --shadow-sheet: 0 -4px 40px rgb(0 0 0 / 0.6);
+}
+
+/* 태블릿 768~1199 */
+@media (width >= 768px) {
+  :root {
+    --text-display: 2.25rem;
+    --text-h1: 1.75rem;
+    --text-h2: 1.375rem;
+    --text-body: 1rem;
+    --text-caption: 0.8125rem;
+    --text-reading: 1.125rem;
+  }
+}
+
+/* 데스크톱 1200~ */
+@media (width >= 1200px) {
+  :root {
+    --text-display: 3rem;
+    --text-h1: 2.125rem;
+    --text-h2: 1.625rem;
+    --text-body: 1rem;
+    --text-caption: 0.8125rem;
+    --text-reading: 1.125rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+}

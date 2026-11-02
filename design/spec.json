@@ -1,0 +1,1641 @@
+{
+ "version": "1",
+ "generated": "2026-11-02T04:56:30+00:00",
+ "docs": "docs",
+ "tokens": ".\\apps\\web\\src\\styles\\tokens.css",
+ "sources": {
+  "docs/03_SCREENS_UX.md": "75f7aa4df0f1",
+  "docs/04_API.md": "08e914a1a73a",
+  "docs/05_DATA_MODEL.md": "fa43e94ffa3b",
+  "docs/blueprints/auth-rbac/api.md": "32da9e8c7094",
+  "docs/blueprints/auth-rbac/data.md": "25c60991cbd5",
+  "docs/blueprints/auth-rbac/screens.md": "c3605370cf92",
+  "docs/blueprints/files-storage/api.md": "4b764bf58fb7",
+  "docs/blueprints/files-storage/data.md": "5a8de8df2c69",
+  "docs/blueprints/files-storage/screens.md": "b2b27b98d8bf",
+  "docs/blueprints/ocr-docs/api.md": "c353d6f6507c",
+  "docs/blueprints/ocr-docs/data.md": "b96972115e2e",
+  "docs/blueprints/ocr-docs/screens.md": "5c4ea9752bd5",
+  "docs/blueprints/rag-chat/api.md": "5375b418256d",
+  "docs/blueprints/rag-chat/data.md": "499544220410",
+  "docs/blueprints/rag-chat/screens.md": "1f2686939114",
+  "docs/blueprints/stt-voice/api.md": "1d7d8ec2d01e",
+  "docs/blueprints/stt-voice/data.md": "5da754287ba0",
+  "docs/blueprints/stt-voice/screens.md": "0cc876452a0f"
+ },
+ "changed": [
+  "S-05",
+  "S-06",
+  "S-07",
+  "S-08",
+  "S-09",
+  "S-10",
+  "S-11",
+  "S-12"
+ ],
+ "removed": [],
+ "screens": {
+  "S-01": {
+   "id": "S-01",
+   "name": "랜딩",
+   "type_raw": "랜딩",
+   "route": "/",
+   "purpose": "제품 이해 후 가입 시작",
+   "blocks": [
+    {
+     "type": "hero",
+     "label": "자료로 답하는 지식 워크스페이스",
+     "items": [
+      "자료로 답하는 지식 워크스페이스"
+     ]
+    },
+    {
+     "type": "text",
+     "label": "핵심 기능 3가지",
+     "items": [
+      "핵심 기능 3가지"
+     ]
+    },
+    {
+     "type": "button",
+     "label": "무료로 시작",
+     "items": [
+      "무료로 시작"
+     ]
+    },
+    {
+     "type": "link",
+     "label": "로그인",
+     "items": [
+      "로그인"
+     ]
+    },
+    {
+     "type": "footer",
+     "label": "",
+     "items": []
+    }
+   ],
+   "data": [],
+   "api": [],
+   "role": "누구나",
+   "next": [
+    "S-02",
+    "S-03"
+   ],
+   "states_combined": "",
+   "source": "docs/03_SCREENS_UX.md",
+   "type": "landing",
+   "must_missing": [],
+   "should_missing": [
+    "근거(사례·수치·후기 — 실제만)",
+    "가격",
+    "자주 묻는 질문"
+   ],
+   "states_missing": [],
+   "hash": "ce5209425145",
+   "wireframe": "design/wireframes/S-01.html"
+  },
+  "S-02": {
+   "id": "S-02",
+   "name": "로그인",
+   "type_raw": "로그인",
+   "route": "/login",
+   "purpose": "계정으로 들어가기",
+   "blocks": [
+    {
+     "type": "header",
+     "label": "",
+     "items": []
+    },
+    {
+     "type": "form",
+     "label": "이메일*·비밀번호*",
+     "items": [
+      "이메일*",
+      "비밀번호*"
+     ]
+    },
+    {
+     "type": "button",
+     "label": "로그인",
+     "items": [
+      "로그인"
+     ]
+    },
+    {
+     "type": "link",
+     "label": "가입하기",
+     "items": [
+      "가입하기"
+     ]
+    },
+    {
+     "type": "link",
+     "label": "비밀번호 재설정",
+     "items": [
+      "비밀번호 재설정"
+     ]
+    },
+    {
+     "type": "link",
+     "label": "약관",
+     "items": [
+      "약관"
+     ]
+    }
+   ],
+   "data": [
+    "profiles"
+   ],
+   "api": [
+    "A-01"
+   ],
+   "role": "비로그인",
+   "next": [
+    "S-06",
+    "S-03",
+    "S-04"
+   ],
+   "states_combined": "",
+   "source": "docs/03_SCREENS_UX.md",
+   "type": "auth",
+   "must_missing": [],
+   "should_missing": [],
+   "states_missing": [],
+   "hash": "e78316d672b7",
+   "wireframe": "design/wireframes/S-02.html"
+  },
+  "S-03": {
+   "id": "S-03",
+   "name": "가입",
+   "type_raw": "로그인",
+   "route": "/signup",
+   "purpose": "새 계정 만들기",
+   "blocks": [
+    {
+     "type": "header",
+     "label": "",
+     "items": []
+    },
+    {
+     "type": "form",
+     "label": "이메일*·비밀번호*",
+     "items": [
+      "이메일*",
+      "비밀번호*"
+     ]
+    },
+    {
+     "type": "button",
+     "label": "가입",
+     "items": [
+      "가입"
+     ]
+    },
+    {
+     "type": "link",
+     "label": "로그인",
+     "items": [
+      "로그인"
+     ]
+    },
+    {
+     "type": "link",
+     "label": "약관",
+     "items": [
+      "약관"
+     ]
+    }
+   ],
+   "data": [
+    "profiles"
+   ],
+   "api": [
+    "A-01"
+   ],
+   "role": "비로그인",
+   "next": [
+    "S-05",
+    "S-02"
+   ],
+   "states_combined": "",
+   "source": "docs/03_SCREENS_UX.md",
+   "type": "auth",
+   "must_missing": [],
+   "should_missing": [],
+   "states_missing": [],
+   "hash": "95483e9392a7",
+   "wireframe": "design/wireframes/S-03.html"
+  },
+  "S-04": {
+   "id": "S-04",
+   "name": "비밀번호 재설정",
+   "type_raw": "폼",
+   "route": "/reset-password",
+   "purpose": "재설정 메일 요청·새 비밀번호 설정",
+   "blocks": [
+    {
+     "type": "header",
+     "label": "",
+     "items": []
+    },
+    {
+     "type": "form",
+     "label": "이메일*",
+     "items": [
+      "이메일*"
+     ]
+    },
+    {
+     "type": "button",
+     "label": "메일 보내기",
+     "items": [
+      "메일 보내기"
+     ]
+    },
+    {
+     "type": "button",
+     "label": "취소",
+     "items": [
+      "취소"
+     ]
+    },
+    {
+     "type": "link",
+     "label": "로그인으로",
+     "items": [
+      "로그인으로"
+     ]
+    }
+   ],
+   "data": [
+    "profiles"
+   ],
+   "api": [
+    "A-01"
+   ],
+   "role": "비로그인",
+   "next": [
+    "S-02"
+   ],
+   "states_combined": "",
+   "source": "docs/03_SCREENS_UX.md",
+   "type": "form",
+   "must_missing": [],
+   "should_missing": [
+    "임시 저장(긴 폼)"
+   ],
+   "states_missing": [],
+   "hash": "1ef6d021b0e0",
+   "wireframe": "design/wireframes/S-04.html"
+  },
+  "S-05": {
+   "id": "S-05",
+   "name": "온보딩",
+   "type_raw": "마법사",
+   "route": "/onboarding",
+   "purpose": "빈 프로젝트 만들기 안내",
+   "blocks": [
+    {
+     "type": "header",
+     "label": "",
+     "items": []
+    },
+    {
+     "type": "steps",
+     "label": "환영·빈 프로젝트 만들기·첫 질문 안내",
+     "items": [
+      "환영",
+      "빈 프로젝트 만들기",
+      "첫 질문 안내"
+     ]
+    },
+    {
+     "type": "form",
+     "label": "프로젝트 이름*",
+     "items": [
+      "프로젝트 이름*"
+     ]
+    },
+    {
+     "type": "button",
+     "label": "이전",
+     "items": [
+      "이전"
+     ]
+    },
+    {
+     "type": "button",
+     "label": "다음",
+     "items": [
+      "다음"
+     ]
+    },
+    {
+     "type": "link",
+     "label": "건너뛰기",
+     "items": [
+      "건너뛰기"
+     ]
+    }
+   ],
+   "data": [
+    "projects"
+   ],
+   "api": [
+    "A-02"
+   ],
+   "role": "로그인",
+   "next": [
+    "S-06"
+   ],
+   "states_combined": "",
+   "source": "docs/03_SCREENS_UX.md",
+   "type": "wizard",
+   "must_missing": [],
+   "should_missing": [
+    "중간 저장·이어하기"
+   ],
+   "states_missing": [],
+   "hash": "486d4dc01f96",
+   "wireframe": "design/wireframes/S-05.html"
+  },
+  "S-06": {
+   "id": "S-06",
+   "name": "대시보드",
+   "type_raw": "목록",
+   "route": "/dashboard",
+   "purpose": "만들던 프로젝트 이어가기",
+   "blocks": [
+    {
+     "type": "header",
+     "label": "",
+     "items": []
+    },
+    {
+     "type": "search",
+     "label": "",
+     "items": []
+    },
+    {
+     "type": "filter",
+     "label": "상태",
+     "items": [
+      "상태"
+     ]
+    },
+    {
+     "type": "list",
+     "label": "최근 프로젝트·처리 중 자료",
+     "items": [
+      "최근 프로젝트",
+      "처리 중 자료"
+     ]
+    },
+    {
+     "type": "pagination",
+     "label": "",
+     "items": []
+    },
+    {
+     "type": "button",
+     "label": "새 프로젝트",
+     "items": [
+      "새 프로젝트"
+     ]
+    },
+    {
+     "type": "link",
+     "label": "리포트",
+     "items": [
+      "리포트"
+     ]
+    }
+   ],
+   "data": [
+    "projects",
+    "sources",
+    "processing_jobs"
+   ],
+   "api": [
+    "A-02",
+    "A-05",
+    "A-10"
+   ],
+   "role": "로그인",
+   "next": [
+    "S-07",
+    "S-08",
+    "S-11",
+    "S-13"
+   ],
+   "states_combined": "",
+   "source": "docs/03_SCREENS_UX.md",
+   "type": "list",
+   "must_missing": [],
+   "should_missing": [
+    "정렬",
+    "일괄 작업(선택·삭제·내보내기)",
+    "저장된 보기·열 설정"
+   ],
+   "states_missing": [],
+   "hash": "9e80a46dc32f",
+   "wireframe": "design/wireframes/S-06.html"
+  },
+  "S-07": {
+   "id": "S-07",
+   "name": "프로젝트 목록",
+   "type_raw": "목록",
+   "route": "/projects",
+   "purpose": "프로젝트 찾기·만들기",
+   "blocks": [
+    {
+     "type": "header",
+     "label": "",
+     "items": []
+    },
+    {
+     "type": "search",
+     "label": "",
+     "items": []
+    },
+    {
+     "type": "filter",
+     "label": "상태",
+     "items": [
+      "상태"
+     ]
+    },
+    {
+     "type": "sort",
+     "label": "",
+     "items": []
+    },
+    {
+     "type": "table",
+     "label": "이름·자료 수·수정일·상태",
+     "items": [
+      "이름",
+      "자료 수",
+      "수정일",
+      "상태"
+     ]
+    },
+    {
+     "type": "pagination",
+     "label": "",
+     "items": []
+    },
+    {
+     "type": "button",
+     "label": "새 프로젝트",
+     "items": [
+      "새 프로젝트"
+     ]
+    }
+   ],
+   "data": [
+    "projects"
+   ],
+   "api": [
+    "A-02"
+   ],
+   "role": "로그인",
+   "next": [
+    "S-08"
+   ],
+   "states_combined": "",
+   "source": "docs/03_SCREENS_UX.md",
+   "type": "list",
+   "must_missing": [],
+   "should_missing": [
+    "일괄 작업(선택·삭제·내보내기)",
+    "저장된 보기·열 설정"
+   ],
+   "states_missing": [],
+   "hash": "624a40637290",
+   "wireframe": "design/wireframes/S-07.html"
+  },
+  "S-08": {
+   "id": "S-08",
+   "name": "워크스페이스",
+   "type_raw": "상세",
+   "route": "/projects/[projectId]",
+   "purpose": "자료 확인·질문·리포트 생성",
+   "blocks": [
+    {
+     "type": "header",
+     "label": "",
+     "items": []
+    },
+    {
+     "type": "breadcrumb",
+     "label": "",
+     "items": []
+    },
+    {
+     "type": "sidebar",
+     "label": "자료(3단 중 왼쪽",
+     "items": [
+      "자료(3단 중 왼쪽"
+     ]
+    },
+    {
+     "type": "design.md#2)",
+     "label": "",
+     "items": []
+    },
+    {
+     "type": "tabs",
+     "label": "요약·원문",
+     "items": [
+      "요약",
+      "원문"
+     ]
+    },
+    {
+     "type": "filter",
+     "label": "자료 유형",
+     "items": [
+      "자료 유형"
+     ]
+    },
+    {
+     "type": "list",
+     "label": "자료 선택 체크(질의 범위)·이름·처리 상태 배지·재시도",
+     "items": [
+      "자료 선택 체크(질의 범위)",
+      "이름",
+      "처리 상태 배지",
+      "재시도"
+     ]
+    },
+    {
+     "type": "button",
+     "label": "선택 자료 삭제",
+     "items": [
+      "선택 자료 삭제"
+     ]
+    },
+    {
+     "type": "card",
+     "label": "요약",
+     "items": [
+      "요약"
+     ]
+    },
+    {
+     "type": "list",
+     "label": "추천 질문",
+     "items": [
+      "추천 질문"
+     ]
+    },
+    {
+     "type": "list",
+     "label": "질문·답변(인용 칩 hover 미리보기→원문 위치 이동)",
+     "items": [
+      "질문",
+      "답변(인용 칩 hover 미리보기→원문 위치 이동)"
+     ]
+    },
+    {
+     "type": "form",
+     "label": "질문 입력*",
+     "items": [
+      "질문 입력*"
+     ]
+    },
+    {
+     "type": "button",
+     "label": "자료 추가",
+     "items": [
+      "자료 추가"
+     ]
+    },
+    {
+     "type": "button",
+     "label": "리포트 생성",
+     "items": [
+      "리포트 생성"
+     ]
+    }
+   ],
+   "data": [
+    "projects",
+    "sources",
+    "source_chunks",
+    "conversations",
+    "messages",
+    "processing_jobs"
+   ],
+   "api": [
+    "A-03",
+    "A-04",
+    "A-05",
+    "A-06",
+    "A-08"
+   ],
+   "role": "로그인(소유자)",
+   "next": [
+    "S-09",
+    "S-10",
+    "S-12",
+    "S-07"
+   ],
+   "states_combined": "",
+   "source": "docs/03_SCREENS_UX.md",
+   "type": "detail",
+   "must_missing": [],
+   "should_missing": [
+    "활동·변경 이력"
+   ],
+   "states_missing": [],
+   "hash": "9ed2e675659c",
+   "wireframe": "design/wireframes/S-08.html"
+  },
+  "S-09": {
+   "id": "S-09",
+   "name": "자료 추가",
+   "type_raw": "폼",
+   "route": "다이얼로그(/projects/[projectId])",
+   "purpose": "PDF·URL 등록",
+   "blocks": [
+    {
+     "type": "modal",
+     "label": "자료 추가",
+     "items": [
+      "자료 추가"
+     ]
+    },
+    {
+     "type": "tabs",
+     "label": "PDF·URL",
+     "items": [
+      "PDF",
+      "URL"
+     ]
+    },
+    {
+     "type": "form",
+     "label": "파일(여러 개) 또는 URL*",
+     "items": [
+      "파일(여러 개) 또는 URL*"
+     ]
+    },
+    {
+     "type": "text",
+     "label": "지원 예정 매체 안내(YouTube·오디오·Office·HWP 등",
+     "items": [
+      "지원 예정 매체 안내(YouTube",
+      "오디오",
+      "Office",
+      "HWP 등"
+     ]
+    },
+    {
+     "type": "prd 3-1)",
+     "label": "",
+     "items": []
+    },
+    {
+     "type": "button",
+     "label": "추가",
+     "items": [
+      "추가"
+     ]
+    },
+    {
+     "type": "button",
+     "label": "취소",
+     "items": [
+      "취소"
+     ]
+    }
+   ],
+   "data": [
+    "sources",
+    "processing_jobs"
+   ],
+   "api": [
+    "A-04"
+   ],
+   "role": "로그인(소유자)",
+   "next": [
+    "S-08"
+   ],
+   "states_combined": "",
+   "source": "docs/03_SCREENS_UX.md",
+   "type": "form",
+   "must_missing": [],
+   "should_missing": [
+    "임시 저장(긴 폼)"
+   ],
+   "states_missing": [],
+   "hash": "7d9d680de5be",
+   "wireframe": "design/wireframes/S-09.html"
+  },
+  "S-10": {
+   "id": "S-10",
+   "name": "문서 뷰어",
+   "type_raw": "상세",
+   "route": "/sources/[sourceId]",
+   "purpose": "인용된 원문 위치 확인(진입 규칙: ?chunk=<chunk_id>)",
+   "blocks": [
+    {
+     "type": "header",
+     "label": "",
+     "items": []
+    },
+    {
+     "type": "breadcrumb",
+     "label": "",
+     "items": []
+    },
+    {
+     "type": "text",
+     "label": "원문(인용 위치 강조)",
+     "items": [
+      "원문(인용 위치 강조)"
+     ]
+    },
+    {
+     "type": "list",
+     "label": "인용 패널",
+     "items": [
+      "인용 패널"
+     ]
+    },
+    {
+     "type": "button",
+     "label": "워크스페이스로",
+     "items": [
+      "워크스페이스로"
+     ]
+    }
+   ],
+   "data": [
+    "sources",
+    "source_chunks"
+   ],
+   "api": [
+    "A-07"
+   ],
+   "role": "로그인(소유자)",
+   "next": [
+    "S-08"
+   ],
+   "states_combined": "",
+   "source": "docs/03_SCREENS_UX.md",
+   "type": "detail",
+   "must_missing": [],
+   "should_missing": [
+    "관련 항목 탭",
+    "활동·변경 이력"
+   ],
+   "states_missing": [],
+   "hash": "0cb16ec4d35b",
+   "wireframe": "design/wireframes/S-10.html"
+  },
+  "S-11": {
+   "id": "S-11",
+   "name": "리포트 목록",
+   "type_raw": "목록",
+   "route": "/reports",
+   "purpose": "만든 리포트 찾기",
+   "blocks": [
+    {
+     "type": "header",
+     "label": "",
+     "items": []
+    },
+    {
+     "type": "search",
+     "label": "",
+     "items": []
+    },
+    {
+     "type": "filter",
+     "label": "프로젝트",
+     "items": [
+      "프로젝트"
+     ]
+    },
+    {
+     "type": "table",
+     "label": "제목·프로젝트·생성일",
+     "items": [
+      "제목",
+      "프로젝트",
+      "생성일"
+     ]
+    },
+    {
+     "type": "pagination",
+     "label": "",
+     "items": []
+    }
+   ],
+   "data": [
+    "reports"
+   ],
+   "api": [
+    "A-08"
+   ],
+   "role": "로그인",
+   "next": [
+    "S-12"
+   ],
+   "states_combined": "",
+   "source": "docs/03_SCREENS_UX.md",
+   "type": "list",
+   "must_missing": [],
+   "should_missing": [
+    "새로 만들기",
+    "일괄 작업(선택·삭제·내보내기)",
+    "저장된 보기·열 설정"
+   ],
+   "states_missing": [],
+   "hash": "352e91ba98fc",
+   "wireframe": "design/wireframes/S-11.html"
+  },
+  "S-12": {
+   "id": "S-12",
+   "name": "리포트",
+   "type_raw": "상세",
+   "route": "/reports/[reportId]",
+   "purpose": "리포트 읽기·출처 확인·내보내기",
+   "blocks": [
+    {
+     "type": "header",
+     "label": "",
+     "items": []
+    },
+    {
+     "type": "breadcrumb",
+     "label": "",
+     "items": []
+    },
+    {
+     "type": "text",
+     "label": "AI 오류 가능 안내",
+     "items": [
+      "AI 오류 가능 안내"
+     ]
+    },
+    {
+     "type": "text",
+     "label": "리포트 본문(문장 클릭→근거 구절 강조)",
+     "items": [
+      "리포트 본문(문장 클릭→근거 구절 강조)"
+     ]
+    },
+    {
+     "type": "list",
+     "label": "출처 패널",
+     "items": [
+      "출처 패널"
+     ]
+    },
+    {
+     "type": "button",
+     "label": "Markdown 내보내기",
+     "items": [
+      "Markdown 내보내기"
+     ]
+    },
+    {
+     "type": "link",
+     "label": "프로젝트로",
+     "items": [
+      "프로젝트로"
+     ]
+    }
+   ],
+   "data": [
+    "reports",
+    "report_citations"
+   ],
+   "api": [
+    "A-08",
+    "A-09"
+   ],
+   "role": "로그인(소유자)",
+   "next": [
+    "S-10",
+    "S-11",
+    "S-08"
+   ],
+   "states_combined": "",
+   "source": "docs/03_SCREENS_UX.md",
+   "type": "detail",
+   "must_missing": [],
+   "should_missing": [
+    "관련 항목 탭",
+    "활동·변경 이력"
+   ],
+   "states_missing": [],
+   "hash": "8b018220a1c1",
+   "wireframe": "design/wireframes/S-12.html"
+  },
+  "S-13": {
+   "id": "S-13",
+   "name": "설정·사용량",
+   "type_raw": "설정",
+   "route": "/settings",
+   "purpose": "계정 관리·사용량 확인",
+   "blocks": [
+    {
+     "type": "header",
+     "label": "",
+     "items": []
+    },
+    {
+     "type": "tabs",
+     "label": "계정·사용량",
+     "items": [
+      "계정",
+      "사용량"
+     ]
+    },
+    {
+     "type": "form",
+     "label": "이름·이메일",
+     "items": [
+      "이름",
+      "이메일"
+     ]
+    },
+    {
+     "type": "stat",
+     "label": "사용량·한도",
+     "items": [
+      "사용량",
+      "한도"
+     ]
+    },
+    {
+     "type": "button",
+     "label": "저장",
+     "items": [
+      "저장"
+     ]
+    },
+    {
+     "type": "button",
+     "label": "계정 삭제",
+     "items": [
+      "계정 삭제"
+     ]
+    }
+   ],
+   "data": [
+    "profiles",
+    "usage_events",
+    "plans",
+    "user_quotas"
+   ],
+   "api": [
+    "A-10"
+   ],
+   "role": "로그인",
+   "next": [
+    "S-06"
+   ],
+   "states_combined": "",
+   "source": "docs/03_SCREENS_UX.md",
+   "type": "settings",
+   "must_missing": [],
+   "should_missing": [],
+   "states_missing": [],
+   "hash": "981dc72ad5a5",
+   "wireframe": "design/wireframes/S-13.html"
+  },
+  "S-14": {
+   "id": "S-14",
+   "name": "없는 경로",
+   "type_raw": "상세",
+   "route": "404",
+   "purpose": "길을 잃었을 때 복귀",
+   "blocks": [
+    {
+     "type": "header",
+     "label": "",
+     "items": []
+    },
+    {
+     "type": "breadcrumb",
+     "label": "",
+     "items": []
+    },
+    {
+     "type": "text",
+     "label": "찾을 수 없거나 접근 권한이 없습니다",
+     "items": [
+      "찾을 수 없거나 접근 권한이 없습니다"
+     ]
+    },
+    {
+     "type": "button",
+     "label": "대시보드로",
+     "items": [
+      "대시보드로"
+     ]
+    },
+    {
+     "type": "link",
+     "label": "랜딩으로",
+     "items": [
+      "랜딩으로"
+     ]
+    }
+   ],
+   "data": [],
+   "api": [],
+   "role": "누구나",
+   "next": [
+    "S-06",
+    "S-01"
+   ],
+   "states_combined": "",
+   "source": "docs/03_SCREENS_UX.md",
+   "type": "detail",
+   "must_missing": [],
+   "should_missing": [
+    "관련 항목 탭",
+    "활동·변경 이력"
+   ],
+   "states_missing": [],
+   "hash": "1a2b6808d877",
+   "wireframe": "design/wireframes/S-14.html"
+  },
+  "S-15": {
+   "id": "S-15",
+   "name": "오류",
+   "type_raw": "상세",
+   "route": "오류 페이지",
+   "purpose": "예상 못한 오류 안내·재시도",
+   "blocks": [
+    {
+     "type": "header",
+     "label": "",
+     "items": []
+    },
+    {
+     "type": "breadcrumb",
+     "label": "",
+     "items": []
+    },
+    {
+     "type": "text",
+     "label": "문제가 생겼습니다",
+     "items": [
+      "문제가 생겼습니다"
+     ]
+    },
+    {
+     "type": "button",
+     "label": "다시 시도",
+     "items": [
+      "다시 시도"
+     ]
+    },
+    {
+     "type": "link",
+     "label": "대시보드로",
+     "items": [
+      "대시보드로"
+     ]
+    }
+   ],
+   "data": [],
+   "api": [],
+   "role": "누구나",
+   "next": [
+    "S-06"
+   ],
+   "states_combined": "",
+   "source": "docs/03_SCREENS_UX.md",
+   "type": "detail",
+   "must_missing": [],
+   "should_missing": [
+    "관련 항목 탭",
+    "활동·변경 이력"
+   ],
+   "states_missing": [],
+   "hash": "fd1b22e7bb2a",
+   "wireframe": "design/wireframes/S-15.html"
+  }
+ },
+ "states": {
+  "S-01": {
+   "빈": "—",
+   "로딩": "—",
+   "오류": "—",
+   "성공": "—"
+  },
+  "S-02": {
+   "빈": "—",
+   "로딩": "버튼 진행 표시",
+   "오류": "이메일·비밀번호 불일치 안내",
+   "성공": "대시보드로 이동"
+  },
+  "S-03": {
+   "빈": "—",
+   "로딩": "버튼 진행 표시",
+   "오류": "이미 가입된 이메일·약한 비밀번호 안내",
+   "성공": "온보딩으로 이동"
+  },
+  "S-04": {
+   "빈": "—",
+   "로딩": "버튼 진행 표시",
+   "오류": "메일 전송 실패 안내 + 다시 시도",
+   "성공": "메일 전송 안내(존재 여부는 노출하지 않음)"
+  },
+  "S-05": {
+   "빈": "—",
+   "로딩": "프로젝트 생성 중 진행 표시",
+   "오류": "프로젝트 생성 실패 + 건너뛰기",
+   "성공": "대시보드로 이동"
+  },
+  "S-06": {
+   "빈": "첫 프로젝트 전 안내 + 새 프로젝트 버튼",
+   "로딩": "목록 스켈레톤",
+   "오류": "다시 시도 버튼",
+   "성공": "—"
+  },
+  "S-07": {
+   "빈": "프로젝트 없음 안내 + 새 프로젝트 버튼",
+   "로딩": "표 스켈레톤",
+   "오류": "다시 시도 버튼",
+   "성공": "—"
+  },
+  "S-08": {
+   "빈": "자료 없음 안내 + 자료 추가 버튼, 질문 전 예시 질문",
+   "로딩": "패널별 스켈레톤, 답변 생성 단계 표시(검색·작성·인용 검증)",
+   "오류": "자료 처리 실패 원인 + 재시도, 답변 실패 + 다시 시도, 근거 없음 안내",
+   "성공": "답변과 인용 칩 표시"
+  },
+  "S-09": {
+   "빈": "—",
+   "로딩": "업로드 진행 표시",
+   "오류": "형식·크기 오류, 스캔 PDF 미지원 안내(제안)",
+   "성공": "등록됨(대기) 표시 후 닫힘 — 분석 완료와 별도"
+  },
+  "S-10": {
+   "빈": "원문 없음 안내 + 워크스페이스로",
+   "로딩": "원문 스켈레톤",
+   "오류": "다시 시도, 접근 불가 시 404",
+   "성공": "—"
+  },
+  "S-11": {
+   "빈": "리포트 없음 안내 + 프로젝트로 이동",
+   "로딩": "표 스켈레톤",
+   "오류": "다시 시도 버튼",
+   "성공": "—"
+  },
+  "S-12": {
+   "빈": "—",
+   "로딩": "리포트 생성 중 진행 표시",
+   "오류": "생성 실패 + 다시 시도, 근거 없음 구간 표시",
+   "성공": "리포트 본문과 출처 표시"
+  },
+  "S-13": {
+   "빈": "사용 기록 없음 안내",
+   "로딩": "섹션 스켈레톤",
+   "오류": "저장 실패 안내",
+   "성공": "저장됨 알림"
+  },
+  "S-14": {
+   "빈": "—",
+   "로딩": "—",
+   "오류": "—",
+   "성공": "—"
+  },
+  "S-15": {
+   "빈": "—",
+   "로딩": "—",
+   "오류": "—",
+   "성공": "—"
+  }
+ },
+ "flows": {
+  "F-01": {
+   "id": "F-01",
+   "name": "가입 → 첫 자료 → 첫 질문",
+   "steps": [
+    "S-01",
+    "S-03",
+    "S-05",
+    "S-06",
+    "S-08",
+    "S-09",
+    "S-08",
+    "S-10"
+   ],
+   "source": "docs/03_SCREENS_UX.md"
+  },
+  "F-02": {
+   "id": "F-02",
+   "name": "리포트 생성",
+   "steps": [
+    "S-06",
+    "S-07",
+    "S-08",
+    "S-12",
+    "S-10"
+   ],
+   "source": "docs/03_SCREENS_UX.md"
+  },
+  "F-03": {
+   "id": "F-03",
+   "name": "리포트 다시 보기·내보내기",
+   "steps": [
+    "S-06",
+    "S-11",
+    "S-12"
+   ],
+   "source": "docs/03_SCREENS_UX.md"
+  },
+  "F-04": {
+   "id": "F-04",
+   "name": "비밀번호 재설정",
+   "steps": [
+    "S-02",
+    "S-04",
+    "S-02",
+    "S-06"
+   ],
+   "source": "docs/03_SCREENS_UX.md"
+  }
+ },
+ "apis": {
+  "A-01": {
+   "id": "A-01",
+   "method": "POST",
+   "path": "/api/auth/signup · login · logout · reset-password · update-password",
+   "row": {
+    "ID": "A-01",
+    "메서드": "POST",
+    "경로": "/api/auth/signup · login · logout · reset-password · update-password",
+    "입력": "이메일, 비밀번호 / (재설정) 이메일",
+    "출력": "세션 쿠키 / 재설정은 항상 동일 안내(존재 여부 비노출)",
+    "권한": "비로그인(logout·update-password는 로그인)",
+    "오류": "400 형식 · 401 불일치 · 409 이미 가입 · 422 약한 비밀번호 · 429 시도 과다"
+   },
+   "source": "docs/04_API.md"
+  },
+  "A-02": {
+   "id": "A-02",
+   "method": "GET · POST",
+   "path": "/api/projects",
+   "row": {
+    "ID": "A-02",
+    "메서드": "GET · POST",
+    "경로": "/api/projects",
+    "입력": "(GET) 검색어, 상태, 정렬, 커서 / (POST) 이름, 설명",
+    "출력": "프로젝트 목록(이름·자료 수·수정일·상태)·다음 커서 / 프로젝트 id",
+    "권한": "로그인(본인)",
+    "오류": "400 · 401 · 422 이름 길이 · 429 프로젝트 수 한도"
+   },
+   "source": "docs/04_API.md"
+  },
+  "A-03": {
+   "id": "A-03",
+   "method": "GET · PATCH · DELETE",
+   "path": "/api/projects/[projectId]",
+   "row": {
+    "ID": "A-03",
+    "메서드": "GET · PATCH · DELETE",
+    "경로": "/api/projects/[projectId]",
+    "입력": "(PATCH) 이름·설명·보관 / (DELETE) —",
+    "출력": "프로젝트 + 자료 목록(유형·처리 상태·오류 코드) + 요약·추천 질문 / 변경 결과 / 삭제 결과(자료·청크·대화·리포트 함께 삭제 — 삭제 정책 확정 전, 05 미정)",
+    "권한": "소유자",
+    "오류": "401 · 404 · 409 처리 중 작업 있음(삭제) · 422"
+   },
+   "source": "docs/04_API.md"
+  },
+  "A-04": {
+   "id": "A-04",
+   "method": "POST · DELETE",
+   "path": "/api/projects/[projectId]/sources",
+   "row": {
+    "ID": "A-04",
+    "메서드": "POST · DELETE",
+    "경로": "/api/projects/[projectId]/sources",
+    "입력": "(POST) source_type, (pdf) 파일 여러 개 또는 (url) URL, 멱등 키 / (DELETE) source id 목록",
+    "출력": "자료 id·작업 id(202, status=queued) / 삭제 결과(청크·Storage 연쇄 삭제 — 삭제 정책 확정 전, 05 미정)",
+    "권한": "소유자",
+    "오류": "401 · 404 · 409 같은 content_hash 자료 있음·같은 멱등 키 다른 입력 · 413 크기 초과 · 415 PDF 아님 · 422 source_type 미지원(\"지원 예정\")·URL 형식/차단 주소(SSRF)·스캔 PDF 미지원 · 429 자료 수 한도"
+   },
+   "source": "docs/04_API.md"
+  },
+  "A-05": {
+   "id": "A-05",
+   "method": "GET · POST",
+   "path": "/api/projects/[projectId]/jobs · /api/sources/[sourceId]/retry",
+   "row": {
+    "ID": "A-05",
+    "메서드": "GET · POST",
+    "경로": "/api/projects/[projectId]/jobs · /api/sources/[sourceId]/retry",
+    "입력": "(GET) 상태 필터, 커서 / (POST) 멱등 키",
+    "출력": "작업 목록(source_id·source.status와 job.status 분리 표기(job: queued·running·succeeded·failed·cancelled, 매핑 05#6)·단계·attempt_count·error_code) / 새 작업 id(202, 재시도=새 작업 생성)",
+    "권한": "소유자",
+    "오류": "401 · 404 · 409 진행 중 작업 있음(job queued·running) · 422 completed 자료는 재처리만 · 429 재시도 한도"
+   },
+   "source": "docs/04_API.md"
+  },
+  "A-06": {
+   "id": "A-06",
+   "method": "GET · POST",
+   "path": "/api/projects/[projectId]/conversations · /api/conversations/[id]/messages",
+   "row": {
+    "ID": "A-06",
+    "메서드": "GET · POST",
+    "경로": "/api/projects/[projectId]/conversations · /api/conversations/[id]/messages",
+    "입력": "(GET) 커서 / (POST) 질문(길이 상한), 질의 범위 source id 목록(생략 시 completed 전체), 멱등 키",
+    "출력": "대화·메시지 목록 / 답변 + 출처 칩(source_id·chunk_id·source_title·locator(locator.page 등 확보된 경우만), 서버가 검색 결과로 생성·인용 검증 통과분), no_answer 여부",
+    "권한": "소유자",
+    "오류": "401 · 404 · 409 같은 멱등 키 진행 중 · 422 질문 길이·범위에 미완료 자료 · 429 월 질문 쿼터 · 502 생성 실패(다시 시도, 쿼터 차감 취소)"
+   },
+   "source": "docs/04_API.md"
+  },
+  "A-07": {
+   "id": "A-07",
+   "method": "GET",
+   "path": "/api/sources/[sourceId] · /api/sources/[sourceId]/chunks",
+   "row": {
+    "ID": "A-07",
+    "메서드": "GET",
+    "경로": "/api/sources/[sourceId] · /api/sources/[sourceId]/chunks",
+    "입력": "(선택) chunk_id, 커서",
+    "출력": "자료 메타 + 원문 청크(chunk_index·content·locator)",
+    "권한": "소유자(자료의 project 소유)",
+    "오류": "401 · 404 · 409 아직 completed 아님"
+   },
+   "source": "docs/04_API.md"
+  },
+  "A-08": {
+   "id": "A-08",
+   "method": "GET · POST",
+   "path": "/api/reports · /api/projects/[projectId]/reports",
+   "row": {
+    "ID": "A-08",
+    "메서드": "GET · POST",
+    "경로": "/api/reports · /api/projects/[projectId]/reports",
+    "입력": "(GET) 프로젝트 필터, 검색어, 커서 / (POST) 제목(선택), 대상 source id 목록(선택), 멱등 키",
+    "출력": "리포트 목록(제목·프로젝트·생성일)·다음 커서 / 리포트 id·작업 id(202)",
+    "권한": "로그인(본인)",
+    "오류": "401 · 404 프로젝트 · 409 같은 멱등 키 진행 중 · 422 completed 자료 없음 · 429 쿼터 · 502 생성 실패"
+   },
+   "source": "docs/04_API.md"
+  },
+  "A-09": {
+   "id": "A-09",
+   "method": "GET · DELETE",
+   "path": "/api/reports/[reportId] · /api/reports/[reportId]/export",
+   "row": {
+    "ID": "A-09",
+    "메서드": "GET · DELETE",
+    "경로": "/api/reports/[reportId] · /api/reports/[reportId]/export",
+    "입력": "(GET export) format=markdown",
+    "출력": "리포트 본문 + 출처(report_citations: chunk_id·position) + 생성 상태 / Markdown 파일 / 삭제 결과",
+    "권한": "소유자",
+    "오류": "401 · 404 · 409 생성 중(내보내기) · 422 지원하지 않는 format"
+   },
+   "source": "docs/04_API.md"
+  },
+  "A-10": {
+   "id": "A-10",
+   "method": "GET · PATCH · DELETE",
+   "path": "/api/me · /api/me/usage",
+   "row": {
+    "ID": "A-10",
+    "메서드": "GET · PATCH · DELETE",
+    "경로": "/api/me · /api/me/usage",
+    "입력": "(PATCH) 이름 / (DELETE) 확인 문구",
+    "출력": "프로필 / 사용량(usage_events 집계)·한도(plans·user_quotas) / 저장·삭제 결과(계정 삭제 시 전 데이터 삭제)",
+    "권한": "로그인(본인)",
+    "오류": "401 · 422 이름 길이·확인 문구 불일치 · 409 처리 중 작업 있음(삭제)"
+   },
+   "source": "docs/04_API.md"
+  }
+ },
+ "tables": {
+  "profiles": {
+   "name": "profiles",
+   "row": {
+    "테이블": "profiles",
+    "목적": "앱 프로필(S-02·03·13)",
+    "주요 컬럼": "id(PK = `auth.users.id`), display_name★",
+    "RLS 기준": "본인 행만 읽기·수정. 생성은 가입 트리거",
+    "비고": "로그인·세션은 Supabase Auth 관리(표에 넣지 않음). 계정 삭제 요청 시 하위 데이터 연쇄 삭제(순서 미정, 5장)"
+   },
+   "source": "docs/05_DATA_MODEL.md"
+  },
+  "projects": {
+   "name": "projects",
+   "row": {
+    "테이블": "projects",
+    "목적": "자료·대화·리포트의 묶음(S-05~08)",
+    "주요 컬럼": "id, user_id★→profiles, name, description, archived_at",
+    "RLS 기준": "user_id = auth.uid()` 행만 모든 작업",
+    "비고": "클라이언트가 준 user_id는 무시하고 서버가 채운다. 삭제 정책은 5장"
+   },
+   "source": "docs/05_DATA_MODEL.md"
+  },
+  "sources": {
+   "name": "sources",
+   "row": {
+    "테이블": "sources",
+    "목적": "자료 1건(S-08·09·10)",
+    "주요 컬럼": "id, project_id, user_id, source_type, title★, original_url, storage_path, content_hash, status, error_code, error_message_safe",
+    "RLS 기준": "user_id = auth.uid()` AND 소속 프로젝트 소유 일치. 상태 쓰기는 서버만",
+    "비고": "source_type: MVP `pdf`·`url`, 예약 `youtube`·`audio`·`video`·`docx`·`pptx`·`image`·`text`(3장). status는 `queued`·`processing`·`completed`·`failed`. unique (project_id, content_hash)"
+   },
+   "source": "docs/05_DATA_MODEL.md"
+  },
+  "source_chunks": {
+   "name": "source_chunks",
+   "row": {
+    "테이블": "source_chunks",
+    "목적": "검색 단위 조각(S-08 질의, S-10 뷰어)",
+    "주요 컬럼": "id, source_id, project_id, chunk_index, content★, locator(jsonb), embedding(vector), embedding_model, content_tsv",
+    "RLS 기준": "사용자 직접 SELECT 없음. 서버·검색 함수가 `project_id`+`user_id` 강제 후 반환(소속 자료가 본인 것일 때만)",
+    "비고": "인용 위치는 `locator` jsonb(3장). 임베딩 차원은 모델 확정 후(미확정, 5장). unique (source_id, chunk_index). 모델이 다른 청크를 섞지 않는다"
+   },
+   "source": "docs/05_DATA_MODEL.md"
+  },
+  "processing_jobs": {
+   "name": "processing_jobs",
+   "row": {
+    "테이블": "processing_jobs",
+    "목적": "자료 처리 작업·이력(S-06·08·09)",
+    "주요 컬럼": "id, source_id(nullable), report_id(nullable)→reports, job_type(`report_generate` 포함), status, current_step, progress(0~100), attempt_count, max_attempts(기본 3), idempotency_key, error_code, started_at, finished_at",
+    "RLS 기준": "소속 자료·리포트 소유자 읽기만. 쓰기는 서비스 키 서버·Worker만",
+    "비고": "상태값은 JOBS.md(`queued`·`running`·`succeeded`·`failed`·`cancelled`). 사용자 재시도 = 새 작업(새 멱등 키), 종료 작업은 되살리지 않음. 같은 자료에 진행 중 작업 1개(부분 유니크). `source_id`·`report_id` 중 하나는 필수(CHECK). 리포트 생성 작업의 멱등 키도 여기 저장. 사용자 화면 배지(`sources.status`)와의 매핑은 6장"
+   },
+   "source": "docs/05_DATA_MODEL.md"
+  },
+  "conversations": {
+   "name": "conversations",
+   "row": {
+    "테이블": "conversations",
+    "목적": "프로젝트 안 대화(S-08)",
+    "주요 컬럼": "id, project_id, user_id★, title",
+    "RLS 기준": "본인 행만",
+    "비고": "삭제 시 하위 messages 연쇄 삭제"
+   },
+   "source": "docs/05_DATA_MODEL.md"
+  },
+  "messages": {
+   "name": "messages",
+   "row": {
+    "테이블": "messages",
+    "목적": "질문·답변(S-08)",
+    "주요 컬럼": "id, conversation_id, role, content★, citation_metadata(jsonb: chunk_id 목록·점수만), idempotency_key",
+    "RLS 기준": "소속 대화 소유자만(conversations 조인). 쓰기는 서버만",
+    "비고": "인용은 서버가 검색 결과로 검증한 chunk_id만([02-rag-and-job-flow §4](diagrams/02-rag-and-job-flow.md)). 청크 텍스트 사본을 넣지 않는다. 응답의 source_id·title·locator는 chunk 조인으로 생성한다. `idempotency_key`는 user 범위 유니크(질문 중복 방지). 원문은 로그에 남기지 않는다"
+   },
+   "source": "docs/05_DATA_MODEL.md"
+  },
+  "reports": {
+   "name": "reports",
+   "row": {
+    "테이블": "reports",
+    "목적": "생성된 리포트(S-11·12)",
+    "주요 컬럼": "id, project_id, user_id★, title, content★, format(`markdown`), status(`generating`·`ready`·`failed`)",
+    "RLS 기준": "user_id = auth.uid()` 행만. 쓰기는 서버만",
+    "비고": "본문 내 출처 위치는 report_citations가 정본"
+   },
+   "source": "docs/05_DATA_MODEL.md"
+  },
+  "report_citations": {
+   "name": "report_citations",
+   "row": {
+    "테이블": "report_citations",
+    "목적": "리포트 문장 ↔ 근거 청크 정규화(S-12)",
+    "주요 컬럼": "id, report_id, chunk_id(삭제 시 null), position",
+    "RLS 기준": "소속 리포트 소유자만(reports 조인). 쓰기는 서버만",
+    "비고": "끊어진 출처(chunk_id null)는 화면에서 \"원문 삭제됨\" 표시. 위치는 chunk의 locator를 조회 시 읽는다(사본 없음)"
+   },
+   "source": "docs/05_DATA_MODEL.md"
+  },
+  "usage_events": {
+   "name": "usage_events",
+   "row": {
+    "테이블": "usage_events",
+    "목적": "AI 호출 사용량 기록(S-13)",
+    "주요 컬럼": "id, user_id★, project_id, event_type, provider, model, input_tokens, output_tokens, estimated_cost",
+    "RLS 기준": "본인 행 조회만. 쓰기는 서버만",
+    "비고": "토큰·비용은 공급자가 주는 범위에서만(nullable). 불완전하면 확정값처럼 표시하지 않음"
+   },
+   "source": "docs/05_DATA_MODEL.md"
+  },
+  "plans": {
+   "name": "plans",
+   "row": {
+    "테이블": "plans",
+    "목적": "요금제별 한도 정의(S-13)",
+    "주요 컬럼": "code(PK `free`·`pro`), max_sources, monthly_questions",
+    "RLS 기준": "로그인 사용자 읽기 전용(시드 데이터)",
+    "비고": "한도 수치는 미확인 — `01_PRD.md`에서 결정 후 시드. 결제 연동은 MVP 제외"
+   },
+   "source": "docs/05_DATA_MODEL.md"
+  },
+  "user_quotas": {
+   "name": "user_quotas",
+   "row": {
+    "테이블": "user_quotas",
+    "목적": "사용자별 사용 한도·누적(S-13)",
+    "주요 컬럼": "user_id(PK), plan_code→plans, period_start, used_questions, used_sources",
+    "RLS 기준": "본인 행 조회만. 갱신은 서버만",
+    "비고": "한도 확인·증가는 한 트랜잭션(경쟁 조건 방지). 기간 초기화 방식은 5장"
+   },
+   "source": "docs/05_DATA_MODEL.md"
+  }
+ },
+ "issues": [
+  [
+   "🟡",
+   "S-01",
+   "랜딩 권장: 근거(사례·수치·후기 — 실제만), 가격, 자주 묻는 질문"
+  ],
+  [
+   "🟡",
+   "S-04",
+   "비밀번호 재설정 권장: 임시 저장(긴 폼)"
+  ],
+  [
+   "🟡",
+   "S-05",
+   "온보딩 권장: 중간 저장·이어하기"
+  ],
+  [
+   "🟡",
+   "S-06",
+   "대시보드 권장: 정렬, 일괄 작업(선택·삭제·내보내기), 저장된 보기·열 설정"
+  ],
+  [
+   "🟡",
+   "S-07",
+   "프로젝트 목록 권장: 일괄 작업(선택·삭제·내보내기), 저장된 보기·열 설정"
+  ],
+  [
+   "🟡",
+   "S-08",
+   "워크스페이스 권장: 활동·변경 이력"
+  ],
+  [
+   "ℹ️",
+   "S-08",
+   "모르는 블록(회색 상자로 표시): design.md#2)"
+  ],
+  [
+   "🟡",
+   "S-09",
+   "자료 추가 권장: 임시 저장(긴 폼)"
+  ],
+  [
+   "ℹ️",
+   "S-09",
+   "모르는 블록(회색 상자로 표시): prd 3-1)"
+  ],
+  [
+   "🟡",
+   "S-10",
+   "문서 뷰어 권장: 관련 항목 탭, 활동·변경 이력"
+  ],
+  [
+   "🟡",
+   "S-11",
+   "리포트 목록 권장: 새로 만들기, 일괄 작업(선택·삭제·내보내기), 저장된 보기·열 설정"
+  ],
+  [
+   "🟡",
+   "S-12",
+   "리포트 권장: 관련 항목 탭, 활동·변경 이력"
+  ],
+  [
+   "🟡",
+   "S-14",
+   "없는 경로 권장: 관련 항목 탭, 활동·변경 이력"
+  ],
+  [
+   "🟡",
+   "S-15",
+   "오류 권장: 관련 항목 탭, 활동·변경 이력"
+  ],
+  [
+   "ℹ️",
+   "S-14",
+   "없는 경로 — 들어오는 경로 없음(메뉴에서만 진입이면 무시)"
+  ],
+  [
+   "ℹ️",
+   "S-15",
+   "오류 — 들어오는 경로 없음(메뉴에서만 진입이면 무시)"
+  ]
+ ]
+}

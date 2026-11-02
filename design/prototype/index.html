@@ -1,0 +1,580 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KNOWFLOW-AI 시안 — S-07 · S-08 · S-12</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.1.11/dist/index.global.js"></script>
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+
+<!-- 브라우저 CDN은 외부 CSS의 @theme를 읽지 못해 apps/web/src/styles/tokens.css의 @theme 값을 그대로 복사했다. 값을 고칠 때는 tokens.css만 고치고 이 블록을 다시 복사한다. -->
+<style type="text/tailwindcss">
+@theme {
+  --color-background: #ffffff; --color-foreground: #1b1f23;
+  --color-card: #ffffff; --color-card-foreground: #1b1f23;
+  --color-popover: #ffffff; --color-popover-foreground: #1b1f23;
+  --color-primary: #0f5f66; --color-primary-foreground: #ffffff;
+  --color-secondary: #eef0f1; --color-secondary-foreground: #1b1f23;
+  --color-muted: #f4f5f5; --color-muted-foreground: #5b6470;
+  --color-accent: #e3f0f1; --color-accent-foreground: #0b4a50;
+  --color-destructive: #b42318; --color-destructive-foreground: #ffffff;
+  --color-border: #e3e6e8; --color-input: #8a929b; --color-ring: #0f5f66;
+  --color-sidebar: #f7f8f8; --color-sidebar-foreground: #1b1f23;
+  --color-danger: #b42318; --color-danger-soft: #fbe9e7;
+  --color-success: #1e6b3c; --color-success-soft: #e7f3ea;
+  --color-warning: #8a5a00; --color-warning-soft: #fbf1dc;
+  --color-highlight: #ffe45c; --color-highlight-fg: #1b1f23; --color-highlight-soft: #fff4b8;
+  --color-scrim: rgb(0 0 0 / 0.4);
+  --size-touch: 2.75rem; --size-chat: 22.5rem; --container-reading: 40rem; --leading-reading: 1.95;
+  --font-sans: "Pretendard Variable", Pretendard, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif;
+  --font-serif: "Noto Serif KR", "Nanum Myeongjo", "Batang", serif;
+  --radius-control: 999px; --radius-row: 0.625rem; --radius-panel: 1rem;
+  --shadow-panel: 0 1px 2px rgb(27 31 35 / 0.05), 0 8px 24px -6px rgb(27 31 35 / 0.1);
+  --shadow-sheet: 0 -4px 40px rgb(27 31 35 / 0.18);
+  --breakpoint-desk: 75rem;
+  --text-display: 1.75rem; --text-h1: 1.5rem; --text-h2: 1.25rem;
+  --text-body: 0.9375rem; --text-caption: 0.75rem; --text-reading: 1.0625rem;
+}
+.dark {
+  --color-background: #121518; --color-foreground: #e9ecee;
+  --color-card: #1a1e22; --color-card-foreground: #e9ecee;
+  --color-popover: #1a1e22; --color-popover-foreground: #e9ecee;
+  --color-primary: #6cc4cc; --color-primary-foreground: #0b1417;
+  --color-secondary: #22272c; --color-secondary-foreground: #e9ecee;
+  --color-muted: #22272c; --color-muted-foreground: #a1aab3;
+  --color-accent: #1e3438; --color-accent-foreground: #bfe6ea;
+  --color-destructive: #f0857b; --color-destructive-foreground: #230b08;
+  --color-border: #2e343a; --color-input: #6e7882; --color-ring: #6cc4cc;
+  --color-sidebar: #171b1e; --color-sidebar-foreground: #e9ecee;
+  --color-danger: #f0857b; --color-danger-soft: #3c1d1a;
+  --color-success: #6fcb8e; --color-success-soft: #17301f;
+  --color-warning: #e5b54d; --color-warning-soft: #3a2e12;
+  --color-highlight: #6b5a12; --color-highlight-fg: #fff3b8; --color-highlight-soft: #4a3f12;
+  --color-scrim: rgb(0 0 0 / 0.6);
+  --shadow-panel: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -6px rgb(0 0 0 / 0.55);
+  --shadow-sheet: 0 -4px 40px rgb(0 0 0 / 0.6);
+}
+@media (width >= 768px) { :root { --text-display: 2.25rem; --text-h1: 1.75rem; --text-h2: 1.375rem; --text-body: 1rem; --text-caption: 0.8125rem; --text-reading: 1.125rem; } }
+@media (width >= 1200px) { :root { --text-display: 3rem; --text-h1: 2.125rem; --text-h2: 1.625rem; --text-body: 1rem; --text-caption: 0.8125rem; --text-reading: 1.125rem; } }
+@media (prefers-reduced-motion: reduce) { * { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; } }
+
+@layer base {
+  html, body { height: 100%; overflow-x: hidden; }
+  body { font-family: var(--font-sans); font-size: var(--text-body); background: var(--color-background); color: var(--color-foreground); -webkit-font-smoothing: antialiased; word-break: keep-all; overflow-wrap: anywhere; }
+  [role=tab] { white-space: nowrap; flex-shrink: 0; }
+  :focus-visible { outline: 2px solid var(--color-ring); outline-offset: 2px; }
+  button { cursor: pointer; }
+  svg.lucide { width: 1.125rem; height: 1.125rem; flex: none; }
+}
+@layer components {
+  .pill { display: inline-flex; align-items: center; gap: .375rem; height: 2.25rem; padding: 0 .875rem; border-radius: var(--radius-control); border: 1px solid var(--color-input); background: var(--color-background); font-size: var(--text-caption); font-weight: 500; white-space: nowrap; }
+  .pill:hover { background: var(--color-muted); }
+  .pill[aria-pressed="true"] { background: var(--color-accent); color: var(--color-accent-foreground); border-color: var(--color-primary); }
+  .btn-primary { display: inline-flex; align-items: center; gap: .5rem; height: 2.5rem; padding: 0 1.125rem; border-radius: var(--radius-control); background: var(--color-primary); color: var(--color-primary-foreground); font-weight: 600; font-size: var(--text-body); }
+  .btn-primary:hover { filter: brightness(1.12); }
+  .icon-btn { display: inline-grid; place-items: center; width: 2.25rem; height: 2.25rem; border-radius: var(--radius-control); color: var(--color-muted-foreground); }
+  .icon-btn:hover { background: var(--color-muted); color: var(--color-foreground); }
+  .pill-sm { height: 2rem; padding: 0 .75rem; }
+  /* 터치 영역: 겉모습은 그대로, ::after로 히트 영역만 44px까지 */
+  .pill, .btn-primary, .icon-btn, .cite, .chk { position: relative; }
+  .pill::after, .btn-primary::after, .icon-btn::after, .cite::after, .chk::after { content: ""; position: absolute; left: 50%; top: 50%; width: max(100%, var(--size-touch)); height: max(100%, var(--size-touch)); transform: translate(-50%, -50%); }
+  .chk { display: inline-grid; place-items: center; width: 1.25rem; height: 1.25rem; flex: none; }
+  .chk input { width: 1.125rem; height: 1.125rem; accent-color: var(--color-primary); }
+  .field { display: flex; align-items: center; gap: .5rem; height: 3rem; padding: 0 .375rem 0 1rem; border-radius: var(--radius-control); border: 1px solid var(--color-input); background: var(--color-background); }
+  .field:focus-within { border-color: var(--color-primary); outline: 2px solid var(--color-ring); outline-offset: 2px; }
+  .field input { flex: 1; min-width: 0; background: transparent; outline: none; }
+  .field input::placeholder { color: var(--color-muted-foreground); }
+  .menu { position: absolute; right: 0; top: calc(100% + .5rem); min-width: 13rem; padding: .375rem; border-radius: var(--radius-row); background: var(--color-popover); border: 1px solid var(--color-border); box-shadow: var(--shadow-panel); z-index: 30; }
+  .menu[hidden] { display: none; }
+  .menu button { display: flex; align-items: center; gap: .625rem; width: 100%; min-height: var(--size-touch); padding: 0 .75rem; border-radius: var(--radius-row); text-align: left; }
+  .menu button:hover { background: var(--color-muted); }
+  .state-card { display: flex; flex-direction: column; gap: .75rem; padding: 1rem; border-radius: var(--radius-panel); border: 1px solid var(--color-border); background: var(--color-card); }
+  .skel { border-radius: var(--radius-row); background: var(--color-muted); animation: pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: .5; } }
+  .badge { display: inline-flex; align-items: center; gap: .25rem; height: 1.5rem; padding: 0 .625rem; border-radius: var(--radius-control); font-size: var(--text-caption); font-weight: 600; white-space: nowrap; }
+  .badge-ok { background: var(--color-success-soft); color: var(--color-success); }
+  .badge-run { background: var(--color-accent); color: var(--color-accent-foreground); }
+  .badge-fail { background: var(--color-danger-soft); color: var(--color-danger); }
+  .badge-wait { background: var(--color-warning-soft); color: var(--color-warning); }
+  .cite { display: inline-grid; place-items: center; min-width: 1.375rem; height: 1.375rem; margin: 0 .125rem; padding: 0 .25rem; border-radius: var(--radius-control); background: var(--color-accent); color: var(--color-accent-foreground); font-size: .6875rem; font-weight: 700; vertical-align: .1em; position: relative; }
+  .cite:hover, .cite[aria-current="true"] { background: var(--color-primary); color: var(--color-primary-foreground); }
+  .cite .tip { display: none; position: absolute; left: 50%; bottom: calc(100% + .5rem); transform: translateX(-50%); width: 15rem; padding: .625rem .75rem; border-radius: var(--radius-row); background: var(--color-popover); color: var(--color-popover-foreground); border: 1px solid var(--color-border); box-shadow: var(--shadow-panel); font-size: var(--text-caption); font-weight: 400; text-align: left; line-height: 1.5; z-index: 30; }
+  .cite:not([data-off]):hover .tip, .cite:not([data-off]):focus-visible .tip { display: block; }
+  mark.ev { background: var(--color-highlight-soft); color: inherit; border-radius: .2em; padding: .05em .1em; box-decoration-break: clone; -webkit-box-decoration-break: clone; transition: background .2s; }
+  mark.ev.on { background: var(--color-highlight); color: var(--color-highlight-fg); }
+  .sent { cursor: pointer; border-radius: .2em; }
+  .sent:hover { background: var(--color-muted); }
+  .sent.on { background: var(--color-accent); color: var(--color-accent-foreground); } /* 형광 노랑은 근거 구절(mark.ev)에만 */
+  .scr { overflow-y: auto; scrollbar-width: thin; }
+  section.scr:focus-visible { outline: none; }
+  /* Sheet: 좁은 구간에서만 떠오른다 */
+  .sheet-l, .sheet-r, .sheet-b { visibility: hidden; }
+  .sheet-l.open, .sheet-r.open, .sheet-b.open { visibility: visible; }
+  .scrim { position: fixed; inset: 0; background: var(--color-scrim); z-index: 40; display: none; }
+  .scrim.open { display: block; }
+  .sheet-l { position: fixed; top: 0; bottom: 0; left: 0; width: min(20rem, 88vw); z-index: 50; background: var(--color-background); box-shadow: var(--shadow-panel); transform: translateX(-105%); transition: transform .2s; }
+  .sheet-l.open { transform: none; }
+  .sheet-r { position: fixed; top: 0; bottom: 0; right: 0; width: min(22rem, 92vw); z-index: 50; background: var(--color-background); box-shadow: var(--shadow-panel); transform: translateX(105%); transition: transform .2s; }
+  .sheet-r.open { transform: none; }
+  .sheet-b { position: fixed; left: 0; right: 0; bottom: 0; height: 82dvh; z-index: 50; background: var(--color-card); border-radius: var(--radius-panel) var(--radius-panel) 0 0; box-shadow: var(--shadow-sheet); transform: translateY(105%); transition: transform .25s; }
+  .sheet-b.open { transform: none; }
+  /* 정적 배치 구간에서는 보이고 포커스도 받는다. 시트 구간의 닫힌 상태는 visibility:hidden + JS가 inert를 건다 */
+  @media (width >= 768px) { .sheet-b { position: static; height: auto; transform: none; visibility: visible; border-radius: var(--radius-panel); box-shadow: var(--shadow-panel); } }
+  @media (width >= 1200px) { .sheet-l.keep-desk, .sheet-r.keep-desk { position: static; width: auto; transform: none; visibility: visible; box-shadow: none; z-index: auto; } }
+  @media (width >= 768px) { .sheet-l.keep-md, .sheet-r.keep-md { position: static; width: auto; transform: none; visibility: visible; box-shadow: none; z-index: auto; } }
+}
+</style>
+</head>
+
+<body class="flex flex-col h-dvh">
+<!-- 시안 전용 전환 띠 (제품 UI 아님) -->
+<div class="flex items-center gap-2 h-11 px-3 border-b border-border bg-muted text-caption shrink-0 overflow-x-auto">
+  <span class="font-semibold shrink-0">시안</span>
+  <button class="pill" data-go="s07" aria-pressed="true">S-07 프로젝트</button>
+  <button class="pill" data-go="s08" aria-pressed="false">S-08 워크스페이스</button>
+  <button class="pill" data-go="s12" aria-pressed="false">S-12 리포트</button>
+  <button class="pill" data-go="st" aria-pressed="false">상태</button>
+  <button class="pill ml-auto" id="theme" aria-label="다크 전환"><i data-lucide="moon"></i><span class="hidden md:inline">다크</span></button>
+</div>
+
+<div class="flex flex-1 min-h-0">
+  <!-- 앱 셸 사이드바: 데스크톱 전체 / 태블릿 아이콘 / 모바일 Sheet -->
+  <aside id="nav" data-label="메뉴" class="sheet-l keep-md flex flex-col gap-1 p-3 bg-sidebar text-sidebar-foreground border-r border-border md:w-16 desk:w-60 md:shrink-0 md:items-stretch"></aside>
+
+  <main class="flex-1 min-w-0 min-h-0 relative">
+
+<!-- ═══ S-07 프로젝트 목록 ═══ -->
+<section id="s07" class="scr absolute inset-0">
+  <div class="mx-auto w-full max-w-3xl px-4 md:px-8 pt-4 md:pt-10 pb-16">
+    <div class="flex items-center gap-2 md:hidden mb-4">
+      <button class="icon-btn" data-open="nav" aria-label="메뉴 열기"><i data-lucide="menu"></i></button>
+      <span class="font-semibold">KNOWFLOW</span>
+    </div>
+    <div class="flex items-end justify-between gap-3">
+      <h1 class="text-h1 font-bold tracking-tight">프로젝트</h1>
+      <button class="btn-primary"><i data-lucide="plus"></i><span>새 프로젝트</span></button>
+    </div>
+    <p class="mt-1 text-muted-foreground">자료를 모으고, 질문하고, 근거를 확인합니다.</p>
+
+    <label class="field mt-6 pr-4">
+      <i data-lucide="search" class="text-muted-foreground"></i>
+      <input type="search" placeholder="프로젝트 이름 검색" aria-label="프로젝트 검색">
+    </label>
+    <div class="mt-3 flex flex-wrap items-center gap-2">
+      <button class="pill">상태: 전체 <i data-lucide="chevron-down"></i></button>
+      <button class="pill">유형: 전체 <i data-lucide="chevron-down"></i></button>
+      <button class="icon-btn ml-auto" aria-label="정렬: 최근 수정순"><i data-lucide="arrow-up-down"></i></button>
+    </div>
+
+    <ul id="rows" class="mt-3"></ul>
+    <nav class="mt-6 flex items-center justify-center gap-1" aria-label="페이지">
+      <button class="icon-btn" aria-label="이전 페이지" disabled><i data-lucide="chevron-left"></i></button>
+      <button class="pill pill-sm" aria-pressed="true" aria-current="page">1</button>
+      <button class="pill pill-sm" aria-pressed="false">2</button>
+      <button class="pill pill-sm" aria-pressed="false">3</button>
+      <button class="icon-btn" aria-label="다음 페이지"><i data-lucide="chevron-right"></i></button>
+    </nav>
+    <p class="mt-3 text-caption text-muted-foreground text-center tabular-nums">전체 프로젝트 18개 중 1–6</p>
+  </div>
+</section>
+
+<!-- ═══ S-08 워크스페이스 ═══ -->
+<section id="s08" class="absolute inset-0 hidden flex-col md:p-3 desk:p-3 gap-3 bg-muted/40 overflow-hidden">
+  <div class="flex items-center gap-1 px-3 pt-2 md:px-1 md:pt-0 shrink-0">
+    <button class="icon-btn md:hidden" data-open="nav" aria-label="메뉴 열기"><i data-lucide="menu"></i></button>
+    <nav class="flex items-center gap-1 text-caption text-muted-foreground min-w-0">
+      <span class="shrink-0 whitespace-nowrap">프로젝트</span><i data-lucide="chevron-right"></i>
+      <span class="font-semibold text-foreground truncate">2026 하반기 반도체 공급망 리서치</span>
+    </nav>
+    <button class="pill ml-auto desk:hidden" data-open="src"><i data-lucide="files"></i>자료 5</button>
+    <button class="btn-primary max-md:hidden desk:ml-auto !h-9"><i data-lucide="file-text"></i>리포트 생성</button>
+    <span class="relative md:hidden">
+      <button class="icon-btn" data-menu="menu-s08" aria-haspopup="menu" aria-expanded="false" aria-label="더보기"><i data-lucide="ellipsis"></i></button>
+      <div class="menu" id="menu-s08" role="menu" hidden><button role="menuitem"><i data-lucide="file-text"></i>리포트 생성</button></div>
+    </span>
+  </div>
+
+  <div class="flex-1 min-h-0 grid gap-3 grid-cols-1 md:grid-cols-[1fr_var(--size-chat)] desk:grid-cols-[30fr_45fr_25fr]">
+    <!-- ① 자료 -->
+    <aside id="src" data-label="자료 목록" class="sheet-l keep-desk flex flex-col bg-background desk:bg-transparent min-h-0">
+      <div class="p-3 flex flex-col gap-3 min-h-0 flex-1">
+        <div class="flex items-center justify-between">
+          <h2 class="font-semibold">자료 <span class="text-muted-foreground font-normal tabular-nums">5</span></h2>
+          <button class="pill"><i data-lucide="plus"></i>자료 추가</button>
+        </div>
+        <div class="flex gap-2 flex-wrap">
+          <button class="pill" aria-pressed="true">전체</button>
+          <button class="pill" aria-pressed="false">PDF</button>
+          <button class="pill" aria-pressed="false">URL</button>
+        </div>
+        <ul class="scr -mx-1 flex-1 min-h-0" id="srcs"></ul>
+        <div class="flex items-center justify-between gap-2">
+          <p class="text-caption text-muted-foreground">체크한 자료 4개 안에서만 답합니다.</p>
+          <button class="pill pill-sm shrink-0 text-destructive"><i data-lucide="trash-2"></i>선택 삭제</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ② 요약 / 원문 -->
+    <div class="min-h-0 flex flex-col bg-card md:rounded-panel md:shadow-panel overflow-hidden">
+      <div class="flex items-center gap-1 px-3 pt-3 border-b border-border" role="tablist">
+        <button id="tabbtn-sum" class="px-3 py-2 min-h-(--size-touch) text-body font-semibold border-b-2 border-transparent text-muted-foreground aria-selected:border-primary aria-selected:text-foreground" role="tab" aria-selected="false" aria-controls="tab-sum" tabindex="-1" data-tab="sum">요약</button>
+        <button id="tabbtn-doc" class="px-3 py-2 min-h-(--size-touch) text-body font-semibold border-b-2 border-transparent text-muted-foreground aria-selected:border-primary aria-selected:text-foreground" role="tab" aria-selected="true" aria-controls="tab-doc" tabindex="0" data-tab="doc">원문</button>
+        <span class="ml-auto text-caption text-muted-foreground pr-2 truncate">2026 반도체 산업 전망 보고서.pdf · p.14</span>
+      </div>
+      <div id="tab-sum" role="tabpanel" aria-labelledby="tabbtn-sum" tabindex="0" class="scr flex-1 min-h-0 p-5 hidden">
+        <h2 class="text-h2 font-bold">핵심 요약</h2>
+        <ul class="mt-3 space-y-3 leading-relaxed">
+          <li>2026년 하반기 메모리 수요는 서버·AI 가속기 중심으로 회복되나, 모바일은 재고 조정이 이어집니다.</li>
+          <li>첨단 패키징 설비 리드타임이 길어져 공급 병목의 무게가 웨이퍼에서 후공정으로 옮겨갑니다.</li>
+          <li>지정학 리스크 대응으로 주요 업체가 생산 거점을 2곳 이상으로 분산하는 계획을 공시했습니다.</li>
+        </ul>
+        <p class="mt-4 text-caption text-muted-foreground">자료 4개 기준 · AI가 요약했으며 오류가 있을 수 있습니다.</p>
+      </div>
+      <article id="tab-doc" role="tabpanel" aria-labelledby="tabbtn-doc" tabindex="0" class="scr flex-1 min-h-0 px-5 py-5 pb-28 md:pb-5 font-serif text-reading leading-reading">
+        <h2 class="font-semibold text-h2 leading-snug mb-3">3. 공급망 병목의 이동</h2>
+        <p>2025년까지 업계의 병목은 웨이퍼 투입량과 EUV 노광 장비의 가동률이었다. 그러나 2026년에 들어서면서 병목은 후공정으로 옮겨가고 있다. <mark class="ev" id="ev1">첨단 패키징(CoWoS 등) 설비의 신규 발주부터 가동까지 평균 리드타임은 14개월에서 18개월로 늘어났으며, 이는 가속기 출하 계획의 가장 큰 불확실성으로 꼽힌다.</mark></p>
+        <p class="mt-4">한편 주요 파운드리는 단일 거점 의존을 줄이기 위해 투자 계획을 수정했다. <mark class="ev" id="ev2">상위 5개 업체 가운데 4곳이 2027년까지 생산 거점을 2곳 이상으로 분산하겠다고 공시했다.</mark> 다만 신규 거점의 수율이 안정화되기까지는 통상 두 분기 이상이 걸린다.</p>
+        <p class="mt-4">메모리 부문에서는 수요의 양극화가 뚜렷하다. 서버용 고대역폭 메모리 주문은 계약 물량이 이미 내년 상반기까지 채워졌지만, 모바일용 D램 재고 일수는 아직 정상 수준을 웃돈다.</p>
+      </article>
+    </div>
+
+    <!-- ③ 채팅 (좁으면 하단 Sheet) -->
+    <aside id="chat" data-label="질문" class="sheet-b flex flex-col min-h-0 overflow-hidden">
+      <div class="flex items-center gap-2 px-4 py-3 border-b border-border">
+        <i data-lucide="message-square-text"></i><h2 class="font-semibold">질문</h2>
+        <button class="icon-btn ml-auto md:hidden" data-close="chat" aria-label="닫기"><i data-lucide="x"></i></button>
+      </div>
+      <div class="scr flex-1 min-h-0 px-4 py-4 space-y-5">
+        <div class="ml-auto max-w-[85%] rounded-panel rounded-br-md bg-secondary px-4 py-2.5">하반기 공급 병목이 어디로 이동했는지 근거와 함께 알려줘.</div>
+        <div>
+          <ol class="mb-3 flex flex-wrap gap-x-3 gap-y-1 text-caption text-muted-foreground">
+            <li class="flex items-center gap-1 text-success"><i data-lucide="check"></i>검색</li>
+            <li class="flex items-center gap-1 text-success"><i data-lucide="check"></i>작성</li>
+            <li class="flex items-center gap-1 text-foreground font-medium"><i data-lucide="loader-circle" class="animate-spin"></i>인용 검증</li>
+          </ol>
+          <p class="leading-relaxed">병목은 웨이퍼 투입에서 <b>후공정, 특히 첨단 패키징</b>으로 이동했습니다. 설비 발주부터 가동까지의 리드타임이 14개월에서 18개월로 늘었고<button class="cite" data-ev="ev1" aria-describedby="tip1" aria-current="true">1<span class="tip" role="tooltip" id="tip1">2026 반도체 산업 전망 보고서.pdf · p.14<br>“첨단 패키징 설비의 신규 발주부터 가동까지…”</span></button>, 상위 업체 5곳 중 4곳이 2027년까지 생산 거점을 분산하기로 했습니다<button class="cite" data-ev="ev2" aria-describedby="tip2">2<span class="tip" role="tooltip" id="tip2">2026 반도체 산업 전망 보고서.pdf · p.14<br>“상위 5개 업체 가운데 4곳이…”</span></button>.</p>
+          <div class="mt-4 flex flex-col items-start gap-2">
+            <button class="pill !h-auto py-2 text-left whitespace-normal">신규 거점의 수율 안정화에는 얼마나 걸려?</button>
+            <button class="pill !h-auto py-2 text-left whitespace-normal">모바일 D램 재고는 어느 정도 남았어?</button>
+          </div>
+        </div>
+      </div>
+      <form class="p-3 border-t border-border" onsubmit="return false">
+        <div class="field">
+          <input placeholder="선택한 자료에 질문하기" aria-label="질문 입력">
+          <button class="icon-btn !bg-primary !text-primary-foreground" aria-label="보내기"><i data-lucide="arrow-up"></i></button>
+        </div>
+      </form>
+    </aside>
+  </div>
+
+  <!-- 모바일: 채팅 열기 막대 -->
+  <button class="md:hidden absolute left-3 right-3 bottom-3 h-12 px-4 rounded-control bg-card shadow-panel border border-border flex items-center gap-2 text-muted-foreground" data-open="chat">
+    <i data-lucide="message-square-text"></i>선택한 자료에 질문하기
+    <span class="ml-auto grid place-items-center size-9 rounded-full bg-primary text-primary-foreground"><i data-lucide="arrow-up"></i></span>
+  </button>
+</section>
+
+<!-- ═══ S-12 리포트 ═══ -->
+<section id="s12" class="absolute inset-0 hidden flex-col">
+  <div class="flex items-center gap-2 px-3 md:px-6 h-11 shrink-0 bg-warning-soft text-warning text-caption">
+    <i data-lucide="info"></i><span>AI가 작성한 내용에는 오류가 있을 수 있습니다. 출처를 확인하세요.</span>
+  </div>
+  <div class="flex items-center gap-1 px-3 md:px-6 h-12 shrink-0 border-b border-border">
+    <button class="icon-btn md:hidden" data-open="nav" aria-label="메뉴 열기"><i data-lucide="menu"></i></button>
+    <button class="icon-btn desk:hidden" data-open="toc" aria-label="목차"><i data-lucide="list"></i></button>
+    <nav aria-label="breadcrumb" class="flex items-center gap-1 min-w-0 text-caption text-muted-foreground">
+      <a href="#s08" class="underline-offset-2 hover:underline shrink-0 whitespace-nowrap max-md:hidden">프로젝트</a>
+      <i data-lucide="chevron-right" class="max-md:hidden"></i>
+      <a href="#s08" class="underline-offset-2 hover:underline truncate max-md:hidden">반도체 공급망 리서치</a>
+      <i data-lucide="chevron-right" class="max-md:hidden"></i>
+      <a href="#s08" class="md:hidden inline-flex items-center gap-1 text-primary font-semibold shrink-0 whitespace-nowrap"><i data-lucide="chevron-left"></i>프로젝트로</a>
+      <span class="font-semibold text-foreground truncate max-md:hidden" aria-current="page">리포트</span>
+    </nav>
+    <button class="pill ml-auto shrink-0" data-open="ref"><i data-lucide="quote"></i>출처 <span class="tabular-nums">3</span></button>
+    <button class="pill max-md:hidden shrink-0"><i data-lucide="download"></i>Markdown 내보내기</button>
+    <span class="relative md:hidden">
+      <button class="icon-btn" data-menu="menu-s12" aria-haspopup="menu" aria-expanded="false" aria-label="더보기"><i data-lucide="ellipsis"></i></button>
+      <div class="menu" id="menu-s12" role="menu" hidden><button role="menuitem"><i data-lucide="download"></i>Markdown 내보내기</button></div>
+    </span>
+  </div>
+  <div class="flex-1 min-h-0 grid grid-cols-1 desk:grid-cols-[14rem_1fr_21rem]">
+    <aside id="toc" data-label="목차" class="sheet-l keep-desk p-4 scr desk:border-r desk:border-border">
+      <p class="text-caption text-muted-foreground mb-3">목차</p>
+      <ol class="space-y-0.5">
+        <li><a class="block px-3 py-2 rounded-row text-muted-foreground hover:bg-muted" href="#">1. 요약</a></li>
+        <li><a class="block px-3 py-2 rounded-row text-muted-foreground hover:bg-muted" href="#">2. 시장 배경</a></li>
+        <li><a class="block px-3 py-2 rounded-row bg-accent text-accent-foreground font-semibold" href="#" aria-current="true">3. 공급망 병목의 이동</a></li>
+        <li><a class="block px-3 py-2 rounded-row text-muted-foreground hover:bg-muted" href="#">4. 업체별 대응</a></li>
+        <li><a class="block px-3 py-2 rounded-row text-muted-foreground hover:bg-muted" href="#">5. 시사점</a></li>
+      </ol>
+    </aside>
+
+    <article class="scr min-h-0 px-5 md:px-10 py-8 font-serif">
+      <div class="mx-auto max-w-reading text-reading leading-reading">
+        <p class="font-sans text-caption text-muted-foreground">2026.11.02 생성 · 자료 4개</p>
+        <h1 class="font-sans text-h1 font-bold tracking-tight leading-snug mt-1">반도체 공급망 재편: 2026 하반기 리스크 요약</h1>
+        <h2 class="font-sans text-h2 font-bold mt-8 mb-2">3. 공급망 병목의 이동</h2>
+        <p>
+          <span class="sent" data-ref="r1">병목은 웨이퍼 투입에서 후공정으로 옮겨갔다.</span>
+          <span class="sent on" data-ref="r2">첨단 패키징 설비의 리드타임은 14개월에서 18개월로 늘었다.</span>
+          <span class="sent" data-ref="r3">상위 업체 5곳 중 4곳이 생산 거점을 2곳 이상으로 분산한다.</span>
+          다만 신규 거점의 수율이 안정화되기까지는 통상 두 분기 이상이 걸린다.
+        </p>
+        <p class="mt-4">모바일용 D램 재고 일수는 아직 정상 수준을 웃돌아, 하반기 가격 반등은 서버용 제품에 한정될 가능성이 높다.</p>
+        <p class="mt-6 font-sans text-caption text-muted-foreground">문장을 누르면 출처 패널에 근거 구절이 표시됩니다.</p>
+      </div>
+    </article>
+
+    <aside id="ref" data-label="출처" class="sheet-r keep-desk scr p-4 desk:border-l desk:border-border">
+      <div class="flex items-center mb-3">
+        <h2 class="font-semibold">출처</h2>
+        <button class="icon-btn ml-auto desk:hidden" data-close="ref" aria-label="닫기"><i data-lucide="x"></i></button>
+      </div>
+      <div id="refcards" class="space-y-3"></div>
+    </aside>
+  </div>
+</section>
+
+<!-- ═══ 상태 시안 ═══ -->
+<section id="st" class="scr absolute inset-0 hidden">
+  <div class="mx-auto max-w-6xl px-4 md:px-8 py-6">
+    <div class="flex items-center gap-2 md:hidden mb-4"><button class="icon-btn" data-open="nav" aria-label="메뉴 열기"><i data-lucide="menu"></i></button></div>
+    <h1 class="text-h1 font-bold tracking-tight">화면 상태</h1>
+    <p class="mt-1 text-muted-foreground">빈 · 로딩 · 오류 상태 시안입니다.</p>
+    <div id="states" class="mt-6 grid gap-4 grid-cols-1 md:grid-cols-2 desk:grid-cols-3"></div>
+  </div>
+</section>
+
+  </main>
+</div>
+
+<div class="scrim" id="scrim"></div>
+
+<script>
+const NAV = [
+  ['layout-grid','대시보드',false],['folder-open','프로젝트',true],['file-text','리포트',false],['search','검색 Ctrl K',false]
+];
+const nav = document.getElementById('nav');
+nav.innerHTML = `
+  <div class="flex items-center gap-2 px-1 h-10 mb-2">
+    <span class="grid place-items-center size-8 rounded-row bg-primary text-primary-foreground"><i data-lucide="book-open-text"></i></span>
+    <span class="font-bold tracking-tight md:max-desk:hidden">KNOWFLOW</span>
+  </div>
+  <button class="btn-primary justify-center md:max-desk:!px-0 md:max-desk:!w-10 md:max-desk:mx-auto" aria-label="새 프로젝트"><i data-lucide="plus"></i><span class="md:max-desk:hidden">새 프로젝트</span></button>
+  <nav class="mt-3 flex flex-col gap-0.5">` + NAV.map(([i,t,a]) =>
+  `<a href="#" class="flex items-center gap-3 h-10 px-3 rounded-row md:max-desk:justify-center md:max-desk:px-0 ${a?'bg-accent text-accent-foreground font-semibold':'text-muted-foreground hover:bg-muted'}" title="${t}"><i data-lucide="${i}"></i><span class="md:max-desk:hidden">${t}</span></a>`).join('') + `</nav>
+  <div class="mt-auto md:max-desk:hidden">
+    <div class="px-3 py-3 rounded-row bg-muted">
+      <div class="flex justify-between text-caption"><span>이번 달 사용량</span><span class="tabular-nums font-semibold">60%</span></div>
+      <div class="mt-2 h-1.5 rounded-full bg-border overflow-hidden" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100" aria-label="이번 달 사용량"><div class="h-full w-3/5 bg-primary"></div></div>
+      <p class="mt-2 text-caption text-muted-foreground tabular-nums">질문 300 / 500회</p>
+    </div>
+  </div>
+  <div class="flex items-center gap-2 px-1 pt-3 mt-3 border-t border-border md:max-desk:justify-center">
+    <span class="grid place-items-center size-8 rounded-full bg-secondary font-semibold text-caption">김</span>
+    <div class="min-w-0 md:max-desk:hidden"><p class="font-medium truncate">김서연</p><p class="text-caption text-muted-foreground truncate">seoyeon@example.com</p></div>
+  </div>`;
+
+// S-07 행
+const ROWS = [
+  ['folder-open','2026 하반기 반도체 공급망 리서치','자료 5개 · 수정 2시간 전','완료','ok'],
+  ['file-pen-line','ESG 공시 기준 비교(ISSB·KSSB)','자료 8개 · 수정 어제','처리 중','run'],
+  ['graduation-cap','석사논문 선행연구 정리 — 플랫폼 노동','자료 21개 · 수정 11월 1일','완료','ok'],
+  ['briefcase-business','신사업 타당성 검토 — 헬스케어 구독 서비스','자료 3개 · 수정 10월 29일','실패','fail'],
+  ['mic','B2B SaaS 고객 인터뷰 녹취 분석','자료 12개 · 수정 10월 24일','검토 대기','wait'],
+  ['landmark','국민연금 개혁안 쟁점 정리','자료 6개 · 수정 10월 18일','완료','ok'],
+];
+const LBL = {ok:'check',run:'loader-circle',fail:'circle-alert',wait:'clock'};
+document.getElementById('rows').innerHTML = ROWS.map(([ic,t,m,s,k]) => `
+  <li class="flex items-center gap-2 px-2 md:px-3 rounded-row hover:bg-muted">
+    <label class="chk"><input type="checkbox" aria-label="${t} 선택"></label>
+    <a href="#s08" class="flex flex-1 min-w-0 items-center gap-3 py-3">
+      <span class="grid place-items-center size-10 rounded-row bg-secondary text-muted-foreground shrink-0"><i data-lucide="${ic}"></i></span>
+      <span class="min-w-0 flex-1">
+        <span class="block font-semibold truncate max-md:whitespace-normal max-md:line-clamp-2">${t}</span>
+        <span class="block text-caption text-muted-foreground mt-0.5 tabular-nums">${m}</span>
+      </span>
+      <span class="badge badge-${k}"><i data-lucide="${LBL[k]}" class="${k==='run'?'animate-spin':''} !size-3.5"></i><span class="max-md:hidden">${s}</span><span class="sr-only md:hidden">${s}</span></span>
+    </a>
+  </li>`).join('');
+
+// S-08 자료
+const SRC = [
+  ['file-text','2026 반도체 산업 전망 보고서.pdf','PDF · 48쪽','ok','완료',true],
+  ['file-text','HBM 공급계약 동향 리포트.pdf','PDF · 22쪽','ok','완료',true],
+  ['globe','한국반도체산업협회 월간 동향','URL','ok','완료',true],
+  ['file-text','주요 파운드리 3분기 실적 발표.pdf','PDF · 36쪽','run','처리 중',false],
+  ['globe','첨단 패키징 설비 리드타임 기사','URL','fail','실패',true],
+];
+document.getElementById('srcs').innerHTML = SRC.map(([ic,t,m,k,s,c]) => `
+  <li class="flex items-start gap-3 px-2 py-2.5 rounded-row hover:bg-muted">
+    <label class="chk mt-0.5"><input type="checkbox" ${c?'checked':''} aria-label="${t} 질의 범위"></label>
+    <i data-lucide="${ic}" class="mt-0.5 text-muted-foreground"></i>
+    <span class="min-w-0 flex-1"><span class="block text-body font-medium leading-snug">${t}</span><span class="block text-caption text-muted-foreground">${m}</span>
+    ${k==='fail'?'<button class="pill pill-sm mt-1.5"><i data-lucide="rotate-cw"></i>재시도</button>':''}</span>
+    <span class="badge badge-${k} shrink-0">${s}</span>
+  </li>`).join('');
+
+// S-12 출처 카드
+const REF = {
+  r1: ['2026 반도체 산업 전망 보고서.pdf · p.13','“2025년까지 업계의 병목은 웨이퍼 투입량과 EUV 노광 장비의 가동률이었다. 그러나 2026년에 들어서면서 ','병목은 후공정으로 옮겨가고 있다.','”'],
+  r2: ['2026 반도체 산업 전망 보고서.pdf · p.14','“','첨단 패키징(CoWoS 등) 설비의 신규 발주부터 가동까지 평균 리드타임은 14개월에서 18개월로 늘어났으며','…”'],
+  r3: ['2026 반도체 산업 전망 보고서.pdf · p.14','“','상위 5개 업체 가운데 4곳이 2027년까지 생산 거점을 2곳 이상으로 분산하겠다고 공시했다.','”'],
+};
+const cards = document.getElementById('refcards');
+function renderRefs(active){
+  cards.innerHTML = Object.entries(REF).map(([k,[src,a,m,b]]) => `
+    <div class="rounded-panel border ${k===active?'border-primary shadow-panel':'border-border'} bg-card p-3.5">
+      <p class="text-caption text-muted-foreground flex items-center gap-1"><i data-lucide="file-text" class="!size-3.5"></i>${src}</p>
+      <p class="mt-2 font-serif leading-relaxed text-body">${a}<mark class="ev ${k===active?'on':''}">${m}</mark>${b}</p>
+      <a href="#" class="mt-2 inline-flex items-center gap-1 text-caption text-primary font-semibold">원문에서 보기 <i data-lucide="arrow-up-right" class="!size-3.5"></i></a>
+    </div>`).join('');
+  lucide.createIcons();
+}
+renderRefs('r2');
+document.querySelectorAll('.sent').forEach(s => s.addEventListener('click', () => {
+  document.querySelectorAll('.sent').forEach(x => x.classList.toggle('on', x === s));
+  renderRefs(s.dataset.ref);
+}));
+
+// 인용 칩 → 원문 하이라이트
+document.querySelectorAll('.cite').forEach(c => c.addEventListener('click', () => {
+  document.querySelectorAll('.cite').forEach(x => x === c ? x.setAttribute('aria-current', 'true') : x.removeAttribute('aria-current'));
+  document.querySelectorAll('mark.ev').forEach(m => m.classList.toggle('on', m.id === c.dataset.ev));
+  setTab('doc'); closeAll(true);
+  document.getElementById(c.dataset.ev).scrollIntoView({block:'center', behavior:'smooth'});
+}));
+document.getElementById('ev1').classList.add('on');
+// 인용 칩 툴팁: Esc로 닫고, 다시 올리거나 포커스하면 열린다
+document.querySelectorAll('.cite').forEach(c => ['mouseenter','focus'].forEach(ev => c.addEventListener(ev, () => c.removeAttribute('data-off'))));
+
+// 요약/원문 탭 (roving tabindex, ←→ Home End)
+const tabs = [...document.querySelectorAll('[role=tab]')];
+function setTab(t, focus){
+  tabs.forEach(b => {
+    const on = b.dataset.tab === t;
+    b.setAttribute('aria-selected', on); b.tabIndex = on ? 0 : -1;
+    document.getElementById(b.getAttribute('aria-controls')).classList.toggle('hidden', !on);
+    if (on && focus) b.focus();
+  });
+}
+tabs.forEach((b, i) => {
+  b.addEventListener('click', () => setTab(b.dataset.tab));
+  b.addEventListener('keydown', e => {
+    const n = { ArrowRight: (i + 1) % tabs.length, ArrowLeft: (i - 1 + tabs.length) % tabs.length, Home: 0, End: tabs.length - 1 }[e.key];
+    if (n !== undefined) { e.preventDefault(); setTab(tabs[n].dataset.tab, true); }
+  });
+});
+
+// 화면 전환
+const SCREENS = ['s07','s08','s12','st'];
+function go(id){
+  if (!SCREENS.includes(id)) id = 's07';
+  SCREENS.forEach(s => {
+    const el = document.getElementById(s);
+    el.classList.toggle('hidden', s !== id);
+    el.classList.toggle('flex', s === id && (s === 's08' || s === 's12'));
+  });
+  document.querySelectorAll('[data-go]').forEach(b => b.setAttribute('aria-pressed', b.dataset.go === id));
+  closeAll(true); history.replaceState(null,'','#'+id);
+}
+document.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => go(b.dataset.go)));
+window.addEventListener('hashchange', () => go(location.hash.slice(1)));
+
+// Sheet: 닫힘=inert, 열림=role=dialog+aria-modal+포커스 이동, 닫으면 원래 자리로 복귀, Esc, Tab 가둠
+const scrim = document.getElementById('scrim');
+const sheets = [...document.querySelectorAll('.sheet-l, .sheet-r, .sheet-b')];
+const STATIC_MQ = s => matchMedia(s.classList.contains('keep-desk') ? '(width >= 1200px)' : '(width >= 768px)');
+const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])';
+let opener = null;
+function syncInert(){ sheets.forEach(s => { s.inert = !s.classList.contains('open') && !STATIC_MQ(s).matches; }); }
+function openSheet(id, btn){
+  closeAll(true);
+  const s = document.getElementById(id);
+  opener = btn; s.classList.add('open'); scrim.classList.add('open'); s.inert = false;
+  s.setAttribute('role', 'dialog'); s.setAttribute('aria-modal', 'true');
+  s.setAttribute('aria-label', s.dataset.label || '패널');
+  (s.querySelector('[data-close]') || s.querySelector(FOCUSABLE) || s).focus();
+}
+function closeAll(silent){
+  const was = document.querySelector('.sheet-l.open, .sheet-r.open, .sheet-b.open');
+  document.querySelectorAll('.open').forEach(e => { e.classList.remove('open'); e.removeAttribute('role'); e.removeAttribute('aria-modal'); e.removeAttribute('aria-label'); });
+  syncInert();
+  if (was && opener && !silent) opener.focus();
+  if (was) opener = silent ? null : opener;
+}
+document.querySelectorAll('[data-open]').forEach(b => b.addEventListener('click', () => openSheet(b.dataset.open, b)));
+document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => closeAll()));
+scrim.addEventListener('click', () => closeAll());
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.cite').forEach(c => c.setAttribute('data-off', ''));
+    closeMenus(true); closeAll();
+  }
+  const s = document.querySelector('.sheet-l.open, .sheet-r.open, .sheet-b.open');
+  if (e.key === 'Tab' && s) {
+    const f = [...s.querySelectorAll(FOCUSABLE)].filter(x => x.offsetParent !== null);
+    if (!f.length) return;
+    const first = f[0], last = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  }
+});
+sheets.forEach(s => STATIC_MQ(s).addEventListener('change', syncInert));
+syncInert();
+
+// 더보기 메뉴
+function closeMenus(refocus){
+  document.querySelectorAll('[data-menu][aria-expanded="true"]').forEach(b => {
+    b.setAttribute('aria-expanded', 'false'); document.getElementById(b.dataset.menu).hidden = true; if (refocus) b.focus();
+  });
+}
+document.querySelectorAll('[data-menu]').forEach(b => b.addEventListener('click', e => {
+  e.stopPropagation();
+  const open = b.getAttribute('aria-expanded') === 'true';
+  closeMenus();
+  if (!open) { b.setAttribute('aria-expanded', 'true'); const m = document.getElementById(b.dataset.menu); m.hidden = false; m.querySelector('button').focus(); }
+}));
+document.addEventListener('click', () => closeMenus());
+
+// 상태 시안 카드
+const ST = [
+  ['S-07','빈','folder-plus','아직 프로젝트가 없습니다','첫 프로젝트를 만들고 PDF나 URL을 추가해 보세요.',[['plus','새 프로젝트','btn']]],
+  ['S-07','스켈레톤','skel'],
+  ['S-07','오류','circle-alert','목록을 불러오지 못했습니다','네트워크 연결을 확인한 뒤 다시 시도해 주세요.',[['rotate-cw','다시 시도','pill']],'danger'],
+  ['S-08','빈','files','추가한 자료가 없습니다','자료를 추가하면 질문할 수 있어요. 이런 질문부터 시작해 보세요.',[['plus','자료 추가','btn']],'', ['핵심 주장 세 가지를 요약해 줘','자료마다 결론이 다른 부분은?']],
+  ['S-08','답변 실패','message-square-warning','답변을 만들지 못했습니다','일시적인 오류입니다. 질문은 그대로 보존돼 있습니다.',[['rotate-cw','다시 시도','pill']],'danger'],
+  ['S-08','근거 없음','search-x','선택한 자료에서 근거를 찾지 못했습니다','추측으로 답하지 않았습니다. 자료를 더 선택하거나 질문을 바꿔 보세요.',[['files','자료 범위 바꾸기','pill']],'warning'],
+  ['S-12','생성 중','loader','리포트를 만드는 중입니다','자료 4개를 바탕으로 작성하고 있습니다. 이 화면을 떠나도 계속됩니다.',[],'','','steps'],
+  ['S-12','실패','file-warning','리포트 생성에 실패했습니다','자료 1개의 처리가 끝나지 않았습니다. 자료를 확인하고 다시 시도해 주세요.',[['rotate-cw','다시 시도','btn']],'danger'],
+];
+document.getElementById('states').innerHTML = ST.map(([scr, name, ic, title, desc, acts = [], tone, chips, steps]) => {
+  const head = `<p class="text-caption font-semibold text-muted-foreground">${scr} · ${name}</p>`;
+  if (ic === 'skel') return `<section class="state-card" aria-label="${scr} ${name}">${head}<div class="space-y-3" aria-busy="true">${[0,1,2].map(() => `<div class="flex items-center gap-3"><div class="skel size-10"></div><div class="flex-1 space-y-2"><div class="skel h-4 w-3/4"></div><div class="skel h-3 w-1/2"></div></div><div class="skel h-6 w-14"></div></div>`).join('')}</div></section>`;
+  const color = tone === 'danger' ? 'bg-danger-soft text-danger' : tone === 'warning' ? 'bg-warning-soft text-warning' : 'bg-accent text-accent-foreground';
+  const stepsHtml = steps ? `<ol class="space-y-1.5 text-caption"><li class="flex items-center gap-2 text-success"><i data-lucide="check"></i>자료 검색</li><li class="flex items-center gap-2 text-success"><i data-lucide="check"></i>목차 구성</li><li class="flex items-center gap-2 font-medium"><i data-lucide="loader-circle" class="animate-spin"></i>본문 작성 · 인용 검증</li></ol><div class="h-1.5 rounded-full bg-border overflow-hidden" role="progressbar" aria-valuenow="66" aria-valuemin="0" aria-valuemax="100" aria-label="생성 진행률"><div class="h-full w-2/3 bg-primary"></div></div>` : '';
+  const chipHtml = chips ? `<div class="flex flex-col items-start gap-2">${chips.map(c => `<button class="pill !h-auto py-2 text-left whitespace-normal">${c}</button>`).join('')}</div>` : '';
+  const actHtml = acts.length ? `<div class="flex gap-2">${acts.map(([i,t,k]) => `<button class="${k==='btn'?'btn-primary':'pill'}"><i data-lucide="${i}"></i>${t}</button>`).join('')}</div>` : '';
+  return `<section class="state-card" aria-label="${scr} ${name}">${head}
+    <span class="grid place-items-center size-10 rounded-row ${color}"><i data-lucide="${ic}" class="${steps?'animate-spin':''}"></i></span>
+    <div><h2 class="font-semibold">${title}</h2><p class="mt-1 text-muted-foreground">${desc}</p></div>
+    ${stepsHtml}${chipHtml}${actHtml}</section>`;
+}).join('');
+
+// 다크
+document.getElementById('theme').addEventListener('click', () => {
+  const d = document.documentElement.classList.toggle('dark');
+  document.querySelector('#theme span').textContent = d ? '라이트' : '다크';
+});
+
+lucide.createIcons();
+go((location.hash || '#s07').slice(1));
+</script>
+</body>
+</html>
