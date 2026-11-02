@@ -8,7 +8,7 @@
 | 보안 영향 | 민감 데이터 (프로젝트 간 자료 유출 방지) |
 | 담당 | builder (+ tester), 착수 전 challenger |
 | 근거 | `docs/05_DATA_MODEL.md`, `docs/diagrams/02-rag-and-job-flow.md#4`, `docs/01_PRD.md#8` |
-| 쓰기 허용 | `supabase/migrations/**`(새 번호만), `apps/web/src/services/search/**`, `supabase/tests/**` |
+| 쓰기 허용 | `supabase/migrations/**`(새 번호만), `apps/web/src/services/search/**`, `packages/db-tests/**` |
 
 ## 할 것
 - pgvector 유사도 + pg_trgm/전문검색을 결합한 검색 SQL 함수(결합 방식은 task-013 골든셋 수치로 결정)

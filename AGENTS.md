@@ -12,7 +12,7 @@ PDF·웹 페이지를 모아 분석하고, 자료에 근거한 질의응답과 �
 | 웹 | Next.js 16.4.3 (App Router) · React 19.3.1 · TypeScript 6.0.3(7.x는 typescript-eslint 미지원) · Tailwind CSS 4.3.3 · shadcn/ui(CLI 4.23.0) · Vitest 5.0.5 · ESLint 10.14.0 | `apps/web` (패키지 `web`) |
 | 도구 | Node 26.13.0 · pnpm 12.16.1(`packageManager` 고정) | 루트 |
 | DB·인증 | Supabase (Postgres · RLS · Auth · Storage · Edge Functions) | `supabase/` |
-| Worker | TypeScript(Node) 상시 컨테이너. Supabase 기반 큐(pgmq), 추출·청킹·임베딩·색인·리포트 생성 ([ADR-0002](docs/adr/0002-mvp-tech-decisions.md)) | `apps/worker` |
+| Worker | TypeScript(Node) 상시 컨테이너. Supabase 테이블 폴링 큐(ADR-0005), 추출·청킹·임베딩·색인·리포트 생성 ([ADR-0002](docs/adr/0002-mvp-tech-decisions.md)) | `apps/worker` |
 | 임베딩 | 임베딩 서버 컨테이너, 잠정 bge-m3(골든셋으로 확정) | 컨테이너 |
 | 검색 | pgvector + 전문검색(하이브리드, 제안) | `supabase/` |
 

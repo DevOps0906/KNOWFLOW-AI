@@ -8,7 +8,7 @@
 | 보안 영향 | 노출 면 (인터넷 API, 외부 LLM 호출, 비용) |
 | 담당 | builder (+ tester), 착수 전 challenger |
 | 근거 | `docs/04_API.md#A-08`, `docs/diagrams/seq-report.mmd`, `docs/diagrams/02-rag-and-job-flow.md#5` |
-| 쓰기 허용 | `apps/web/src/app/api/**/reports/**`, `apps/worker/src/report/**`, `apps/web/src/services/reports/**`, `supabase/migrations/**`(새 번호만) |
+| 쓰기 허용 | `apps/web/src/app/api/**/reports/**`, `apps/worker/src/report/**`, `apps/web/src/services/reports/**`, `supabase/migrations/**`(새 번호만), `packages/db-tests/**`(RPC 음성 테스트) |
 
 ## 할 것
 - POST: 멱등 키(`idempotency_keys`), `consume_quota`로 리포트 쿼터 차감, completed 자료 없음 422, `enqueue_job`으로 작업 생성, 리포트 id·작업 id 202 반환

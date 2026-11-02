@@ -8,7 +8,7 @@
 | 보안 영향 | 민감 데이터 (계정·전 데이터 삭제, Storage 파일) |
 | 담당 | builder (+ tester), 착수 전 challenger |
 | 근거 | `spec S-13`, `docs/04_API.md#A-10`, `docs/05_DATA_MODEL.md`, `docs/01_PRD.md#8` |
-| 쓰기 허용 | `apps/web/src/app/(app)/settings/**`, `apps/web/src/app/api/me/**`, `apps/worker/src/cleanup/**`, `supabase/migrations/**`(새 번호만) |
+| 쓰기 허용 | `apps/web/src/app/(app)/settings/**`, `apps/web/src/app/api/me/**`, `apps/worker/src/cleanup/**`, `supabase/migrations/**`(새 번호만), `packages/db-tests/**`(RPC 음성 테스트) |
 
 ## 할 것
 - S-13: 이름 수정, 사용량 요약 자리, 계정 삭제(확인 문구 입력)

@@ -8,7 +8,7 @@
 | 보안 영향 | 노출 면 (인터넷 API, 외부 LLM 호출, 비용) |
 | 담당 | builder (+ tester), 착수 전 challenger |
 | 근거 | `docs/04_API.md#A-06`, `docs/diagrams/seq-ask.mmd`, `docs/01_PRD.md#8-1` |
-| 쓰기 허용 | `apps/web/src/app/api/**/conversations/**`, `apps/web/src/ai/**`, `apps/web/src/services/qa/**` |
+| 쓰기 허용 | `apps/web/src/app/api/**/conversations/**`, `apps/web/src/ai/**`, `apps/web/src/services/qa/**`, `supabase/migrations/**`(새 번호만, 기능 쓰기 RPC), `packages/db-tests/**`(RPC 음성 테스트) |
 
 ## 할 것
 - 흐름: 인증·소유권 → 멱등 키(`idempotency_keys`) → `consume_quota`로 월 질문 쿼터 차감 → 질문 임베딩 → `match_chunks` 검색 → 생성 → 인용 검증

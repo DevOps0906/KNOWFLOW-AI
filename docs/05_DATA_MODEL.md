@@ -18,8 +18,8 @@
 | reports | 생성된 리포트(S-11·12) | id, project_id, user_id★, title, content★, format(`markdown`), status(`generating`·`ready`·`failed`) | `user_id = auth.uid()` 행만. 쓰기는 서버만 | 본문 내 출처 위치는 report_citations가 정본 |
 | report_citations | 리포트 문장 ↔ 근거 청크 정규화(S-12) | id, report_id, chunk_id(삭제 시 null), position | 소속 리포트 소유자만(reports 조인). 쓰기는 서버만 | 끊어진 출처(chunk_id null)는 화면에서 "원문 삭제됨" 표시. 위치는 chunk의 locator를 조회 시 읽는다(사본 없음) |
 | usage_events | AI 호출 사용량 기록(S-13) | id, user_id★, project_id, event_type, provider, model, input_tokens, output_tokens, estimated_cost | 본인 행 조회만. 쓰기는 서버만 | 토큰·비용은 공급자가 주는 범위에서만(nullable). 불완전하면 확정값처럼 표시하지 않음 |
-| plans | 요금제별 한도 정의(S-13) | code(PK `free`·`pro`), max_projects, max_sources_per_project, monthly_questions, monthly_reports, monthly_source_jobs | 로그인 사용자 읽기 전용(시드 데이터) | 한도 5종(프로젝트·자료·질문·리포트·자료 처리). 수치는 [PRD 8-1](01_PRD.md#8-1-베타-초기값-2026-11-02-확정-조정-가능) 시드. 결제 연동은 MVP 제외 |
-| user_quotas | 사용자별 사용 한도·누적(S-13) | user_id(PK), plan_code→plans, period_start, used_projects, used_sources, used_questions, used_reports, used_source_jobs | 본인 행 조회만. 갱신은 RPC만 | 원자 차감 RPC `consume_quota(kind, n)`: 조건부 UPDATE … RETURNING으로 한도 확인·증가를 한 문장에서 처리(경쟁 조건 방지). 기간 초기화는 5장 |
+| plans | 요금제별 한도 정의(S-13) | code(PK, MVP는 `beta` 1종), max_projects, max_sources_per_project, monthly_questions, monthly_reports, monthly_source_jobs | 로그인 사용자 읽기 전용(시드 데이터) | 한도 5종(프로젝트·자료·질문·리포트·자료 처리). 수치는 [PRD 8-1](01_PRD.md#8-1-베타-초기값-2026-11-02-확정-조정-가능) 시드. 결제 연동은 MVP 제외 |
+| user_quotas | 사용자별 월 사용 누적(S-13) | user_id(PK), plan_code→plans, period_start(KST 월 시작), used_questions, used_reports, used_source_jobs(각 CHECK ≥ 0) — 프로젝트 수·프로젝트당 자료 수는 카운터 없이 생성 RPC가 부모 행을 잠그고 셈 | 본인 행 조회만. 갱신은 RPC만 | 원자 차감 RPC `consume_quota(kind, n)`: 조건부 UPDATE … RETURNING으로 한도 확인·증가를 한 문장에서 처리(경쟁 조건 방지). 기간 초기화는 5장 |
 | idempotency_keys | 중복 요청 방지(A-04·05·06·08) | user_id, key, request_hash, resource_type, resource_id, created_at | 직접 접근 없음. RPC 안에서만 | unique (user_id, key). 같은 키+다른 request_hash는 409. 업로드는 파일마다 키 |
 
 ## 2. 공통 RLS 원칙
@@ -65,3 +65,13 @@
 | running | processing |
 | succeeded | completed |
 | failed · cancelled | failed |
+
+## 7. 쓰기 RPC 규칙 (task-004 challenger 반영, 확정)
+| 규칙 | 내용 |
+|---|---|
+| 권한 | `REVOKE ALL ON ALL TABLES/SEQUENCES/FUNCTIONS ... FROM PUBLIC, anon, authenticated` + DEFAULT PRIVILEGES 회수 후 필요한 SELECT만 GRANT. `idempotency_keys`·`source_chunks`는 SELECT도 없음 |
+| 함수 | SECURITY DEFINER, `SET search_path = ''`, 첫 줄 `auth.uid()` null이면 예외, 모든 id·경로의 소유자 검증. anon EXECUTE 0개, authenticated EXECUTE는 허용 목록과 일치(게이트 테스트) |
+| 쿼터 | `consume_quota`는 내부 함수(authenticated EXECUTE 없음). 자원 생성 RPC 안에서 같은 트랜잭션으로 차감. 환불은 service_role만. 월 경계는 Asia/Seoul. 행이 없으면 예외(가입 트리거가 생성) |
+| 멱등 키 | 생성 RPC 안에서 `INSERT ... ON CONFLICT DO NOTHING` 후 재조회, 키·자원·차감이 한 트랜잭션 |
+| 소프트 삭제 | SELECT 정책에 `deleted_at is null`과 부모 프로젝트 미삭제 조건 |
+| 작성 주체 | 기반(테이블·권한·게이트·consume_quota·멱등 키·enqueue_job·가입 트리거·프로필 수정)은 task-004, 기능 쓰기 RPC는 각 기능 작업이 새 마이그레이션 + `packages/db-tests` 음성 테스트(타인 id·타인 경로·anon 거부)로 추가 |

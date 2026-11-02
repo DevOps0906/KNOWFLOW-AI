@@ -8,7 +8,7 @@
 | 보안 영향 | 노출 면 · 민감 데이터 (파일 업로드, 사용자 원본) |
 | 담당 | builder (+ tester). 착수 전 challenger |
 | 근거 | `spec S-09`, `docs/04_API.md#A-04`, `docs/01_PRD.md#8`, `docs/01_PRD.md#8-1`, `docs/adr/0003-*.md` |
-| 쓰기 허용 | `apps/web/src/app/(app)/projects/[projectId]/sources/**`, `apps/web/src/app/api/projects/[projectId]/sources/**`, `apps/web/src/components/sources/**`, `apps/web/src/lib/storage/**` |
+| 쓰기 허용 | `apps/web/src/app/(app)/projects/[projectId]/sources/**`, `apps/web/src/app/api/projects/[projectId]/sources/**`, `apps/web/src/components/sources/**`, `apps/web/src/lib/storage/**`, `supabase/migrations/**`(새 번호만, 기능 쓰기 RPC), `packages/db-tests/**`(RPC 음성 테스트) |
 
 ## 할 것
 - 업로드 흐름: 서명 업로드 URL 발급 → 클라이언트가 Storage에 직접 업로드 → 등록 API 호출(웹 서버는 파일 본문을 받지 않음, 본문 한도는 ADR-0003)
