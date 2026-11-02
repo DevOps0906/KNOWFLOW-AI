@@ -1,0 +1,29 @@
+{
+  "_doc": "Files Storage 모듈이 더하는 필수 구조 — plan2spec 이 기본 patterns.json 에 합친다. if_has: 그 블록이 있는 화면에만 적용.",
+  "types": {
+    "form": {
+      "must_extra": [
+        {
+          "id": "file_notice",
+          "label": "안내 문구(허용 형식·신분증 금지·공유 범위 중 해당)",
+          "any": [
+            "text~안내"
+          ]
+        }
+      ],
+      "applies_to_prefix": "FILE-"
+    },
+    "list": {
+      "must_extra": [
+        {
+          "id": "file_status_col",
+          "label": "상태 열",
+          "any": [
+            "table~상태"
+          ]
+        }
+      ],
+      "applies_to_prefix": "FILE-"
+    }
+  }
+}

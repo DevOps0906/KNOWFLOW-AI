@@ -1,0 +1,19 @@
+stateDiagram-v2
+    state "문서 (ocr_documents.status)" as ocr_st {
+        [*] --> o_queued
+        state "queued" as o_queued
+        state "processing" as o_processing
+        state "needs_review" as o_review
+        state "confirmed" as o_confirmed
+        state "rejected" as o_rejected
+        state "failed" as o_failed
+        o_queued --> o_processing : 워커 행 잠금 후 시작 (전처리 OCR 추출 검증 마스킹)
+        o_processing --> o_review : 파이프라인 완료 (신뢰도 미만 필드 강조)
+        o_processing --> o_failed : 시도 3회 소진
+        o_failed --> o_queued : 다시 인식 (새 작업, 이력 보존)
+        o_review --> o_queued : 다시 인식 (OCR-A07, 이력 보존)
+        o_review --> o_confirmed : 확정 (사람이 확인, outbox 같은 트랜잭션)
+        o_review --> o_rejected : 반려 (사유 기록)
+        o_confirmed --> [*]
+        o_rejected --> [*]
+    }

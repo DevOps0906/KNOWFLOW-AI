@@ -1,0 +1,69 @@
+erDiagram
+    files {
+        uuid id PK
+        uuid org_id FK
+        text storage_path UK "org_id/app/entity/uuid.ext 서버 생성"
+        text status "uploading scanning ready quarantined deleted purged"
+        text owner_module "null=파일함 일반 파일"
+        text visibility "org private module"
+        text sha256 "서버 계산"
+        bigint size_bytes "정수 바이트"
+        int current_version_no
+        text preview_status "none pending ready failed"
+        timestamptz purge_after "삭제 후 30일"
+        timestamptz purged_at "영구 삭제 시각"
+        text idempotency_key "org_id와 함께 유니크"
+    }
+    file_versions {
+        uuid id PK
+        uuid org_id FK
+        uuid file_id FK
+        int version_no "file_id와 함께 유니크"
+        text storage_path UK
+        text status "uploading scanning ready quarantined deleted purged"
+        text upload_token_hash "1회용 complete 시 무효"
+        text sha256
+        bigint size_bytes
+    }
+    file_scans {
+        uuid id PK
+        uuid org_id FK
+        uuid file_id FK
+        int version_no
+        text engine "clamav"
+        text result "clean infected error"
+        int attempts
+        timestamptz scanned_at
+    }
+    file_shares {
+        uuid id PK
+        uuid org_id FK
+        uuid file_id FK
+        text token_hash UK "토큰 원문 저장 안 함"
+        text password_hash "선택 · 개인정보★"
+        text status "active revoked expired"
+        timestamptz expires_at
+        int max_downloads "null이면 무제한"
+        int download_count "max_downloads 이하"
+    }
+    file_links {
+        uuid id PK
+        uuid org_id FK
+        uuid file_id FK
+        text ref_module
+        text ref_id "ready 파일만 연결"
+    }
+    file_outbox_events {
+        uuid id PK "event_id"
+        uuid org_id FK
+        text type "file.object.ready 등"
+        text aggregate_id "files.id"
+        bigint sequence "aggregate_type과 aggregate_id와 함께 유니크"
+        text result "성공 실패"
+        timestamptz occurred_at
+    }
+
+    files ||--o{ file_versions : "파일 1 : 버전 N"
+    files ||--o{ file_scans : "파일 1 : 검사 N"
+    files ||--o{ file_shares : "파일 1 : 공유 N"
+    files ||--o{ file_links : "파일 1 : 참조 N"

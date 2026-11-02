@@ -1,0 +1,60 @@
+sequenceDiagram
+    participant U as OCR 사용자
+    participant API as OCR API
+    participant DB as DB ocr
+    participant W as OCR 워커
+    participant RV as 검토자
+    participant SUB as ERP CRM 구독 모듈
+
+    U->>API: POST /api/ocr/documents (file_id, doc_type_id 또는 자동 판별, 멱등 키)
+    API->>API: file_id가 검사 통과 ready인지 확인 (격리 또는 형식 불허는 422)
+    API->>DB: ocr_documents INSERT (queued, doc_type_version 고정) 와 ocr_jobs INSERT (queued)
+    API-->>U: 문서 id, 상태 queued, 작업 id
+
+    W->>DB: 작업 조회, 행 잠금 후 상태 재확인, 작업 running, 문서 processing
+    W->>W: 전처리 (회전 기울기 보정, 해상도 제한, PDF 분해)
+    W->>W: OCR 단어 좌표 신뢰도 (기본 PaddleOCR)
+    W->>W: 주민등록번호 패턴 뒷자리 마스킹 (OCR 직후, 저장 전, 감지 시 마스킹 사본 이미지 생성)
+    W->>W: 필드 추출 (마스킹된 텍스트 기준, 규칙 우선, LLM 보조는 설정이 켜진 경우만, 감지 문서는 LLM 보조 끄거나 자체 호스팅만)
+    W->>W: 검증 (사업자번호 체크섬, 날짜, 금액 형식)
+
+    alt 정상 완료
+        W->>DB: ocr_pages와 ocr_fields 저장 (마스킹 후), 작업 succeeded, 문서 needs_review
+    else 실패 시도 3회 미만
+        W->>DB: 작업 running에서 queued 재시도
+    else 시도 3회 소진
+        W->>DB: 작업 failed, 문서 failed
+    end
+
+    RV->>API: GET /api/ocr/documents/[id] (단어 좌표, 필드)
+    API-->>RV: 문서와 필드, 감지 문서는 마스킹 사본 URL (신뢰도 기준 미만과 검증 실패 강조)
+    opt 감지 문서 원본 열람
+        RV->>API: GET /api/ocr/documents/[id]?original=true (사유 입력, review 권한)
+        API->>DB: 열람 감사 기록
+        API-->>RV: 원본 서명 URL (다운로드 금지)
+    end
+
+    opt 필드 수정
+        RV->>API: PATCH /api/ocr/documents/[id]/fields (필드 키, 새 값, 문서 version)
+        API->>DB: 필드 갱신 (수정 전 값과 수정자 보존, version 낙관적 잠금)
+        API-->>RV: 갱신된 필드, 검증 결과
+    end
+
+    alt 반려
+        RV->>API: POST /api/ocr/documents/[id]/reject (사유)
+        API->>DB: 문서 rejected
+    else 확정
+        RV->>API: POST /api/ocr/documents/[id]/confirm (문서 version)
+        alt 필수 필드 비어 있음 또는 검증 실패 (422)
+            API-->>RV: 422 확정 불가
+        else 통과
+            API->>DB: 한 트랜잭션 (문서 confirmed, ocr_outbox_events INSERT ocr.document.confirmed, payload는 id만, 원본 자동 삭제 예약이 기본)
+            API-->>RV: 확정 완료, 이벤트 id
+        end
+    end
+
+    W->>SUB: 봉투 전달 (X-Nomad-Signature, payload에 필드 값 없음)
+    SUB-->>W: 2xx 전달 완료 (실패는 지수 간격 재시도, 한도 초과 시 dead와 운영 알림)
+    SUB->>API: GET /api/ocr/documents/[id] (서버 간 인증으로 값 재조회)
+    API-->>SUB: 문서와 확정 필드 값
+    SUB->>SUB: 등록 후보 생성 (자동 반영 없음, 사람이 확인해 등록)

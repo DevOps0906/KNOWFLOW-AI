@@ -1,0 +1,59 @@
+sequenceDiagram
+    participant U as 업로더 또는 파일 관리자
+    participant API as 파일 API
+    participant DB as DB file_shares
+    participant R as 외부 수신자 브라우저
+    participant ST as Supabase Storage
+
+    U->>API: POST /api/files/shares (file_id, 만료 일시, 최대 다운로드 수, 비밀번호 선택, 멱등 키)
+    API->>DB: files 상태 조회
+    alt 검사 전 또는 격리 (423)
+        API-->>U: 423 공유 불가
+    else 만료 30일 초과 또는 비밀번호 필수 정책 위반 (422)
+        API-->>U: 422 정책 초과
+    else 허용
+        API->>API: 긴 무작위 토큰 생성, 토큰 해시와 비밀번호 해시 계산
+        API->>DB: file_shares INSERT (status active, download_count 0, 토큰 원문 저장 안 함)
+        API-->>U: share id, 공유 URL (토큰 원문은 이 응답에서만), 만료 시각
+    end
+
+    Note over U,R: 공유 URL을 수신자에게 전달 (URL 노출 주의)
+
+    R->>API: GET /api/public/shares/[token]
+    API->>DB: token_hash로 조회, status active, 만료, download_count 미만 확인
+    alt 만료 폐기 한도 소진 (410)
+        API-->>R: 410 접근 불가
+    else 유효 (비밀번호 없는 링크)
+        API-->>R: 파일 이름, 크기, 형식, 만료
+    else 유효 (비밀번호 링크)
+        API-->>R: 비밀번호 필요 여부와 만료만 (인증 전 파일 이름과 크기 숨김)
+    end
+
+    R->>API: POST /api/public/shares/[token] (비밀번호, 필요할 때만)
+    API->>DB: token_hash로 조회, 비밀번호 해시 대조
+    alt 비밀번호 불일치 (401)
+        API-->>R: 401 (연속 실패 과다 시 429 일시 차단)
+    else 일치
+        Note over API,DB: 한 트랜잭션 시작
+        API->>DB: 파일 및 버전 status ready 재확인 (아니면 423)
+        API->>DB: UPDATE download_count + 1 WHERE status active AND download_count 미만 (조건부 UPDATE)
+        alt 갱신 0건 또는 파일 not ready
+            API-->>R: 410 만료 폐기 한도 소진 또는 423 (롤백, 한도 소진이면 status expired)
+        else 갱신 1건
+            API->>ST: 서명 URL 발급 (만료 60초, attachment, nosniff, Content-Type 고정)
+            alt 발급 실패
+                Note over API,DB: 롤백 (다운로드 수 차감 취소)
+                API-->>R: 502 다시 시도
+            else 발급 성공
+                Note over API,DB: 커밋
+                API-->>R: 서명 URL, 만료 시각
+                R->>ST: 서명 URL로 다운로드
+            end
+        end
+    end
+
+    opt 공유 폐기
+        U->>API: DELETE /api/files/shares/[share_id]
+        API->>DB: status revoked (이미 폐기면 200 그대로)
+        API-->>U: 폐기 결과
+    end

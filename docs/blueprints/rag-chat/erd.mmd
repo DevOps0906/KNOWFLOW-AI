@@ -1,0 +1,65 @@
+erDiagram
+    rag_documents {
+        uuid id PK
+        uuid org_id FK
+        uuid collection_id FK "rag_collections 참조 (표 생략)"
+        text status "queued indexing ready failed"
+        text visibility "org roles users owner_only"
+        text allowed_roles "text 배열"
+        text allowed_user_ids "uuid 배열 개인정보★"
+        int acl_version "청크 사본과 같아야 검색"
+        text content_hash "collection_id와 함께 유니크"
+        int chunk_count
+    }
+    rag_chunks {
+        uuid id PK "ai_chunks id와 같음"
+        uuid org_id FK
+        uuid document_id FK
+        int ord "document_id와 함께 유니크"
+        text text "개인정보 가능, 사용자 SELECT 없음"
+        text visibility "문서 사본"
+        int acl_version "문서 사본"
+    }
+    rag_jobs {
+        uuid id PK
+        uuid org_id FK
+        text kind "index reindex embed_migrate"
+        text status "queued running succeeded failed cancelled"
+        int progress "0~100"
+        int attempts "max_attempts 3"
+        text idempotency_key "org_id와 함께 유니크"
+        text error_code
+    }
+    rag_conversations {
+        uuid id PK
+        uuid org_id FK
+        uuid user_id "본인만 조회 개인정보★"
+        text status "active archived"
+        timestamptz last_question_at
+        timestamptz retain_until "보관 만료 시각"
+    }
+    rag_messages {
+        uuid id PK
+        uuid org_id FK
+        uuid conversation_id FK
+        text role "user assistant"
+        text content "질문 답변 원문★ 로그 금지"
+        text status "streaming done failed refused"
+        bool no_answer
+        text prompt_version
+        text idempotency_key "conversation_id와 함께 유니크"
+    }
+    rag_citations {
+        uuid id PK
+        uuid org_id FK
+        uuid message_id FK
+        uuid chunk_id "삭제되면 null"
+        uuid document_id "삭제되면 null"
+        int ord
+        float score
+    }
+
+    rag_documents ||--o{ rag_chunks : "문서 1 : 청크 N"
+    rag_conversations ||--o{ rag_messages : "대화 1 : 메시지 N"
+    rag_messages ||--o{ rag_citations : "메시지 1 : 출처 N"
+    rag_chunks |o--o{ rag_citations : "청크 1 : 출처 N (삭제 시 null)"

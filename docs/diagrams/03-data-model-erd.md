@@ -15,6 +15,7 @@ erDiagram
   CONVERSATIONS ||--o{ MESSAGES : "메시지"
   PROJECTS ||--o{ REPORTS : "리포트"
   REPORTS ||--o{ REPORT_CITATIONS : "근거"
+  REPORTS ||--o{ PROCESSING_JOBS : "생성 작업"
   SOURCE_CHUNKS ||--o{ REPORT_CITATIONS : "인용됨"
   PROFILES ||--o{ USAGE_EVENTS : "사용량"
   PLANS ||--o{ USER_QUOTAS : "한도 정의"
@@ -41,7 +42,7 @@ erDiagram
     uuid id PK
     uuid project_id FK
     uuid user_id FK
-    text source_type "pdf web text"
+    text source_type "MVP pdf url (예약 값은 05 3장)"
     text title
     text original_url
     text storage_path
@@ -59,8 +60,7 @@ erDiagram
     uuid project_id FK
     int chunk_index
     text content
-    int page_number "확보된 경우만"
-    jsonb location_metadata
+    jsonb locator "page char_start char_end 등 source_type별 키, 확보된 경우만"
     vector embedding "차원은 모델 확정 후"
     text embedding_model "v1.1 모델 교체 대비"
     tsvector content_tsv "v1.1 전문검색"
@@ -82,6 +82,7 @@ erDiagram
     text role
     text content
     jsonb citation_metadata
+    text idempotency_key "v1.1 user 범위 유니크"
     timestamptz created_at
   }
 
@@ -92,6 +93,7 @@ erDiagram
     text title
     text content
     text format "markdown"
+    text status "v1.1 generating ready failed"
     timestamptz created_at
     timestamptz updated_at
   }
@@ -105,10 +107,15 @@ erDiagram
 
   PROCESSING_JOBS {
     uuid id PK
-    uuid source_id FK
-    text job_type
+    uuid source_id FK "nullable, source_id 또는 report_id 필수"
+    uuid report_id FK "v1.1 nullable"
+    text job_type "report_generate 포함"
     text status
+    text current_step "validate, extract_text 등"
+    int progress "0~100"
     int attempt_count
+    int max_attempts "기본 3"
+    text idempotency_key "재시도마다 새 키"
     text error_code
     timestamptz started_at
     timestamptz finished_at
@@ -152,6 +159,8 @@ erDiagram
 | 컬럼 추가 | sources.content_hash | 같은 자료 중복 업로드 방지 | 중복 비용 방지 |
 | 컬럼 추가 | source_chunks.embedding_model | 모델 교체 시 재색인 대상 식별 | 임베딩 모델 미정 |
 | 컬럼 추가 | source_chunks.content_tsv | 전문검색 색인 | 하이브리드 검색 |
+| 컬럼 변경 | sources.source_type, source_chunks.locator | source_type MVP 값을 pdf·url로 한정(나머지는 예약). page_number·location_metadata를 jsonb locator 하나로 합침 | 매체 확장 대비, 위치 키는 source_type이 정함 (05 3장) |
+| 컬럼 추가 | processing_jobs | current_step·progress·max_attempts·idempotency_key 추가 | 단계 표시, 재시도 상한, 중복 실행 방지 (05 1장·JOBS.md) |
 | 정책 확정 필요 | 삭제 | soft delete 여부, 벡터·Storage 연쇄 삭제 순서 | 사용자 데이터 삭제 정책 (19장) |
 
 ## 3. RLS 원칙

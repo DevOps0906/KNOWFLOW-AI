@@ -1,0 +1,41 @@
+stateDiagram-v2
+    state "초대 (invitations.상태)" as inv {
+        [*] --> p_wait
+        state "대기" as p_wait
+        state "수락" as p_ok
+        state "취소" as p_cancel
+        state "만료" as p_exp
+        p_wait --> p_ok : 이메일 일치 확인 후 수락
+        p_wait --> p_cancel : 관리자 취소
+        p_wait --> p_exp : 7일 경과
+        p_ok --> [*]
+        p_cancel --> [*]
+        p_exp --> [*]
+    }
+
+    state "구성원 (memberships.status)" as mem {
+        [*] --> m_on
+        state "활성 (active)" as m_on
+        state "정지 (suspended)" as m_off
+        state "제거 (멤버십 삭제)" as m_gone
+        m_on --> m_off : 정지 (자기 등급 이하 · 마지막 활성 owner 제외), 해당 사용자 세션 폐기
+        m_off --> m_on : 복구
+        m_off --> m_gone : 제거
+        m_gone --> [*]
+    }
+
+    state "계정 (profiles.계정 상태)" as acct {
+        [*] --> a_on
+        state "활성 (active)" as a_on
+        state "정지 (suspended)" as a_off
+        a_on --> a_off : 플랫폼 운영자 정지, 모든 세션 폐기
+        a_off --> a_on : 플랫폼 운영자 복구
+    }
+
+    state "조직 (organizations.status)" as org {
+        [*] --> o_on
+        state "활성 (active)" as o_on
+        state "정지 (suspended)" as o_off
+        o_on --> o_off : 플랫폼 운영자 정지 (A16), 조직 접근 거부
+        o_off --> o_on : 플랫폼 운영자 복구
+    }

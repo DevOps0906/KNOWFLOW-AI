@@ -1,0 +1,24 @@
+sequenceDiagram
+    participant U as 사용자
+    participant API as AUTH API
+    participant DB as DB (profiles · memberships · outbox · inbox)
+    participant ADM as admin-audit (개인정보 요청)
+
+    U->>API: DELETE /api/me (비밀번호 재확인)
+    API->>DB: profiles 삭제 요청 시각 기록
+    API->>DB: outbox auth.account.deletion_requested (같은 트랜잭션)
+    DB-->>ADM: 전달 (ADM이 개인정보 요청으로 자동 접수 · 기한 추적)
+    API-->>U: 삭제 요청 접수
+
+    ADM->>API: privacy_request.status_changed (삭제 승인)
+    API->>DB: inbox INSERT (event_id 유니크, 재수신은 무시)
+    alt 마지막 활성 owner인 조직이 있음
+        API->>DB: outbox auth.account.deletion_blocked (소유권 이전 필요)
+        DB-->>ADM: 보류 회신
+    else 결제 5년 보존 대상 참조가 있음
+        API->>DB: 세션 폐기, 멤버십 제거, 식별 정보만 삭제 (레코드는 분리 보관)
+        API->>DB: outbox auth.account.deletion_completed
+    else 예외 없음
+        API->>DB: 세션 폐기, 멤버십 제거, 프로필 삭제, auth.users 삭제
+        API->>DB: outbox auth.account.deletion_completed
+    end

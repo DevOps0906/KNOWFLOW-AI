@@ -1,0 +1,73 @@
+erDiagram
+    stt_recordings {
+        uuid id PK
+        uuid org_id FK
+        uuid owner_id "작성자 본인"
+        uuid file_id "files-storage 참조, 원본 삭제 후 null"
+        text status "queued processing done failed"
+        text visibility "private org"
+        text input_path "mic_short mic_meeting mic_lecture upload"
+        text consent_text_version "동의 필드 NOT NULL, 서버 기록"
+        timestamptz consented_at
+        timestamptz retain_until
+        timestamptz audio_deleted_at
+    }
+    stt_jobs {
+        uuid id PK
+        uuid org_id FK
+        uuid recording_id FK
+        text kind "transcribe summarize"
+        text status "queued running succeeded failed cancelled"
+        int progress "0~100"
+        int attempts "max_attempts 3 이하"
+        text idempotency_key "org_id와 함께 유니크"
+        bigint event_seq
+    }
+    stt_job_steps {
+        uuid id PK
+        uuid org_id FK
+        uuid job_id FK
+        text step "normalize chunk transcribe merge diarize summarize"
+        int seq "job_id와 함께 유니크"
+        text status "pending running succeeded failed skipped cancelled"
+        int units_total
+        int units_done "받아쓰기는 조각 수"
+    }
+    stt_transcripts {
+        uuid id PK
+        uuid org_id FK
+        uuid recording_id FK
+        uuid job_id FK
+        int version "recording_id와 함께 유니크"
+        bool is_current "현재본 1개"
+        text engine "faster-whisper whisper.cpp external"
+        text model
+        bool cross_border
+        bool masked
+    }
+    stt_segments {
+        uuid id PK
+        uuid org_id FK
+        uuid transcript_id FK
+        int seq "transcript_id와 함께 유니크"
+        int start_ms
+        int end_ms "end_ms가 start_ms보다 큼"
+        text text "개인정보★ 편집 가능"
+        text original_text "개인정보★ 최초 편집 때 보존"
+        timestamptz edited_at
+    }
+    stt_outbox_events {
+        uuid id PK "event_id"
+        uuid org_id FK
+        text type "stt.transcript.completed failed"
+        text aggregate_type "stt_job"
+        text aggregate_id "작업 id"
+        bigint sequence "집계별 단조 증가"
+        text result "성공 실패"
+        timestamptz occurred_at
+    }
+
+    stt_recordings ||--o{ stt_jobs : "녹음 1 : 작업 N"
+    stt_jobs ||--o{ stt_job_steps : "작업 1 : 단계 N"
+    stt_recordings ||--o{ stt_transcripts : "녹음 1 : 전사 version N"
+    stt_transcripts ||--|{ stt_segments : "전사 1 : 구간 N"

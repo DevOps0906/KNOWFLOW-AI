@@ -1,0 +1,33 @@
+stateDiagram-v2
+    state "파일 (files.status)" as files_st {
+        [*] --> f_uploading
+        state "uploading" as f_uploading
+        state "scanning" as f_scanning
+        state "ready" as f_ready
+        state "quarantined" as f_quar
+        state "deleted" as f_deleted
+        state "purged" as f_purged
+        f_uploading --> f_scanning : complete 검증 통과 (매직 바이트 크기 sha256)
+        f_uploading --> f_deleted : complete 검증 실패 (객체 삭제 422)
+        f_scanning --> f_scanning : 검사 서비스 오류 재시도
+        f_scanning --> f_ready : clean
+        f_scanning --> f_quar : infected
+        f_quar --> f_scanning : 관리자 재검사 요청 (통과 시에만 ready)
+        f_ready --> f_deleted : 휴지통 이동 (purge_after 30일)
+        f_quar --> f_deleted : 삭제
+        f_deleted --> f_ready : 복구 (보관 기간 안 이전 상태)
+        f_deleted --> f_quar : 복구 (보관 기간 안 이전 상태)
+        f_deleted --> f_purged : 영구 삭제 잡 (객체 삭제 purged_at status purged)
+        f_purged --> [*]
+    }
+
+    state "공유 링크 (file_shares.status)" as share_st {
+        [*] --> s_active
+        state "active" as s_active
+        state "revoked" as s_revoked
+        state "expired" as s_expired
+        s_active --> s_revoked : 폐기 (만든 사람 또는 파일 관리자)
+        s_active --> s_expired : 만료 시각 경과 또는 다운로드 한도 소진
+        s_revoked --> [*]
+        s_expired --> [*]
+    }

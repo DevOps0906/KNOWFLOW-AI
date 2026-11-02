@@ -1,0 +1,32 @@
+sequenceDiagram
+    participant A as 관리자 (admin 이상)
+    participant API as AUTH API
+    participant N as notify (메일)
+    participant U as 초대받은 사람
+    participant DB as DB (invitations · memberships · outbox)
+
+    A->>API: POST /api/invitations (이메일, 역할)
+    API->>API: 권한 확인 invitation:manage, 자기 등급 이하 역할만
+    alt 이미 구성원이거나 대기 초대가 있음
+        API-->>A: 409
+    else 발송 가능
+        API->>DB: invitations INSERT (토큰 해시만, 만료 7일, 상태 대기)
+        API->>DB: outbox auth.invitation.created 기록 (같은 트랜잭션, actor=user, result=success, 이메일은 해시)
+        API->>N: 초대 메일 발송 (토큰 원문은 메일로만)
+        API-->>A: 초대 id, 만료일
+    end
+    Note over N,U: notify 미설치 시 Supabase 메일로 대체
+    N-->>U: 초대 메일 (토큰 링크)
+
+    U->>API: GET /api/invitations/[token] (공개, 레이트 리밋)
+    API-->>U: 조직 이름, 부여 역할, 가려진 초대 이메일 (없음 · 만료 · 사용됨은 같은 404 응답)
+
+    U->>API: POST /api/invitations/[token] (수락, 로그인 필요)
+    API->>DB: 토큰 해시로 초대 조회, 상태 대기 확인
+    alt 인증된 이메일 다름 (초대 이메일과 불일치)
+        API-->>U: 403 수락 불가
+    else 인증된 이메일 = 초대 이메일
+        API->>DB: memberships INSERT (role_key, 활성) 및 invitations 수락 시각 · 수락 사용자 기록
+        API->>DB: outbox auth.invitation.accepted 기록 (같은 트랜잭션)
+        API-->>U: 멤버십 + 활성 조직 설정
+    end

@@ -1,0 +1,78 @@
+stateDiagram-v2
+    state "문서 (rag_documents.status)" as doc_st {
+        [*] --> d_queued
+        state "queued" as d_queued
+        state "indexing" as d_indexing
+        state "ready" as d_ready
+        state "failed" as d_failed
+        d_queued --> d_indexing : 색인 워커 행 잠금 후 시작
+        d_indexing --> d_ready : 청크 저장과 ready 전환 한 트랜잭션
+        d_indexing --> d_failed : 시도 횟수 소진 (rag.document.failed)
+        d_ready --> d_queued : 재색인 (RAG-A05 또는 내용 해시 변경)
+        d_failed --> d_queued : 재색인 (RAG-A05)
+        d_ready --> d_queued : file.object.ready 수신 (version_no 변경, 해시가 다를 때만 재색인)
+        d_ready --> [*] : 삭제 또는 file.object.purged 수신 (청크 임베딩 함께 삭제)
+        d_failed --> [*] : 삭제
+    }
+
+    state "작업 (rag_jobs.status)" as jobr_st {
+        [*] --> j_queued
+        state "queued" as j_queued
+        state "running" as j_running
+        state "succeeded" as j_succeeded
+        state "failed" as j_failed
+        state "cancelled" as j_cancelled
+        j_queued --> j_running : 워커 행 잠금 후 시작
+        j_queued --> j_cancelled : 취소
+        j_running --> j_queued : 재시도 (attempts 3회 미만, 지수 간격)
+        j_running --> j_succeeded : 완료 (outbox 기록)
+        j_running --> j_failed : attempts 3회 소진
+        j_running --> j_cancelled : 취소 요청 (다음 단위 전)
+        j_succeeded --> [*]
+        j_failed --> [*] : 재시도는 새 작업 생성
+        j_cancelled --> [*]
+    }
+
+    state "작업 단계 (rag_job_steps.status, parse mask split embed store)" as step_st {
+        [*] --> s_pending
+        state "pending" as s_pending
+        state "running" as s_running
+        state "succeeded" as s_succeeded
+        state "failed" as s_failed
+        state "skipped" as s_skipped
+        state "cancelled" as s_cancelled
+        s_pending --> s_running : 단계 시작
+        s_pending --> s_skipped : 작업 종료 때 남은 단계
+        s_pending --> s_cancelled : 작업 취소
+        s_running --> s_succeeded : 단계 완료
+        s_running --> s_failed : 오류 (aborted 포함)
+        s_running --> s_cancelled : 취소 요청
+        s_succeeded --> [*]
+        s_failed --> [*]
+        s_skipped --> [*]
+        s_cancelled --> [*]
+    }
+
+    state "메시지 (rag_messages.status)" as msg_st {
+        [*] --> m_streaming
+        [*] --> m_refused : 근거 없음 또는 최소 유사도 미달 (LLM 미호출)
+        state "streaming" as m_streaming
+        state "done" as m_done
+        state "failed" as m_failed
+        state "refused" as m_refused
+        m_streaming --> m_done : 답변 완료, 출처 저장
+        m_streaming --> m_failed : 생성 실패 502 (선차감 환불)
+        m_done --> [*]
+        m_failed --> [*]
+        m_refused --> [*]
+    }
+
+    state "대화 (rag_conversations.status)" as conv_st {
+        [*] --> c_active
+        state "active" as c_active
+        state "archived" as c_archived
+        c_active --> c_archived : 보관 전환
+        c_archived --> c_active : 다시 활성
+        c_active --> [*] : 삭제 요청 (메시지 출처 피드백 함께 삭제)
+        c_archived --> [*] : 삭제 또는 보관 기간 경과
+    }

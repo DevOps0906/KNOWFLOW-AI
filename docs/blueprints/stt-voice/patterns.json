@@ -1,0 +1,53 @@
+{
+  "_doc": "STT Voice 모듈이 더하는 필수 구조 — plan2spec 이 기본 patterns.json 에 합친다. if_has: 그 블록이 있는 화면에만 적용.",
+  "types": {
+    "form": {
+      "must_extra": [
+        {
+          "id": "stt_consent",
+          "label": "녹음·처리 동의 항목(시작 전 고지·동의)",
+          "any": [
+            "form~동의"
+          ]
+        }
+      ],
+      "applies_to_prefix": "STT-"
+    },
+    "list": {
+      "must_extra": [
+        {
+          "id": "stt_status_col",
+          "label": "상태 열",
+          "any": [
+            "table~상태"
+          ]
+        }
+      ],
+      "applies_to_prefix": "STT-"
+    },
+    "dashboard": {
+      "must_extra": [
+        {
+          "id": "stt_usage_chart",
+          "label": "사용량 차트(기간별 받아쓴 분)",
+          "any": [
+            "chart~사용"
+          ]
+        }
+      ],
+      "applies_to_prefix": "STT-"
+    },
+    "settings": {
+      "must_extra": [
+        {
+          "id": "stt_retention",
+          "label": "원본 음성 보관 기간 설정",
+          "any": [
+            "form~보관"
+          ]
+        }
+      ],
+      "applies_to_prefix": "STT-"
+    }
+  }
+}

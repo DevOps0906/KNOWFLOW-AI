@@ -1,0 +1,29 @@
+{
+  "_doc": "Auth·RBAC 모듈이 더하는 필수 구조 — plan2spec 이 기본 patterns.json 에 합친다. if_has: 그 블록이 있는 화면에만 적용.",
+  "types": {
+    "form": {
+      "must_extra": [
+        {
+          "id": "generic_notice",
+          "label": "같은 문구 안내(이메일 열거 방지·등급·이메일 일치)",
+          "any": [
+            "text~안내"
+          ]
+        }
+      ],
+      "applies_to_prefix": "AUTH-"
+    },
+    "wizard": {
+      "must_extra": [
+        {
+          "id": "totp_setup",
+          "label": "QR 코드·설정 키",
+          "any": [
+            "text~QR|설정 키"
+          ]
+        }
+      ],
+      "applies_to_prefix": "AUTH-"
+    }
+  }
+}

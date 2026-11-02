@@ -1,0 +1,52 @@
+flowchart LR
+  subgraph g0["누구나"]
+    n_S_01["S-01 랜딩<br/>/"]
+    n_S_14["S-14 없는 경로<br/>404"]
+    n_S_15["S-15 오류<br/>오류 페이지"]
+  end
+  subgraph g1["비로그인"]
+    n_S_02["S-02 로그인<br/>/login"]
+    n_S_03["S-03 가입<br/>/signup"]
+    n_S_04["S-04 비밀번호 재설정<br/>/reset-password"]
+  end
+  subgraph g2["로그인"]
+    n_S_05["S-05 온보딩<br/>/onboarding"]
+    n_S_06["S-06 대시보드<br/>/dashboard"]
+    n_S_07["S-07 프로젝트 목록<br/>/projects"]
+    n_S_11["S-11 리포트 목록<br/>/reports"]
+    n_S_13["S-13 설정·사용량<br/>/settings"]
+  end
+  subgraph g3["로그인(소유자)"]
+    n_S_08["S-08 워크스페이스<br/>/projects/[projectId]"]
+    n_S_09["S-09 자료 추가<br/>다이얼로그(/projects/[projectId])"]
+    n_S_10["S-10 문서 뷰어<br/>/sources/[sourceId]"]
+    n_S_12["S-12 리포트<br/>/reports/[reportId]"]
+  end
+  n_S_01 --> n_S_02
+  n_S_01 --> n_S_03
+  n_S_02 --> n_S_06
+  n_S_02 --> n_S_03
+  n_S_02 --> n_S_04
+  n_S_03 --> n_S_05
+  n_S_03 --> n_S_02
+  n_S_04 --> n_S_02
+  n_S_05 --> n_S_06
+  n_S_06 --> n_S_07
+  n_S_06 --> n_S_08
+  n_S_06 --> n_S_11
+  n_S_06 --> n_S_13
+  n_S_07 --> n_S_08
+  n_S_08 --> n_S_09
+  n_S_08 --> n_S_10
+  n_S_08 --> n_S_12
+  n_S_08 --> n_S_07
+  n_S_09 --> n_S_08
+  n_S_10 --> n_S_08
+  n_S_11 --> n_S_12
+  n_S_12 --> n_S_10
+  n_S_12 --> n_S_11
+  n_S_12 --> n_S_08
+  n_S_13 --> n_S_06
+  n_S_14 --> n_S_06
+  n_S_14 --> n_S_01
+  n_S_15 --> n_S_06

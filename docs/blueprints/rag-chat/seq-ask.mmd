@@ -1,0 +1,46 @@
+sequenceDiagram
+    participant U as 사용자
+    participant APP as 앱 Next.js
+    participant F as FastAPI RAG
+    participant DB as Postgres pgvector
+    participant LLM as 임베딩 및 생성 모델
+
+    U->>APP: POST /api/rag/conversations/[id]/messages (질문, 검색 범위, 멱등 키)
+    APP->>APP: 로그인 확인, rag:use 권한 (has_permission)
+    APP->>DB: 대화 소유 확인 (본인 대화만), 검색 범위는 대화 범위 안
+    alt 타인 대화 또는 권한 없음
+        APP-->>U: 403 또는 404
+    else 통과
+        APP->>F: 질문 전달 + EdDSA 서명 토큰 (scope rag, jti 1회, org, app)
+        F->>F: 토큰 검증 (aud, scope, exp, jti), org와 app은 토큰에서만 사용, 본문 org 무시
+        F->>DB: resolve_ai_route (조직 설정, 국외 이전 동의 반영)
+        opt 크레딧 사용 (선택)
+            F->>DB: 크레딧 선차감 (부족 시 402 CR001)
+        end
+        F->>LLM: 질문 임베딩 (컬렉션 고정 모델, 1024차원)
+        F->>DB: rag_match_chunks(요청자, 컬렉션, 쿼리 벡터, k) 벡터 후보와 문서 ACL 조인
+        F->>DB: 키워드 검색 (PGroonga 우선, 불가 시 pg_trgm) 같은 ACL 조인
+        F->>F: 점수 병합 (RRF 제안), top-k, 서버 후처리 ACL 필터 (이중 방어)
+
+        alt 근거 0건 또는 최소 유사도 미달
+            F->>DB: 메시지 refused 저장 (LLM 미호출)
+            F-->>APP: 고정 문구 자료에서 찾지 못함, 출처 없음
+            APP-->>U: 고정 문구 표시
+        else 근거 있음
+            F->>LLM: 시스템 지시 고정 + 자료 블록 + 이전 질문만 + 질문 (도구 호출 없음)
+            alt 생성 성공
+                LLM-->>F: 답변 조각 스트림
+                F-->>APP: SSE message_id, 답변 조각
+                APP-->>U: 스트리밍 표시
+                F->>F: 출처는 이번 검색 결과로 서버가 생성 (모델 출력의 id와 링크 무시)
+                F->>DB: 메시지 done 저장, rag_citations 저장 (chunk_id, document_id, ord, 점수, 텍스트 사본 없음), 토큰 수 기록
+                F-->>APP: 종료 상태 done, no_answer 여부, 출처 목록
+                APP-->>U: 출처 표시
+            else 생성 실패 (502)
+                F->>DB: 메시지 failed, 선차감 크레딧 환불
+                F-->>APP: 502 생성 실패
+            end
+        end
+    end
+
+    Note over F,DB: 질문과 답변 원문은 로그와 이벤트에 쓰지 않음, 다음 질문 이력에는 이전 질문 텍스트만 포함

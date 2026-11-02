@@ -25,7 +25,7 @@ KNOWFLOW AI 개발 기준 문서 v1.0(KF-DES-001, KF-ARC-001, KF-AGT-001)을 다
 | 자료 | 사용한 부분 |
 |---|---|
 | KNOWFLOW AI 개발 기준 문서 v1.0 (사용자 제공 docx·pdf) | 전체 구조의 기준 |
-| platform-docs 저장소 `products/_design-guide/DASHBOARD_PATTERNS.md`, `DASHBOARD_VISUAL.md`, `DESIGN_SYSTEM.md` | 화면 구조 패턴(A~O), 시각 아키타입(V-A~V-N), 토큰·반응형 규칙 |
+| `nomad-design-modules/_design-guide/DASHBOARD_PATTERNS.md`, `DASHBOARD_VISUAL.md`, `DESIGN_SYSTEM.md` (디자인 정본, 옛 platform-docs 위치에서 이전) | 화면 구조 패턴(A~O), 시각 아키타입(V-A~V-N), 토큰·반응형 규칙 |
 | platform-docs `README.md` 6장 | task 폴더, 웨이브, 계획 공격·리뷰 방식 |
 | Lilys AI 공개 변경 기록·사용 가이드 | 결과 화면 구조, AI 채팅 패널, 라이브러리 구조. 공개된 화면과 사용 흐름만 참고하고 내부 구현을 추정하거나 복제하지 않았다 |
 

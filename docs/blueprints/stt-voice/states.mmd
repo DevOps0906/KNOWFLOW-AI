@@ -1,0 +1,60 @@
+stateDiagram-v2
+    state "작업 (stt_jobs.status)" as job_st {
+        [*] --> j_queued
+        state "queued" as j_queued
+        state "running" as j_running
+        state "succeeded" as j_succeeded
+        state "failed" as j_failed
+        state "cancelled" as j_cancelled
+        j_queued --> j_running : 워커 행 잠금 후 시작 started_at
+        j_queued --> j_cancelled : 취소 (예약 크레딧 전액 환불)
+        j_running --> j_queued : 자동 재시도 (attempts 미만, 지수 간격, 끝난 단계 재사용)
+        j_running --> j_succeeded : 전사 확정 (한 트랜잭션, 완료 outbox)
+        j_running --> j_failed : attempts가 max_attempts에 도달 (환불, 실패 이벤트)
+        j_running --> j_cancelled : 다음 조각 시작 전 취소 확인 (미실행분 환불)
+        j_succeeded --> [*]
+        j_failed --> [*]
+        j_cancelled --> [*]
+    }
+
+    state "단계 (stt_job_steps.status)" as step_st {
+        [*] --> p_pending
+        state "pending" as p_pending
+        state "running" as p_running
+        state "succeeded" as p_succeeded
+        state "failed" as p_failed
+        state "skipped" as p_skipped
+        state "cancelled" as p_cancelled
+        p_pending --> p_running : 작업 running 중 단계 시작
+        p_pending --> p_skipped : 작업 종료 시 남은 단계
+        p_pending --> p_cancelled : 작업 취소
+        p_running --> p_succeeded : 단계 완료
+        p_running --> p_failed : 단계 오류 (작업 종료 시 aborted)
+        p_running --> p_cancelled : 취소 요청 확인
+        p_succeeded --> [*]
+        p_failed --> [*]
+        p_skipped --> [*]
+        p_cancelled --> [*]
+    }
+
+    state "녹음 (stt_recordings.status)" as rec_st {
+        [*] --> r_queued
+        state "queued" as r_queued
+        state "processing" as r_processing
+        state "done" as r_done
+        state "failed" as r_failed
+        r_queued --> r_processing : 최신 transcribe 작업 running (정본 따라감)
+        r_processing --> r_done : 최신 작업 succeeded
+        r_processing --> r_failed : 최신 작업 failed
+        r_failed --> r_queued : 다시 시도 (새 작업, 새 멱등 키)
+        r_done --> r_queued : 재받아쓰기 (STT-A09, 작업 중 편집 잠금, 편집 저장은 409)
+        r_processing --> r_done : 재작업 실패 또는 취소 (이전 현재본 유지, 편집 잠금 해제)
+    }
+
+    state "원본 음성 (audio_deleted_at)" as audio_st {
+        [*] --> a_kept
+        state "보관 중" as a_kept
+        state "삭제됨" as a_gone
+        a_kept --> a_gone : retain_until 도래, 즉시 삭제, 녹음 삭제, FILE file.object.deleted 수신 (처리 중 작업 취소, 완료된 전사 유지)
+        a_gone --> [*]
+    }

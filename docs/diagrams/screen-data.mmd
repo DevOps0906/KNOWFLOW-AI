@@ -1,0 +1,88 @@
+flowchart LR
+  subgraph SC["화면"]
+    n_S_01["S-01 랜딩"]
+    n_S_02["S-02 로그인"]
+    n_S_03["S-03 가입"]
+    n_S_04["S-04 비밀번호 재설정"]
+    n_S_05["S-05 온보딩"]
+    n_S_06["S-06 대시보드"]
+    n_S_07["S-07 프로젝트 목록"]
+    n_S_08["S-08 워크스페이스"]
+    n_S_09["S-09 자료 추가"]
+    n_S_10["S-10 문서 뷰어"]
+    n_S_11["S-11 리포트 목록"]
+    n_S_12["S-12 리포트"]
+    n_S_13["S-13 설정·사용량"]
+    n_S_14["S-14 없는 경로"]
+    n_S_15["S-15 오류"]
+  end
+  subgraph AP["API"]
+    n_api_A_01["A-01 POST /api/auth/signup · login · logout · reset-password · update-password"]
+    n_api_A_02["A-02 GET · POST /api/projects"]
+    n_api_A_03["A-03 GET · PATCH · DELETE /api/projects/[projectId]"]
+    n_api_A_04["A-04 POST · DELETE /api/projects/[projectId]/sources"]
+    n_api_A_05["A-05 GET · POST /api/projects/[projectId]/jobs · /api/sources/[sourceId]/retry"]
+    n_api_A_06["A-06 GET · POST /api/projects/[projectId]/conversations · /api/conversations/[id]/messages"]
+    n_api_A_07["A-07 GET /api/sources/[sourceId] · /api/sources/[sourceId]/chunks"]
+    n_api_A_08["A-08 GET · POST /api/reports · /api/projects/[projectId]/reports"]
+    n_api_A_09["A-09 GET · DELETE /api/reports/[reportId] · /api/reports/[reportId]/export"]
+    n_api_A_10["A-10 GET · PATCH · DELETE /api/me · /api/me/usage"]
+  end
+  subgraph DB["데이터"]
+    n_t_conversations[("conversations")]
+    n_t_messages[("messages")]
+    n_t_plans[("plans")]
+    n_t_processing_jobs[("processing_jobs")]
+    n_t_profiles[("profiles")]
+    n_t_projects[("projects")]
+    n_t_report_citations[("report_citations")]
+    n_t_reports[("reports")]
+    n_t_source_chunks[("source_chunks")]
+    n_t_sources[("sources")]
+    n_t_usage_events[("usage_events")]
+    n_t_user_quotas[("user_quotas")]
+  end
+  n_S_02 --> n_api_A_01
+  n_S_02 -.-> n_t_profiles
+  n_S_03 --> n_api_A_01
+  n_S_03 -.-> n_t_profiles
+  n_S_04 --> n_api_A_01
+  n_S_04 -.-> n_t_profiles
+  n_S_05 --> n_api_A_02
+  n_S_05 -.-> n_t_projects
+  n_S_06 --> n_api_A_02
+  n_S_06 --> n_api_A_05
+  n_S_06 --> n_api_A_10
+  n_S_06 -.-> n_t_projects
+  n_S_06 -.-> n_t_sources
+  n_S_06 -.-> n_t_processing_jobs
+  n_S_07 --> n_api_A_02
+  n_S_07 -.-> n_t_projects
+  n_S_08 --> n_api_A_03
+  n_S_08 --> n_api_A_04
+  n_S_08 --> n_api_A_05
+  n_S_08 --> n_api_A_06
+  n_S_08 --> n_api_A_08
+  n_S_08 -.-> n_t_projects
+  n_S_08 -.-> n_t_sources
+  n_S_08 -.-> n_t_source_chunks
+  n_S_08 -.-> n_t_conversations
+  n_S_08 -.-> n_t_messages
+  n_S_08 -.-> n_t_processing_jobs
+  n_S_09 --> n_api_A_04
+  n_S_09 -.-> n_t_sources
+  n_S_09 -.-> n_t_processing_jobs
+  n_S_10 --> n_api_A_07
+  n_S_10 -.-> n_t_sources
+  n_S_10 -.-> n_t_source_chunks
+  n_S_11 --> n_api_A_08
+  n_S_11 -.-> n_t_reports
+  n_S_12 --> n_api_A_08
+  n_S_12 --> n_api_A_09
+  n_S_12 -.-> n_t_reports
+  n_S_12 -.-> n_t_report_citations
+  n_S_13 --> n_api_A_10
+  n_S_13 -.-> n_t_profiles
+  n_S_13 -.-> n_t_usage_events
+  n_S_13 -.-> n_t_plans
+  n_S_13 -.-> n_t_user_quotas

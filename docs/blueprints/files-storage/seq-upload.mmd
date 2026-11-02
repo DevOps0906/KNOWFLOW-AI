@@ -1,0 +1,42 @@
+sequenceDiagram
+    participant B as 업로더 브라우저
+    participant API as 파일 API
+    participant ST as Supabase Storage
+    participant DB as DB files
+    participant W as 검사 워커
+    participant CV as ClamAV 서비스
+
+    B->>API: POST /api/files/uploads (표시 이름, 크기, 형식, app, entity, 멱등 키)
+    API->>API: 확장자 허용 목록, 크기, 조직 용량 확인
+    API->>DB: files INSERT (status uploading, 서버 생성 storage_path) 와 file_versions INSERT (version_no 1)
+    API-->>B: file_id, version_no, 업로드 방식 단일 또는 tus, 업로드 URL 토큰, 만료 시각
+
+    B->>ST: 본문 직접 업로드 (6MB 초과는 tus 재개)
+    B->>API: POST /api/files/[id]/complete (version_no)
+    API->>ST: 객체 조회 (앞부분 매직 바이트, 크기)
+    API->>API: 매직 바이트 확장자 크기 대조, sha256 서버 계산
+    alt 검증 실패 (422)
+        API->>ST: 객체 삭제
+        API->>DB: status deleted
+        API-->>B: 422 확장자 또는 내용 불일치, 크기 불일치
+    else 검증 통과
+        API->>DB: status uploading에서 scanning, sha256 저장, 스캔 잡 등록
+        API-->>B: status scanning, 같은 sha256 파일 목록 (중복 안내만)
+    end
+
+    W->>DB: 스캔 잡 조회, 행 잠금 후 상태 재확인
+    W->>CV: 객체 스트림 전달 (압축은 해제 500MB 깊이 3 한도)
+    alt clean
+        CV-->>W: 탐지 없음
+        W->>DB: status ready, file_versions ready, current_version_no 교체, file_scans clean
+        Note over W,DB: 같은 트랜잭션에서 file_outbox_events INSERT (file.object.ready)
+    else infected
+        CV-->>W: 탐지 이름
+        W->>DB: status quarantined, file_scans infected
+        Note over W,DB: 같은 트랜잭션에서 INSERT (file.object.quarantined)
+    else 서비스 오류 또는 시간 초과
+        CV--xW: 응답 없음
+        W->>DB: scanning 유지, 재시도 횟수 증가 (한도 초과 시 운영 알림)
+    end
+
+    Note over W,DB: 워커가 구독자별 file_outbox_deliveries 생성 후 HMAC 서명 전달, 실패는 지수 간격 재시도, 한도 초과 시 dead

@@ -42,7 +42,7 @@ flowchart TB
 
 ## 2. 화면별 구조 패턴과 시각 지정
 
-platform-docs `DASHBOARD_PATTERNS.md`(구조 A~O)와 `DASHBOARD_VISUAL.md`(시각 V-A~V-N) 표기를 따른다. 값은 제안이며 Gate A에서 확정한다.
+`nomad-design-modules/_design-guide/DASHBOARD_PATTERNS.md`(구조 A~O)와 `DASHBOARD_VISUAL.md`(시각 V-A~V-N) 표기를 따른다. 값은 제안이며 Gate A에서 확정한다.
 
 | 화면 | 경로 | 구조 | 시각 | 비고 |
 |---|---|---|---|---|

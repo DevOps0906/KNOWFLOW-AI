@@ -1,0 +1,80 @@
+erDiagram
+    profiles {
+        uuid user_id PK "auth.users.id"
+        text 이름 "개인정보"
+        date 생년월일 "개인정보, 만 14세 미만 파생"
+        text 계정상태 "active suspended"
+    }
+    organizations {
+        uuid id PK
+        text 이름
+        text slug UK
+        text status "active suspended"
+        uuid 생성자 FK "생성자는 owner로 멤버십 생성"
+    }
+    memberships {
+        uuid id PK
+        uuid org_id FK
+        uuid user_id FK "org_id + user_id 유니크"
+        text role_key FK
+        text status "active suspended"
+        timestamp 가입시각
+    }
+    roles {
+        text role_key PK "owner admin member viewer"
+        int 등급
+    }
+    role_permissions {
+        text role_key FK
+        text permission "resource:action"
+    }
+    invitations {
+        uuid id PK
+        uuid org_id FK
+        text 이메일 "개인정보, 정규화"
+        text role_key FK
+        text token_hash UK "원문 미저장, 1회용"
+        text 상태 "대기 수락 취소 만료"
+        timestamp 만료시각 "접수 후 7일"
+    }
+    platform_admins {
+        uuid user_id PK, FK
+        uuid 부여한사람
+        timestamp 부여시각
+    }
+    rate_limit_counters {
+        text key_hash PK
+        timestamp 구간시작
+        int 횟수
+    }
+    outbox_events {
+        uuid event_id UK
+        uuid org_id FK "없을 수 있음"
+        text type "domain.object.verb"
+        text aggregate_type
+        text aggregate_id
+        bigint sequence "집계별 단조 증가"
+        uuid actor_id "필수"
+        text actor_type "user system service"
+        text result "success failure"
+    }
+    inbox {
+        uuid event_id UK "멱등"
+        text source
+        text type
+        timestamp received_at
+    }
+    outbox_deliveries {
+        uuid event_id FK
+        text subscriber
+        text status
+        int attempts
+    }
+
+    organizations ||--o{ memberships : "조직 1 : 멤버십 N"
+    profiles ||--o{ memberships : "사용자 1 : 멤버십 N"
+    roles ||--o{ memberships : "역할 1 : 멤버십 N"
+    roles ||--o{ role_permissions : "역할 1 : 권한 N"
+    organizations ||--o{ invitations : "조직 1 : 초대 N"
+    roles ||--o{ invitations : "역할 1 : 초대 N"
+    outbox_events ||--o{ outbox_deliveries : "이벤트 1 : 구독자별 전달 N"

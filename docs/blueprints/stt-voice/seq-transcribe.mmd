@@ -1,0 +1,50 @@
+sequenceDiagram
+    participant U as 사용자 브라우저
+    participant FS as files-storage
+    participant API as STT API
+    participant DB as DB stt
+    participant W as STT 워커
+    participant VS as 음성 서버 faster-whisper
+
+    U->>FS: 녹음 또는 파일 업로드 (검사 통과 후 file_id)
+    U->>API: POST /api/stt/recordings (file_id, 녹음 종류, 문구 버전, 동의 여부, 옵션, 멱등 키)
+    API->>API: 동의 검증 (동의 여부, 현재 게시 문구 버전, 서버 시각 기록) 과 엔진 경로 판정 (기능 경로 mic_short와 60초 이하와 조직 외부 허용과 국외 이전 동의일 때만 외부, 그 밖은 자체 호스팅)
+    API->>FS: file_id 상태 확인 (ready만, 서버 간 인증)
+    alt 동의 누락 또는 문구 불일치 또는 허용 안 된 형식 (422)
+        API-->>U: 422 작업 생성 안 함
+    else 통과
+        API->>DB: stt_recordings INSERT (status queued, 동의 필드 고정) 와 stt_jobs INSERT (kind transcribe, queued) 와 stt_job_steps pending (normalize chunk transcribe merge, 옵션 diarize)
+        API-->>U: recording_id, job_id, 상태 queued, 예상 사용 분
+    end
+
+    W->>DB: queued 작업 조회, 행 잠금 후 상태 재확인
+    W->>DB: 작업 running, 녹음 processing, started_at 기록 (조직 동시 작업 상한 기본 3 확인)
+    W->>FS: 원본 다운로드 (서명 URL, 서버 간 인증)
+    W->>W: normalize 16kHz mono, chunk 5분 나누기
+    par 조각 병렬 받아쓰기
+        W->>VS: 조각 받아쓰기 (작업마다 발급한 EdDSA scope voice 토큰)
+        VS-->>W: 조각 결과 (상대 시간)
+        W->>W: opt 조각 단위 마스킹 (이후 저장은 마스킹 후 값만, 임시 결과 TTL 24시간)
+        W->>DB: units_done 증가, progress 갱신 (단조 증가)
+    and 나머지 조각
+        W->>VS: 조각 받아쓰기 (같은 방식)
+        VS-->>W: 조각 결과 (상대 시간)
+        W->>DB: units_done 증가, progress 갱신
+    end
+    W->>W: merge 조각 시작 오프셋 보정, opt 화자 구분 (기본 꺼짐)
+
+    alt 성공
+        W->>DB: 전사 확정 한 트랜잭션 (transcripts version+1 현재본 전환, segments, speakers INSERT, 작업 succeeded, stt.transcript.completed outbox INSERT)
+    else 실패 attempts가 max_attempts 미만
+        W->>DB: 작업 running에서 queued 자동 재시도 (지수 간격)
+    else 재시도 소진
+        W->>DB: 작업 failed, 크레딧 전액 환불 (선택), stt.transcript.failed outbox INSERT
+    end
+
+    Note over W,DB: 워커가 outbox를 구독자별로 전달 (notify는 requested_by, admin-audit는 전 type), HMAC 서명, 실패는 지수 간격 재시도, dead는 운영 알림
+
+    opt 사용자 취소 (STT-A04)
+        U->>API: POST /api/stt/jobs/[id] (action cancel)
+        API->>DB: queued면 즉시 cancelled, running이면 취소 요청 기록
+        Note over W,DB: 다음 조각 시작 전 취소 확인, 미실행분 크레딧 환불
+    end

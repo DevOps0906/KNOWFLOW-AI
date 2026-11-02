@@ -1,0 +1,41 @@
+{
+  "_doc": "OCR Docs 모듈이 더하는 필수 구조 — plan2spec 이 기본 patterns.json 에 합친다.",
+  "types": {
+    "form": {
+      "must_extra": [
+        {
+          "id": "ocr_masking_notice",
+          "label": "개인정보 마스킹 안내(업로드·내보내기 전)",
+          "any": [
+            "text~마스킹"
+          ]
+        }
+      ],
+      "applies_to_prefix": "OCR-"
+    },
+    "list": {
+      "must_extra": [
+        {
+          "id": "ocr_status_col",
+          "label": "상태 열",
+          "any": [
+            "table~상태"
+          ]
+        }
+      ],
+      "applies_to_prefix": "OCR-"
+    },
+    "detail": {
+      "must_extra": [
+        {
+          "id": "ocr_confidence",
+          "label": "필드별 신뢰도 표시(사람 확인 대상 강조)",
+          "any": [
+            "table~신뢰도"
+          ]
+        }
+      ],
+      "applies_to_prefix": "OCR-"
+    }
+  }
+}

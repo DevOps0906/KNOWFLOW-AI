@@ -1,0 +1,29 @@
+{
+  "_doc": "RAG Chat 모듈이 더하는 필수 구조 — plan2spec 이 기본 patterns.json 에 합친다. 문서 추가 폼은 접근 범위 안내가 있어야 하고, 목록은 상태 열이 있어야 한다.",
+  "types": {
+    "form": {
+      "must_extra": [
+        {
+          "id": "rag_acl_notice",
+          "label": "문서 접근 범위 안내(누가 이 문서로 답변받는지)",
+          "any": [
+            "text~접근 범위"
+          ]
+        }
+      ],
+      "applies_to_prefix": "RAG-"
+    },
+    "list": {
+      "must_extra": [
+        {
+          "id": "rag_status_col",
+          "label": "상태 열",
+          "any": [
+            "table~상태"
+          ]
+        }
+      ],
+      "applies_to_prefix": "RAG-"
+    }
+  }
+}

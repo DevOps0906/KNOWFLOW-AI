@@ -1,0 +1,6 @@
+flowchart LR
+  user["사용자"] --> web["웹 (Next.js)"]
+  web --> api["API (FastAPI)"]
+  web --> db[("Supabase")]
+  api --> db
+  api --> llm["LLM 제공자"]
