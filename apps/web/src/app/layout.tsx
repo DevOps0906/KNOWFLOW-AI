@@ -5,7 +5,7 @@ export const metadata: Metadata = { title: "KNOWFLOW-AI" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ko">
+    <html lang="ko" suppressHydrationWarning>
       <body className="bg-background text-foreground font-sans">{children}</body>
     </html>
   );
