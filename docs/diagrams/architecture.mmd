@@ -1,6 +1,42 @@
 flowchart LR
-  user["사용자"] --> web["웹 (Next.js)"]
-  web --> api["API (FastAPI)"]
-  web --> db[("Supabase")]
-  api --> db
-  api --> llm["LLM 제공자"]
+  subgraph client ["클라이언트"]
+    br["브라우저"]
+    scr["화면 (Next.js App Router)"]
+    br --> scr
+  end
+  subgraph app ["애플리케이션 서버 (Next.js)"]
+    rh["Route Handlers<br/>인증 · 입력 검증 · 소유권"]
+    svc["서비스 계층<br/>projects · sources · reports · usage"]
+    qt["쿼터 · rate limit"]
+    ai["AI 오케스트레이션<br/>검색 · 프롬프트 · 사용량 기록"]
+    cv["인용 검증"]
+    rh --> svc
+    svc --> qt
+    ai --> cv
+  end
+  subgraph data ["데이터 · 작업"]
+    jq[("작업 큐<br/>processing_jobs")]
+    wk["Worker<br/>추출 · 청킹 · 임베딩 · 색인"]
+    sb[("Supabase<br/>Auth · PostgreSQL+RLS<br/>pgvector+전문검색 · Storage")]
+    jq --> wk
+  end
+  subgraph ext ["외부 공급자"]
+    llm["LLM (Claude API)"]
+    emb["임베딩 모델 (미정)"]
+    web["웹 URL"]
+  end
+  subgraph ext_media ["매체 확장 (이후)"]
+    adp["매체별 추출 어댑터<br/>ocr · transcribe · 추가 포맷"]
+  end
+  br -->|"HTTPS · 세션 쿠키"| rh
+  br -->|"사용자 JWT · RLS 읽기만"| sb
+  rh --> ai
+  svc -->|"processing_jobs 생성 (멱등 키)"| jq
+  svc -->|"서명 URL · 상태 조회"| sb
+  ai -->|"project_id · user_id 강제 검색"| sb
+  ai --> llm
+  wk -->|"서비스 키로 상태 · 청크 저장"| sb
+  wk --> emb
+  wk -->|"SSRF · 리디렉션 검사 후 fetch"| web
+  wk -.-> adp
+  wk -->|"report_generate 작업"| ai

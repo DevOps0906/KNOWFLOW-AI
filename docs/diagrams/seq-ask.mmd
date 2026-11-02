@@ -1,0 +1,41 @@
+sequenceDiagram
+  autonumber
+  actor U as 사용자
+  participant A as Route Handler
+  participant D as Supabase DB
+  participant S as 검색 (프로젝트 범위)
+  participant L as Claude API
+
+  U->>A: POST /api/conversations/[id]/messages (질문, 범위, Idempotency-Key)
+  A->>A: 인증 · 소유권 확인
+  A->>D: 쿼터 확인 (user_quotas)
+  alt 한도 초과
+    A-->>U: 429 (월 질문 쿼터)
+  else 한도 이내
+    A->>D: 멱등 키 확인 (messages.idempotency_key)
+    alt 같은 키 진행 중
+      A-->>U: 409
+    else 신규 질문
+      A->>S: 질문 임베딩 · 하이브리드 검색 (project_id · user_id 강제)
+      S-->>A: 관련 청크 목록 · 점수
+      alt 근거 없음
+        A->>D: 근거 없음 답변 저장 (no_answer)
+        A-->>U: 자료에서 근거를 찾지 못했다는 안내
+      else 근거 있음
+        A->>L: 청크 ID가 붙은 근거 + 질문 (근거 텍스트는 신뢰하지 않는 데이터로 격리)
+        L-->>A: 답변 + 인용 청크 ID
+        A->>A: 인용 검증 (ID 존재 · project_id 일치 · 인용문 포함)
+        alt 검증 실패
+          A->>L: 1회 재생성 요청
+          L-->>A: 수정된 답변
+          A->>A: 재검증
+        end
+        alt 재검증 통과
+          A->>D: messages 저장 (citation_metadata) · usage_events 기록 · 쿼터 증가
+          A-->>U: 답변 + 출처 칩 (source_id · chunk_id · locator)
+        else 여전히 실패
+          A-->>U: 502 (다시 시도, 쿼터 차감 취소)
+        end
+      end
+    end
+  end

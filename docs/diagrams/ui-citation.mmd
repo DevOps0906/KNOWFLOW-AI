@@ -1,0 +1,32 @@
+sequenceDiagram
+  autonumber
+  actor U as 사용자
+  participant C as 채팅 패널 ③
+  participant V as 원문 뷰어 S-08 원문 탭 · S-10
+  participant A as 원문 청크 API A-07
+  participant R as 리포트 본문 S-12
+  participant P as 출처 패널 S-12
+
+  Note over U,V: 흐름 1 인용 칩 클릭 → 원문 근거 하이라이트
+  U->>C: 답변의 인용 칩 [1]에 hover
+  C-->>U: Tooltip으로 출처 파일명과 위치 미리보기
+  U->>C: 칩 클릭
+  C->>V: 출처와 chunk_id 전달
+  V->>A: 원문·청크 조회
+  A-->>V: 원문 텍스트와 인용 위치
+  V-->>U: 원문 구절 형광 하이라이트, 해당 위치로 스크롤
+  Note over U,V: 모바일 767 이하는 hover가 없어 칩 탭이 곧 클릭이다
+
+  Note over R,P: 흐름 2 리포트 문장 클릭 → 출처 패널
+  U->>R: 리포트 문장 클릭
+  R->>P: 문장의 출처 목록 전달 (report_citations)
+  alt 데스크톱 1200 이상
+    P-->>U: 우측 출처 패널에 원문 구절 카드 표시
+  else 태블릿 768~1199
+    P-->>U: 출처 패널을 Sheet로 열기
+  else 모바일 767 이하
+    P-->>U: 출처 패널을 Sheet로 열기
+  end
+  U->>P: 원문 구절 카드 클릭
+  P->>V: 해당 출처와 chunk_id 전달
+  V-->>U: 원문 뷰어에서 근거 구절 하이라이트 (흐름 1과 같음)

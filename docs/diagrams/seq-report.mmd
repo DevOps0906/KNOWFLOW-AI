@@ -1,0 +1,35 @@
+sequenceDiagram
+  autonumber
+  actor U as 사용자
+  participant A as Route Handler
+  participant D as Supabase DB
+  participant W as Worker
+  participant L as LLM (Claude API)
+
+  U->>A: POST /api/projects/[projectId]/reports (제목, 대상 source id, Idempotency-Key)
+  A->>A: 인증 · 소유권 확인
+  A->>D: 멱등 키 확인 · completed 자료 존재 확인 · 쿼터 확인
+  alt 조건 불충족 (409 · 422 · 429)
+    A-->>U: 오류 응답
+  else 조건 충족
+    A->>D: reports(status = generating) · processing_jobs(job_type = report_generate, queued) 생성
+    A-->>U: 202 (리포트 id · 작업 id)
+    W->>D: 작업 시작 (processing_jobs = running)
+    W->>D: 대상 자료의 근거 청크 검색 (project_id 강제)
+    W->>L: 근거 청크 + 목차 프롬프트 (AI 오케스트레이션 경유)
+    L-->>W: 문장별 인용 ID가 달린 본문
+    W->>W: 인용 검증 (인용 ID가 검색된 청크인지 코드로 확인)
+    opt 근거 없는 문장
+      W->>W: 해당 문장을 근거 없음 구간으로 표시
+    end
+    W->>D: reports.content · report_citations 저장 (chunk_id · position)
+    alt 생성 성공
+      W->>D: reports.status = ready · processing_jobs = succeeded
+    else 생성 실패
+      W->>D: reports.status = failed · processing_jobs = failed (error_code)
+    end
+  end
+  U->>A: GET /api/reports/[reportId] (A-09 · 작업 상태 A-05)
+  A->>D: 리포트 · 작업 상태 조회
+  D-->>A: reports.status (generating · ready · failed)
+  A-->>U: 리포트 본문 또는 생성 상태

@@ -71,41 +71,18 @@ flowchart TB
 
 ## 4. 워크스페이스 반응형 레이아웃
 
-구간: 모바일 ~767px, 태블릿 768~1199px, 데스크탑 1200px~.
-
-```mermaid
-flowchart LR
-  subgraph desktop["데스크탑 1200px~ : 3분할"]
-    direction LR
-    d1["자료 패널<br/>약 280px"] --- d2["분석 패널<br/>가변"] --- d3["AI 채팅 패널<br/>약 380px"]
-  end
-```
-
-```mermaid
-flowchart LR
-  subgraph tablet["태블릿 768~1199px : 2분할"]
-    direction LR
-    t1["자료 · 분석 탭"] --- t2["AI 채팅 패널"]
-  end
-```
-
-```mermaid
-flowchart TB
-  subgraph mobile["모바일 ~767px : 1패널 + 하단 탭"]
-    direction TB
-    m1["현재 패널 하나만 표시"]
-    m2["하단 탭: 자료 | 분석 | 채팅"]
-    m1 --- m2
-  end
-```
+구간: 모바일 ~767px, 태블릿 768~1199px, 데스크탑 1200px~. 기준: [DESIGN.md#2 레이아웃 계획](../../DESIGN.md#2-레이아웃-계획-팀장-결정-구조-근거-docsbenchmark-readraymd). 구간별 다이어그램: [ui-responsive.mmd](ui-responsive.mmd). 앱 셸·S-07·S-08·S-12 배치: [ui-app-shell.mmd](ui-app-shell.mmd). 인용 흐름: [ui-citation.mmd](ui-citation.mmd).
 
 | 항목 | 모바일 ~767 | 태블릿 768~1199 | 데스크탑 1200~ |
 |---|---|---|---|
-| 앱 사이드바 | 햄버거 메뉴 | 아이콘만 접힘 | 약 248px 펼침 |
-| 워크스페이스 | 하단 탭 3개로 전환 | 자료·분석 탭 + 채팅 2분할 | 3분할, 패널 너비 조절 확장 가능 |
-| 터치 영역 | 최소 44px | 최소 44px | 마우스 기준 |
-| 메인 콘텐츠 최대 너비 | 가득 | 가득 | 약 1200px |
+| 앱 사이드바 | Sheet(햄버거 메뉴) | 아이콘만 접힘(SidebarRail) | 좌측 약 17%, 펼침 |
+| 워크스페이스 S-08 | 단일 열 원문(②), 채팅은 하단 Sheet | 2단 ②+③, 자료 ①은 Sheet | ResizablePanelGroup 3단 ≈ 30 : 45 : 25 |
+| 리포트 S-12 | 단일 열, 목차·출처 모두 Sheet | 목차 접힘, 출처 패널 Sheet | 좌 목차 · 가운데 본문 · 우 출처 패널 |
+| 프로젝트 목록 S-07 | 가운데 좁은 단, 행 2줄 | 같음 | 가운데 좁은 단(최대 폭 제한) |
+| 터치 영역 | 최소 44px(`--size-touch`) | 최소 44px | 마우스 기준 |
 | 페이지 가로 스크롤 | 없음 (표는 자체 스크롤) | 없음 | 없음 |
+
+모바일 하단 탭 3개(자료·분석·채팅)는 폐기한다. 채팅은 하단 Sheet(드로어)로 연다.
 
 ## 5. 구간별 글꼴 크기 (제안)
 

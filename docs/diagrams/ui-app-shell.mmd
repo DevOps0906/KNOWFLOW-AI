@@ -1,0 +1,39 @@
+flowchart LR
+  app["앱 셸<br/>인증 후 모든 화면 공통"]
+
+  subgraph shell["셸 구성 (shadcn/ui)"]
+    sb["Sidebar 약 17%<br/>로고 · 새 프로젝트 · 프로젝트 · 리포트 · 사용량 · 계정"]
+    rail["SidebarRail<br/>태블릿: 아이콘만 접힘"]
+    cmd["Command<br/>검색 (자료·프로젝트)"]
+    tip["Tooltip<br/>접힌 아이콘 설명"]
+    sh["Sheet<br/>모바일: 햄버거로 여는 사이드바"]
+    main["본문 영역<br/>화면별 콘텐츠"]
+  end
+
+  app --> sb & rail & cmd & tip & sh & main
+
+  main --> s07["S-07 프로젝트 목록 /projects<br/>가운데 좁은 단 · 알약 Select 필터 2개 · 검색·정렬<br/>행: 유형 아이콘 · 제목 · 자료 N개 · 수정일 · 상태 Badge"]
+  main --> s08["S-08 워크스페이스 /projects/[projectId]<br/>ResizablePanelGroup 3단 ≈ 30 : 45 : 25"]
+  main --> s12["S-12 리포트 /reports/[reportId]<br/>좌 목차 · 가운데 세리프 본문 · 우 출처 패널"]
+
+  sb -->|"프로젝트"| s07
+  sb -->|"리포트"| s12
+
+  subgraph ws["S-08 세 패널"]
+    p1["① 자료 목록<br/>유형 필터 칩 · 선택 체크(질의 범위) · 처리 상태 Badge"]
+    p2["② Tabs 요약 · 원문<br/>원문은 세리프, 근거 하이라이트"]
+    p3["③ 채팅<br/>인용 칩 Tooltip · 추천 질문 · 하단 입력창"]
+    p1 --- p2 --- p3
+  end
+  s08 --> ws
+
+  subgraph rp["S-12 세 영역"]
+    t1["좌 목차<br/>현재 장 강조"]
+    t2["가운데 본문<br/>문장 클릭 → 근거 강조"]
+    t3["우 출처 패널<br/>원문 구절 카드"]
+    t1 --- t2 --- t3
+  end
+  s12 --> rp
+
+  sh -.->|"태블릿·모바일"| p1
+  sh -.->|"태블릿·모바일"| t1

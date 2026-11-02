@@ -1,0 +1,44 @@
+flowchart LR
+  root{"구간 판정<br/>모바일 767 이하 · 태블릿 768~1199 · 데스크톱 1200 이상"}
+
+  subgraph desk["데스크톱 1200 이상 · 3단"]
+    dsb["Sidebar 약 17% 펼침"]
+    dws1["① 자료 목록 ≈ 30"]
+    dws2["② 요약·원문 Tabs ≈ 45"]
+    dws3["③ 채팅 ≈ 25"]
+    drp1["S-12 좌 목차 · 현재 장 강조"]
+    drp2["S-12 가운데 세리프 본문"]
+    drp3["S-12 우 출처 패널"]
+    dws1 --> dws2 --> dws3
+    drp1 --> drp2 --> drp3
+  end
+
+  subgraph tab["태블릿 768~1199 · 2단"]
+    tsb["Sidebar 아이콘만 접힘"]
+    tws1["① 자료 목록 Sheet"]
+    tws2["② 요약·원문 Tabs"]
+    tws3["③ 채팅 우측 2단"]
+    trp1["S-12 목차 접힘"]
+    trp2["S-12 본문"]
+    trp3["S-12 출처 패널 Sheet"]
+    tws1 -.->|"열기"| tws2
+    tws2 --- tws3
+    trp1 -.->|"펼치기"| trp2
+    trp2 -.->|"문장 클릭"| trp3
+  end
+
+  subgraph mob["모바일 767 이하 · 1단"]
+    msb["Sidebar Sheet 햄버거"]
+    mws2["② 원문 단일 열"]
+    mws3["③ 채팅 하단 Sheet 드로어"]
+    mrp1["S-12 목차 Sheet"]
+    mrp2["S-12 리포트 단일 열"]
+    mrp3["S-12 출처 Sheet"]
+    mws2 -.->|"채팅 열기"| mws3
+    mrp1 -.->|"목차"| mrp2
+    mrp2 -.->|"문장 클릭"| mrp3
+  end
+
+  root -->|"1200 이상"| desk
+  root -->|"768~1199"| tab
+  root -->|"767 이하"| mob

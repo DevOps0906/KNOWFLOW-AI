@@ -1,0 +1,38 @@
+sequenceDiagram
+  autonumber
+  actor U as 사용자
+  participant A as Route Handler
+  participant S as 서비스 계층
+  participant D as Supabase DB·Storage
+  participant W as Worker
+  participant E as 임베딩·LLM 공급자
+
+  U->>A: POST /api/projects/[projectId]/sources (Idempotency-Key)
+  A->>A: 인증 · 입력 검증 · 소유권 확인
+  A->>S: 자료 등록 요청
+  S->>S: 형식 · 크기 검사, URL은 SSRF · 리디렉션 검사
+  S->>D: 원본 저장 (Storage 경로 첫 폴더 = user_id)
+  S->>D: content_hash 중복 확인
+  alt 같은 content_hash 자료 있음
+    D-->>S: 중복
+    S-->>A: 409
+    A-->>U: 409 안내
+  else 신규 자료
+    S->>D: sources(queued) · processing_jobs(queued, 멱등 키) 생성
+    S-->>A: 자료 id · 작업 id
+    A-->>U: 202 (status = queued)
+    W->>D: 작업 가져오기, processing_jobs = running, sources = processing
+    W->>W: 텍스트 추출 · 정규화 · 청킹 (위치 메타데이터)
+    W->>E: 청크 임베딩 요청
+    E-->>W: 임베딩 벡터 (embedding_model 기록)
+    W->>D: source_chunks 저장 · 벡터·전문검색 색인
+    alt 처리 성공
+      W->>D: processing_jobs = succeeded, sources = completed
+    else 처리 실패
+      W->>D: processing_jobs = failed, sources = failed (error_code, 안전한 메시지)
+    end
+  end
+  U->>A: GET /api/projects/[projectId]/jobs (상태 조회, A-05)
+  A->>D: 작업 상태 조회
+  D-->>A: source.status · job.status · current_step
+  A-->>U: 처리 상태 표시

@@ -37,9 +37,11 @@
 ## 3. 주요 흐름
 | 흐름 | 요약 | 그림·근거 |
 |---|---|---|
-| 자료 수집 | 검증 → 원본 저장 → 해시 중복 확인 → 작업 생성 → Worker 처리 → 완료/실패 | [`02-rag-and-job-flow §1`](diagrams/02-rag-and-job-flow.md) |
-| 자료 처리 상태 | `queued`→`processing`→`completed`/`failed`, 사용자 재시도 | [`02-rag-and-job-flow §2`](diagrams/02-rag-and-job-flow.md) |
-| 질의응답 | 쿼터 → 하이브리드 검색 → 생성 → 인용 검증(실패 시 1회 재생성) → 저장 | [`02-rag-and-job-flow §3`](diagrams/02-rag-and-job-flow.md) |
+| 자료 수집 | 검증 → 원본 저장 → 해시 중복 확인 → 작업 생성 → Worker 처리 → 완료/실패 | [`02-rag-and-job-flow §1`](diagrams/02-rag-and-job-flow.md), [`seq-ingest.mmd`](diagrams/seq-ingest.mmd) |
+| 자료 처리 상태 | `queued`→`processing`→`completed`/`failed`, 사용자 재시도 | [`02-rag-and-job-flow §2`](diagrams/02-rag-and-job-flow.md), [`state-source-job.mmd`](diagrams/state-source-job.mmd) |
+| 질의응답 | 쿼터 → 하이브리드 검색 → 생성 → 인용 검증(실패 시 1회 재생성) → 저장 | [`02-rag-and-job-flow §3`](diagrams/02-rag-and-job-flow.md), [`seq-ask.mmd`](diagrams/seq-ask.mmd) |
+| 리포트 생성 | 202 → 작업 → 근거 검색 → 생성 → 인용 검증 → reports.status | [`seq-report.mmd`](diagrams/seq-report.mmd) |
+| 매체 처리(추후 포함) | 매체별 추출 단계, MVP 실선·이후 점선 | [`media-pipeline.mmd`](diagrams/media-pipeline.mmd) |
 | 사용자 흐름 | 가입→첫 자료→첫 질문, 리포트 | [`flow-F-01.mmd`](diagrams/flow-F-01.mmd)~[`F-04`](diagrams/flow-F-04.mmd) |
 | 화면 이동 | 사이트맵·레이아웃 | [`sitemap.mmd`](diagrams/sitemap.mmd), [`04-screen-map-and-layout`](diagrams/04-screen-map-and-layout.md) |
 

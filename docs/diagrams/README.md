@@ -4,13 +4,33 @@ KNOWFLOW AI 개발 기준 문서 v1.0(KF-DES-001, KF-ARC-001, KF-AGT-001)을 다
 
 ## 1. 문서 목록
 
-| 파일 | 내용 | 다이어그램 |
-|---|---|---|
-| [01-system-architecture.md](01-system-architecture.md) | 시스템 구조, 구성 요소 책임, 경계 규칙, 미정 항목 | 구성도 1 |
-| [02-rag-and-job-flow.md](02-rag-and-job-flow.md) | 자료 수집 파이프라인, 처리 상태 전이, 질의응답 순서(인용 검증), 출처 계약 | 흐름도 1, 상태도 1, 시퀀스 1 |
-| [03-data-model-erd.md](03-data-model-erd.md) | ERD, v1.0 대비 변경, RLS 원칙 | ERD 1 |
-| [04-screen-map-and-layout.md](04-screen-map-and-layout.md) | 화면 이동, 화면별 패턴·시각, Lilys AI 벤치마킹 대응, 반응형 3구간과 글꼴 | 이동도 1, 레이아웃 3 |
-| [05-multi-agent-workflow.md](05-multi-agent-workflow.md) | 역할, 작업 1건 흐름, 승인 게이트, 작업 ID, 병렬 규칙 | 흐름도 3 |
+### 1-1. 설명 문서 (v1.1 초안)
+| 파일 | 내용 |
+|---|---|
+| [01-system-architecture.md](01-system-architecture.md) | 시스템 구조, 구성 요소 책임, 경계 규칙, 미정 항목 |
+| [02-rag-and-job-flow.md](02-rag-and-job-flow.md) | 자료 수집 파이프라인, 처리 상태 전이, 질의응답 순서(인용 검증), 출처 계약 |
+| [03-data-model-erd.md](03-data-model-erd.md) | ERD(locator·작업 필드 반영), v1.0 대비 변경, RLS 원칙 |
+| [04-screen-map-and-layout.md](04-screen-map-and-layout.md) | 화면 이동, 화면별 패턴, 반응형(디자인 시안 기준으로 갱신), 글꼴 |
+| [05-multi-agent-workflow.md](05-multi-agent-workflow.md) | 역할, 작업 1건 흐름, 승인 게이트, 병렬 규칙 |
+
+### 1-2. Mermaid 원본 (`.mmd`, 단계별)
+| 단계 | 파일 | 종류 | 내용 |
+|---|---|---|---|
+| 02 기획 | [feature-map.mmd](feature-map.mmd) | mindmap | MVP 기능과 추후 매체 확장 1·2·3 |
+| 03 UX | [sitemap.mmd](sitemap.mmd) | flowchart | 화면 15개 이동(사양 생성기 자동) |
+| 03 UX | [flow-F-01.mmd](flow-F-01.mmd) ~ [flow-F-04.mmd](flow-F-04.mmd) | flowchart | 사용자 흐름 4개(자동) |
+| 03 UX | [screen-data.mmd](screen-data.mmd) | flowchart | 화면 ↔ API ↔ 데이터 연결(자동) |
+| 04 UI | [ui-app-shell.mmd](ui-app-shell.mmd) | flowchart | 앱 셸과 shadcn/ui 컴포넌트 배치(S-07·S-08·S-12) |
+| 04 UI | [ui-responsive.mmd](ui-responsive.mmd) | flowchart | 데스크톱 3단 / 태블릿 2단 / 모바일 1단 + 시트 |
+| 04 UI | [ui-citation.mmd](ui-citation.mmd) | sequence | 인용 칩 → 근거 하이라이트, 리포트 문장 → 출처 패널 |
+| 05 기술 | [architecture.mmd](architecture.mmd) | flowchart | 시스템 아키텍처(매체 확장은 점선) |
+| 05 기술 | [seq-ingest.mmd](seq-ingest.mmd) | sequence | 자료 추가 → 작업 → Worker 처리 |
+| 05 기술 | [seq-ask.mmd](seq-ask.mmd) | sequence | 질문 → 검색 → 생성 → 인용 검증 |
+| 05 기술 | [seq-report.mmd](seq-report.mmd) | sequence | 리포트 생성 작업과 인용 검증 |
+| 05 기술 | [state-source-job.mmd](state-source-job.mmd) | state | 작업 5상태 ↔ 자료 4상태 매핑 |
+| 05 기술 | [media-pipeline.mmd](media-pipeline.mmd) | flowchart | 매체별 처리 단계(MVP 실선, 추후 점선) |
+
+ERD 원본은 코드가 생기면 `sql2erd`로 `erd.mmd`를 기계 생성한다. 배포 구조도는 08 배포 단계에서 만든다. 렌더링 SVG는 커밋하지 않는다(GitHub가 Mermaid를 직접 그린다).
 
 ## 2. 표기 규칙
 
@@ -43,7 +63,6 @@ KNOWFLOW AI 개발 기준 문서 v1.0(KF-DES-001, KF-ARC-001, KF-AGT-001)을 다
 
 | 순서 | 작업 |
 |---|---|
-| 1 | 이 구조도 검토 후 열린 결정 확정 (04장 7절 디자인 결정 3개, 01장 4절 미정 3개) |
-| 2 | 대시보드 디자인안 (Lilys AI 벤치마킹 반영, 화면별 와이어프레임) |
-| 3 | 개발기획서 v1.1 (일정, Phase 0 검증, 쿼터·요금 초안) |
-| 4 | AGENTS.md 보완과 작업 계약 목록 |
+| 1 | 사용자 결정(팔레트·PRD 미결·데이터 미정)과 린 검증 |
+| 2 | 작업 분해 후 구현, 코드 생성 시 `sql2erd`·`deps2mmd`로 ERD·모듈 구조도 기계 생성 |
+| 3 | 08 배포 단계에서 배포 구조도 추가 |

@@ -1,0 +1,28 @@
+stateDiagram-v2
+  state "processing_jobs.status" as JOB {
+    [*] --> jq
+    state "queued" as jq
+    state "running" as jr
+    state "succeeded" as js
+    state "failed" as jf
+    state "cancelled" as jc
+    jq --> jr: Worker 시작
+    jr --> js: 추출 · 색인 · 요약 성공
+    jr --> jf: 오류 (attempt_count 기록)
+    jq --> jc: 취소 요청
+    jr --> jc: 취소 요청
+  }
+  state "sources.status" as SRC {
+    [*] --> sq
+    state "queued" as sq
+    state "processing" as sp
+    state "completed" as sc
+    state "failed" as sf
+    sq --> sp: job running
+    sp --> sc: job succeeded
+    sp --> sf: job failed 또는 cancelled
+    sf --> sq: 사용자 재시도 (새 작업)
+    sc --> sq: 재처리 요청 (새 작업)
+    sf --> [*]: 삭제
+    sc --> [*]: 삭제
+  }
