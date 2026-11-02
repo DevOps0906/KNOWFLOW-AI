@@ -14,6 +14,7 @@ export function StateCard({
   description,
   tone = "default",
   role,
+  headingLevel = 2,
   className,
   children,
 }: {
@@ -22,9 +23,11 @@ export function StateCard({
   description?: string;
   tone?: Tone;
   role?: "alert" | "status";
+  headingLevel?: 1 | 2;
   className?: string;
   children?: React.ReactNode;
 }) {
+  const Heading = headingLevel === 1 ? "h1" : "h2";
   return (
     <section
       role={role}
@@ -34,7 +37,7 @@ export function StateCard({
         {icon}
       </span>
       <div>
-        <h2 className="font-semibold">{title}</h2>
+        <Heading className="font-semibold">{title}</Heading>
         {description ? <p className="mt-1 text-muted-foreground">{description}</p> : null}
       </div>
       {children}

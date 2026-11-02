@@ -14,7 +14,7 @@
 | [task-007](task-007.md) | 프로젝트 S-05~S-07 · A-02 | W2 | task-004, task-005, task-006 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
 | [task-008](task-008.md) | PDF 업로드·Storage S-09 · A-04 | W2 | task-007 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
 | [task-009](task-009.md) | URL 가져오기(SSRF 방어) | W2 | task-010 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
-| [task-010](task-010.md) | 작업 큐(pgmq)·Worker 골격·A-05 재시도 | W2 | task-004, task-008 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
+| [task-010](task-010.md) | 작업 큐(테이블 폴링)·Worker 골격·A-05 재시도 | W2 | task-004, task-008 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
 | [task-011](task-011.md) | 추출·청킹·임베딩·색인 | W2 | task-009, task-010 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
 | [task-012](task-012.md) | 자료 목록·원문 뷰어 S-08 · S-10 · A-03 · A-07 | W2 | task-007, task-011 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
 | [task-013](task-013.md) | 골든셋 30~50문항 + 평가(임베딩·청킹 확정, 벡터 컬럼·저장 연결) | W3 | task-011 | 보통 | builder (+tester) | 대기 |
@@ -25,7 +25,7 @@
 | [task-018](task-018.md) | 리포트 화면·목록·Markdown 내보내기 S-11 · S-12 · A-09 | W4 | task-017 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
 | [task-019](task-019.md) | 계정 설정·삭제·소프트 삭제 정리 S-13 · A-10 | W4 | task-012, task-018 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
 | [task-020](task-020.md) | 요청 한도·사용량 표시(S-13 통합) | W4 | task-004, task-005, task-015, task-017, task-019 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
-| [task-021](task-021.md) | 오류·404·빈 상태 S-14 · S-15 | W5 | task-006 | 낮음 | builder (+tester) | 대기 |
+| [task-021](task-021.md) | 오류·404·빈 상태 S-14 · S-15 | W5 | task-006 | 낮음 | builder (+tester) | 완료 |
 | [task-022](task-022.md) | E2E F-01~F-04 + 반응형 캡처 | W5 | task-016, task-018, task-019, task-021 | 보통 | tester (+builder 시드) | 대기 |
 | [task-023](task-023.md) | 보안 L2 상향 점검 | W5 | task-020, task-022 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
 | [task-024](task-024.md) | 베타 배포(인프라 ADR·Worker 배포) | W5 | task-023 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
