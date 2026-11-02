@@ -5,12 +5,12 @@
 
 | 번호 | 제목 | 웨이브 | 선행 | 위험도 | 담당 | 상태 |
 |---|---|---|---|---|---|---|
-| [task-001](task-001.md) | 랜딩 S-01 + 외부 폼 사전예약(린 검증) | W0 | task-002 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
+| [task-001](task-001.md) | 랜딩 S-01 + 외부 폼 사전예약(린 검증) | W0 | task-002 | 높음 | builder (+tester) · 착수 전 challenger | 완료 |
 | [task-002](task-002.md) | 저장소 골격(Next.js·pnpm·Tailwind v4·shadcn/ui·토큰) | W1 | — | 높음 | builder (+tester) · 착수 전 challenger | 완료 |
-| [task-003](task-003.md) | 보안 기본 설정 /secure setup(L1) | W1 | task-002 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
+| [task-003](task-003.md) | 보안 기본 설정 /secure setup(L1) | W1 | task-002 | 높음 | builder (+tester) · 착수 전 challenger | 완료 |
 | [task-004](task-004.md) | Supabase 마이그레이션 12테이블 + RLS | W1 | task-003 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
 | [task-005](task-005.md) | 인증 S-02~S-04 | W1 | task-004, task-006 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
-| [task-006](task-006.md) | 앱 셸·공통 컴포넌트 | W1 | task-002 | 낮음 | builder (+tester) | 대기 |
+| [task-006](task-006.md) | 앱 셸·공통 컴포넌트 | W1 | task-002 | 낮음 | builder (+tester) | 완료 |
 | [task-007](task-007.md) | 프로젝트 S-05~S-07 · A-02 | W2 | task-004, task-005, task-006 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
 | [task-008](task-008.md) | PDF 업로드·Storage S-09 · A-04 | W2 | task-007 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
 | [task-009](task-009.md) | URL 가져오기(SSRF 방어) | W2 | task-010 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
