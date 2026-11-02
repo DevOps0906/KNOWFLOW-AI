@@ -1,0 +1,159 @@
+{
+  "_doc": "NOMAD 모듈 기록 — nomad-os module 이 관리. 커밋해 두면 같은 버전을 받는다.",
+  "modules": {
+    "contracts": {
+      "type": "blueprint",
+      "title": "Contracts — 청사진 공통 계약",
+      "version": "0.2.0",
+      "source": "https://github.com/DevOps0906/nomad-blueprints-module.git",
+      "ref": "main",
+      "commit": "c500fb429fb7f6086c12cd0c0782e59b3d4964b3",
+      "install_to": "docs/blueprints/contracts",
+      "license": "",
+      "requires": [],
+      "installed": "2026-11-02T04:48:01+00:00",
+      "files": {
+        "README.md": "08b756cc77a8b25bb41aacd00f826d13a162bf4ba369ddbf2ab6c2bb237f899c",
+        "EVENTS.md": "7e4cec26e25c4616759ce5fa81f043d465ffa69d294d39e1afb807702f57add0",
+        "JOBS.md": "26d1fe6425ab4dcea23a204a1f85dfc479d706fa4c39e967fb191d28613d6bb4",
+        "ACCESS.md": "767b987690a243ce3b47d56c9230da2e01ec5a82d5bf96948177177f218addf5",
+        "CONVENTIONS.md": "b728688ea63e99c4e45ad882b53f42d514c50b64462c42567ca9fbf93e485790"
+      }
+    },
+    "files-storage": {
+      "type": "blueprint",
+      "title": "Files Storage — 파일 저장·공유",
+      "version": "0.1.0",
+      "source": "https://github.com/DevOps0906/nomad-blueprints-module.git",
+      "ref": "main",
+      "commit": "c500fb429fb7f6086c12cd0c0782e59b3d4964b3",
+      "install_to": "docs/blueprints/files-storage",
+      "license": "Proprietary",
+      "requires": [
+        "contracts"
+      ],
+      "installed": "2026-11-02T04:48:03+00:00",
+      "files": {
+        "README.md": "fac67d2c4133639da945453a0b1481e5ca67487147760b722da29596565455bf",
+        "screens.md": "9d18ce466597c0f0f7439f64d35959953ea68103bbd677cec4c2347f6db177fc",
+        "api.md": "ed94f3f023ff2149ab13f310ace0a597897bddc13575cc229b108c7035e81ac3",
+        "data.md": "1f6454174f681498279a34774a0fd1024884c03a6759498c8466859e7555c318",
+        "patterns.json": "cafe91fb879307f829d4aeca35a43565133238449e2e94ea6b6b16f5c22e83ed",
+        "adr.md": "7fe6b3e229f1a4351c6650a0f0a9d49c62190c8621b5cab02ec7d6aa40564ffd",
+        "design.md": "94ee273f91a73f4d2d92d566ced7c779d87b0aeaa9a6d8430248de4c0ad5adc4",
+        "erd.mmd": "6de3f0f98a0442a54311105c79093281573510e37f0ad9370fb067b4c5e09618",
+        "seq-share.mmd": "48a2a8fa9fa6b5ad5c96ddb07849f6694ea9888297d12812d0998e3450d0d87c",
+        "seq-upload.mmd": "410d2ae8e2ad228a09fb46a7ef0d0d7035711c16c17228f8201129749dc40d1d",
+        "states.mmd": "37e6a76b8af0c6d9c7268e6b50b9fe4dda33ad6992db01fd5fc06750cd1bad43"
+      }
+    },
+    "auth-rbac": {
+      "type": "blueprint",
+      "title": "Auth·RBAC — 인증·조직·권한",
+      "version": "0.1.0",
+      "source": "https://github.com/DevOps0906/nomad-blueprints-module.git",
+      "ref": "main",
+      "commit": "c500fb429fb7f6086c12cd0c0782e59b3d4964b3",
+      "install_to": "docs/blueprints/auth-rbac",
+      "license": "Proprietary",
+      "requires": [
+        "contracts"
+      ],
+      "installed": "2026-11-02T04:48:07+00:00",
+      "files": {
+        "README.md": "656b922755370928d227600b875bef027a91083827c5215ba455cebbfe863d91",
+        "screens.md": "098cfa80b661c4c1b22d265d4ff3f0da8cc0fe23bd0b1d6e8e6607c227172330",
+        "api.md": "d287980f0ea159153dccf90444f2f4d7947a459aae63b4a8f44eaac835d9ee1a",
+        "data.md": "a5454fbd367d929cfb7286d7bcc6618ef632f308dbc3f587ea10a9769a81b8f5",
+        "patterns.json": "8aa3d85a4d855661e031798ce1a692f3a4f0ab8323dd021d2e4fc890212cf656",
+        "adr.md": "b0431250bf7531479b8b1e9e4eb79ec06986f8c82808efd51358af78244e8c74",
+        "design.md": "125dc5d1a86660f5cc94f098872a6f5111b5a8d95aff65412fe65639c67f4fb8",
+        "erd.mmd": "3b521a0f4c9983b796848dfd6c1952d5247776eadf12fa7e55fabe004a91ffde",
+        "seq-invite.mmd": "50894f64d8a5763a6e39834b526105656e6713cc00aec88d5eb5781befb90669",
+        "states.mmd": "80cd547b539f73be5166dcc73f40656ce4d19edde1826157fd606ececb611fc1",
+        "seq-deletion.mmd": "0d77296f351fb23bef46b7853ba82e25e0ef3e9dfd9650c22bec291553e36f07"
+      }
+    },
+    "rag-chat": {
+      "type": "blueprint",
+      "title": "RAG Chat — 문서 기반 질의응답",
+      "version": "0.1.0",
+      "source": "https://github.com/DevOps0906/nomad-blueprints-module.git",
+      "ref": "main",
+      "commit": "c500fb429fb7f6086c12cd0c0782e59b3d4964b3",
+      "install_to": "docs/blueprints/rag-chat",
+      "license": "Proprietary",
+      "requires": [
+        "contracts",
+        "files-storage"
+      ],
+      "installed": "2026-11-02T04:48:12+00:00",
+      "files": {
+        "README.md": "654daa71ccc775c652c0ff9adcc9c513122c0a285fab6370b1c550909048de8f",
+        "screens.md": "5ea976477f9aecf9cf726ecebb3d37382a967ee38540e099b41c80002f9a3973",
+        "api.md": "93b7b896bb535604046e4a4b66ed131e55f8e081a1cd21b7f7ad7111113c06b8",
+        "data.md": "5cbfcded0522ad0e557b9f97d83723a5aef1e2896b307b0a2a501ed74608ed0f",
+        "patterns.json": "cc70bd137601846cef469cc1020404077eda13bb3288929504f3763390289a87",
+        "adr.md": "f69155fe6a5ed00fa6c2c61870822ca7ceb1a568c14760bc3c36c3918ebc29d6",
+        "design.md": "419076f7f6446e63af28cc435a218956cda641a74ed517426538fa13de19c56a",
+        "erd.mmd": "5e7c42bd9687d2bae44a7f58ef2f8c4774a73658b28c0efba5464672ebd458e0",
+        "seq-ask.mmd": "a8d22322780aac540e67535ce96230ca81ecc93b802ec98bbb35ddb8d5b9bcb8",
+        "states.mmd": "d5913b2620c26cd201f20bb313308d13a5cea1ecd5d0e09a11322869b54afbbc"
+      }
+    },
+    "stt-voice": {
+      "type": "blueprint",
+      "title": "STT Voice — 음성 받아쓰기",
+      "version": "0.1.0",
+      "source": "https://github.com/DevOps0906/nomad-blueprints-module.git",
+      "ref": "main",
+      "commit": "c500fb429fb7f6086c12cd0c0782e59b3d4964b3",
+      "install_to": "docs/blueprints/stt-voice",
+      "license": "Proprietary",
+      "requires": [
+        "contracts",
+        "files-storage"
+      ],
+      "installed": "2026-11-02T04:48:18+00:00",
+      "files": {
+        "README.md": "8c430de325a74d46670900dafe3c88eac07db6c70341307c47cbc2ea9eda7e77",
+        "screens.md": "6016e997143da8dcf3fde5fa06d8aec0324d21a00312af73fe3e1024268c2064",
+        "api.md": "afd71d280373bdf0770def877c97be7a41cb9b4ed7a90996abf1488a36df5c6d",
+        "data.md": "bc491e5fa9c70da3211e95d74305578907dbb0ffa474fbcc67169818b44eaee2",
+        "patterns.json": "772228b8b5707c77dc5600b8b8718e560a1122dbf605c3db1034494352382e38",
+        "adr.md": "51b82b71159fb80dc0a12588e27c54c5d0ee426bbc442b068af90a2eb70441a7",
+        "design.md": "2779d8eb3d7646cbb45d93f97424eb0236c434baf1adb1ef0d26de7744ec7205",
+        "erd.mmd": "6fc149a626a31b41d78f55b3149d0145088681bb4a2aa3e4ae99abc1c67f21a6",
+        "seq-transcribe.mmd": "b8f01049647d15f6791a0e939a093298f506420e733f0fa77ea27c709225731f",
+        "states.mmd": "0b06df599ee1f8e69fe51ad0f30b90589790c041baaa56dfaf0374215a7a7b61"
+      }
+    },
+    "ocr-docs": {
+      "type": "blueprint",
+      "title": "OCR Docs — 문서 인식·필드 추출",
+      "version": "0.1.0",
+      "source": "https://github.com/DevOps0906/nomad-blueprints-module.git",
+      "ref": "main",
+      "commit": "c500fb429fb7f6086c12cd0c0782e59b3d4964b3",
+      "install_to": "docs/blueprints/ocr-docs",
+      "license": "Proprietary",
+      "requires": [
+        "contracts",
+        "files-storage"
+      ],
+      "installed": "2026-11-02T04:48:24+00:00",
+      "files": {
+        "README.md": "ea101e9c1d2b953b217953547f542c7536798de68b738ed172448791e6fc5580",
+        "screens.md": "a08b6510490f214136fabcb41f96179743ee8ed2ffbe5eac316ba9cb2ed3d888",
+        "api.md": "3a98d3f4ef0572a760b2f01cb5828ce2a0c18fea8a6781958c51c069cf3aa83c",
+        "data.md": "78f99b22ff65607560b7f9c3ddfbfb58751d779b657d9b437cfe29a366d92f2f",
+        "patterns.json": "7022e96ab2b906c96cb95286304fe57080fb2d01ebc9b6d5505ba3bd488d6294",
+        "adr.md": "55fcaa857497618cb2a30f20746a17da50ebf7e06205b89f92bfadfa80b6c466",
+        "design.md": "ab594e9eb2ce20d7031a2d256a7e1b99feb482c4370fb176ea69158752542de6",
+        "erd.mmd": "9c50468523b310a54bea52cbe30c05c523a4232354e151fd3cb604e051d3eb90",
+        "seq-ocr.mmd": "e4b6daea8a2f87e7126de612ec65c2626503c582a62c3cddcf15c06eaa6833eb",
+        "states.mmd": "0dea582b7f67c1bf0f254eb0296bfcbc06d0cfaeab53485c1b6646c98b83257e"
+      }
+    }
+  }
+}

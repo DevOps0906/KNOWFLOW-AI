@@ -1,0 +1,15 @@
+.nomad/
+.env
+.env.*
+!.env.example
+node_modules/
+.next/
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+
+# 렌더링 부산물 (Mermaid 원본 .mmd만 커밋)
+docs/diagrams/*.svg
