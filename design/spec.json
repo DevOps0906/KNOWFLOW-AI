@@ -1,12 +1,12 @@
 {
  "version": "1",
- "generated": "2026-11-02T04:56:30+00:00",
+ "generated": "2026-11-02T05:23:58+00:00",
  "docs": "docs",
  "tokens": ".\\apps\\web\\src\\styles\\tokens.css",
  "sources": {
   "docs/03_SCREENS_UX.md": "75f7aa4df0f1",
-  "docs/04_API.md": "08e914a1a73a",
-  "docs/05_DATA_MODEL.md": "fa43e94ffa3b",
+  "docs/04_API.md": "23ca6df66d1c",
+  "docs/05_DATA_MODEL.md": "4157246bb8fc",
   "docs/blueprints/auth-rbac/api.md": "32da9e8c7094",
   "docs/blueprints/auth-rbac/data.md": "25c60991cbd5",
   "docs/blueprints/auth-rbac/screens.md": "c3605370cf92",
@@ -30,8 +30,7 @@
   "S-08",
   "S-09",
   "S-10",
-  "S-11",
-  "S-12"
+  "S-13"
  ],
  "removed": [],
  "screens": {
@@ -358,7 +357,7 @@
     "중간 저장·이어하기"
    ],
    "states_missing": [],
-   "hash": "486d4dc01f96",
+   "hash": "db3a55b9f902",
    "wireframe": "design/wireframes/S-05.html"
   },
   "S-06": {
@@ -440,7 +439,7 @@
     "저장된 보기·열 설정"
    ],
    "states_missing": [],
-   "hash": "9e80a46dc32f",
+   "hash": "239d4a8d39fc",
    "wireframe": "design/wireframes/S-06.html"
   },
   "S-07": {
@@ -514,7 +513,7 @@
     "저장된 보기·열 설정"
    ],
    "states_missing": [],
-   "hash": "624a40637290",
+   "hash": "b6b29fbe1caa",
    "wireframe": "design/wireframes/S-07.html"
   },
   "S-08": {
@@ -652,7 +651,7 @@
     "활동·변경 이력"
    ],
    "states_missing": [],
-   "hash": "9ed2e675659c",
+   "hash": "f5b2e231ba3d",
    "wireframe": "design/wireframes/S-08.html"
   },
   "S-09": {
@@ -733,7 +732,7 @@
     "임시 저장(긴 폼)"
    ],
    "states_missing": [],
-   "hash": "7d9d680de5be",
+   "hash": "0baefc573799",
    "wireframe": "design/wireframes/S-09.html"
   },
   "S-10": {
@@ -795,7 +794,7 @@
     "활동·변경 이력"
    ],
    "states_missing": [],
-   "hash": "0cb16ec4d35b",
+   "hash": "a7fffacdd8c8",
    "wireframe": "design/wireframes/S-10.html"
   },
   "S-11": {
@@ -1009,7 +1008,7 @@
    "must_missing": [],
    "should_missing": [],
    "states_missing": [],
-   "hash": "981dc72ad5a5",
+   "hash": "c36284cf1202",
    "wireframe": "design/wireframes/S-13.html"
   },
   "S-14": {
@@ -1310,7 +1309,7 @@
     "메서드": "GET · PATCH · DELETE",
     "경로": "/api/projects/[projectId]",
     "입력": "(PATCH) 이름·설명·보관 / (DELETE) —",
-    "출력": "프로젝트 + 자료 목록(유형·처리 상태·오류 코드) + 요약·추천 질문 / 변경 결과 / 삭제 결과(자료·청크·대화·리포트 함께 삭제 — 삭제 정책 확정 전, 05 미정)",
+    "출력": "프로젝트 + 자료 목록(유형·처리 상태·오류 코드) + 요약·추천 질문 / 변경 결과 / 삭제 결과(소프트 삭제 `deleted_at`, 30일 뒤 자료·청크·대화·리포트 영구 삭제 — [05#5](05_DATA_MODEL.md)). 요약·추천 질문은 자료 completed 시 Worker가 생성해 `projects.summary`·`suggested_questions`에 저장",
     "권한": "소유자",
     "오류": "401 · 404 · 409 처리 중 작업 있음(삭제) · 422"
    },
@@ -1324,10 +1323,10 @@
     "ID": "A-04",
     "메서드": "POST · DELETE",
     "경로": "/api/projects/[projectId]/sources",
-    "입력": "(POST) source_type, (pdf) 파일 여러 개 또는 (url) URL, 멱등 키 / (DELETE) source id 목록",
-    "출력": "자료 id·작업 id(202, status=queued) / 삭제 결과(청크·Storage 연쇄 삭제 — 삭제 정책 확정 전, 05 미정)",
+    "입력": "(POST) source_type, (pdf) 서명 업로드 URL 발급 → 브라우저가 Storage로 직접 업로드 → 등록 요청(파일별 멱등 키) 또는 (url) URL / (DELETE) source id 목록",
+    "출력": "서명 업로드 URL / 자료 id·작업 id(202, status=queued) / 삭제 결과(소프트 삭제 `deleted_at`, 영구 삭제는 30일 뒤)",
     "권한": "소유자",
-    "오류": "401 · 404 · 409 같은 content_hash 자료 있음·같은 멱등 키 다른 입력 · 413 크기 초과 · 415 PDF 아님 · 422 source_type 미지원(\"지원 예정\")·URL 형식/차단 주소(SSRF)·스캔 PDF 미지원 · 429 자료 수 한도"
+    "오류": "401 · 404 · 409 같은 content_hash 자료 있음·같은 멱등 키 다른 입력 · 413 크기 초과 · 415 PDF 아님 · 422 source_type 미지원(\"지원 예정\")·URL 형식/차단 주소(SSRF) · 429 자료 수 한도·분당 10회. 500쪽 초과·스캔 PDF는 등록 후 Worker가 job failed + error_code로 판정(A-05에서 확인)"
    },
    "source": "docs/04_API.md"
   },
@@ -1439,9 +1438,9 @@
    "row": {
     "테이블": "projects",
     "목적": "자료·대화·리포트의 묶음(S-05~08)",
-    "주요 컬럼": "id, user_id★→profiles, name, description, archived_at",
-    "RLS 기준": "user_id = auth.uid()` 행만 모든 작업",
-    "비고": "클라이언트가 준 user_id는 무시하고 서버가 채운다. 삭제 정책은 5장"
+    "주요 컬럼": "id, user_id★→profiles, name, description, archived_at, deleted_at, summary, suggested_questions(jsonb)",
+    "RLS 기준": "user_id = auth.uid()` 행만 SELECT. 쓰기는 RPC",
+    "비고": "클라이언트가 준 user_id는 무시하고 서버가 채운다. summary·suggested_questions는 자료 completed 시 Worker가 생성·저장. 삭제 정책은 5장"
    },
    "source": "docs/05_DATA_MODEL.md"
   },
@@ -1450,7 +1449,7 @@
    "row": {
     "테이블": "sources",
     "목적": "자료 1건(S-08·09·10)",
-    "주요 컬럼": "id, project_id, user_id, source_type, title★, original_url, storage_path, content_hash, status, error_code, error_message_safe",
+    "주요 컬럼": "id, project_id, user_id, source_type, title★, original_url, storage_path, content_hash, status, error_code, error_message_safe, deleted_at",
     "RLS 기준": "user_id = auth.uid()` AND 소속 프로젝트 소유 일치. 상태 쓰기는 서버만",
     "비고": "source_type: MVP `pdf`·`url`, 예약 `youtube`·`audio`·`video`·`docx`·`pptx`·`image`·`text`(3장). status는 `queued`·`processing`·`completed`·`failed`. unique (project_id, content_hash)"
    },
@@ -1463,7 +1462,7 @@
     "목적": "검색 단위 조각(S-08 질의, S-10 뷰어)",
     "주요 컬럼": "id, source_id, project_id, chunk_index, content★, locator(jsonb), embedding(vector), embedding_model, content_tsv",
     "RLS 기준": "사용자 직접 SELECT 없음. 서버·검색 함수가 `project_id`+`user_id` 강제 후 반환(소속 자료가 본인 것일 때만)",
-    "비고": "인용 위치는 `locator` jsonb(3장). 임베딩 차원은 모델 확정 후(미확정, 5장). unique (source_id, chunk_index). 모델이 다른 청크를 섞지 않는다"
+    "비고": "인용 위치는 `locator` jsonb(3장). embedding vector 차원 컬럼은 골든셋 확정 후 별도 마이그레이션으로 추가(5장). unique (source_id, chunk_index). 모델이 다른 청크를 섞지 않는다"
    },
    "source": "docs/05_DATA_MODEL.md"
   },
@@ -1472,9 +1471,9 @@
    "row": {
     "테이블": "processing_jobs",
     "목적": "자료 처리 작업·이력(S-06·08·09)",
-    "주요 컬럼": "id, source_id(nullable), report_id(nullable)→reports, job_type(`report_generate` 포함), status, current_step, progress(0~100), attempt_count, max_attempts(기본 3), idempotency_key, error_code, started_at, finished_at",
+    "주요 컬럼": "id, user_id, source_id(nullable), report_id(nullable)→reports, job_type(`report_generate` 포함), status, current_step, progress(0~100), attempt_count, max_attempts(기본 3), locked_until, heartbeat_at, error_code, started_at, finished_at",
     "RLS 기준": "소속 자료·리포트 소유자 읽기만. 쓰기는 서비스 키 서버·Worker만",
-    "비고": "상태값은 JOBS.md(`queued`·`running`·`succeeded`·`failed`·`cancelled`). 사용자 재시도 = 새 작업(새 멱등 키), 종료 작업은 되살리지 않음. 같은 자료에 진행 중 작업 1개(부분 유니크). `source_id`·`report_id` 중 하나는 필수(CHECK). 리포트 생성 작업의 멱등 키도 여기 저장. 사용자 화면 배지(`sources.status`)와의 매핑은 6장"
+    "비고": "상태값은 JOBS.md(`queued`·`running`·`succeeded`·`failed`·`cancelled`). 사용자 재시도 = 새 작업(새 멱등 키), 종료 작업은 되살리지 않음. 같은 자료에 진행 중 작업 1개(부분 유니크). `source_id`·`report_id` 중 하나는 필수(CHECK). 멱등 키는 `idempotency_keys`에 둔다. Worker는 heartbeat_at을 갱신하고, locked_until이 지난 running 작업은 회수(재큐잉)한다. 작업 행 생성과 pgmq 전송은 한 트랜잭션 RPC `enqueue_job`. 사용자 화면 배지(`sources.status`)와의 매핑은 6장"
    },
    "source": "docs/05_DATA_MODEL.md"
   },
@@ -1494,9 +1493,9 @@
    "row": {
     "테이블": "messages",
     "목적": "질문·답변(S-08)",
-    "주요 컬럼": "id, conversation_id, role, content★, citation_metadata(jsonb: chunk_id 목록·점수만), idempotency_key",
+    "주요 컬럼": "id, conversation_id, role, content★, citation_metadata(jsonb: chunk_id 목록·점수만)",
     "RLS 기준": "소속 대화 소유자만(conversations 조인). 쓰기는 서버만",
-    "비고": "인용은 서버가 검색 결과로 검증한 chunk_id만([02-rag-and-job-flow §4](diagrams/02-rag-and-job-flow.md)). 청크 텍스트 사본을 넣지 않는다. 응답의 source_id·title·locator는 chunk 조인으로 생성한다. `idempotency_key`는 user 범위 유니크(질문 중복 방지). 원문은 로그에 남기지 않는다"
+    "비고": "인용은 서버가 검색 결과로 검증한 chunk_id만([02-rag-and-job-flow §4](diagrams/02-rag-and-job-flow.md)). 청크 텍스트 사본을 넣지 않는다. 응답의 source_id·title·locator는 chunk 조인으로 생성한다. 질문 중복 방지는 `idempotency_keys`. 원문은 로그에 남기지 않는다"
    },
    "source": "docs/05_DATA_MODEL.md"
   },
@@ -1538,9 +1537,9 @@
    "row": {
     "테이블": "plans",
     "목적": "요금제별 한도 정의(S-13)",
-    "주요 컬럼": "code(PK `free`·`pro`), max_sources, monthly_questions",
+    "주요 컬럼": "code(PK `free`·`pro`), max_projects, max_sources_per_project, monthly_questions, monthly_reports, monthly_source_jobs",
     "RLS 기준": "로그인 사용자 읽기 전용(시드 데이터)",
-    "비고": "한도 수치는 미확인 — `01_PRD.md`에서 결정 후 시드. 결제 연동은 MVP 제외"
+    "비고": "한도 5종(프로젝트·자료·질문·리포트·자료 처리). 수치는 [PRD 8-1](01_PRD.md#8-1-베타-초기값-2026-11-02-확정-조정-가능) 시드. 결제 연동은 MVP 제외"
    },
    "source": "docs/05_DATA_MODEL.md"
   },
@@ -1549,9 +1548,20 @@
    "row": {
     "테이블": "user_quotas",
     "목적": "사용자별 사용 한도·누적(S-13)",
-    "주요 컬럼": "user_id(PK), plan_code→plans, period_start, used_questions, used_sources",
-    "RLS 기준": "본인 행 조회만. 갱신은 서버만",
-    "비고": "한도 확인·증가는 한 트랜잭션(경쟁 조건 방지). 기간 초기화 방식은 5장"
+    "주요 컬럼": "user_id(PK), plan_code→plans, period_start, used_projects, used_sources, used_questions, used_reports, used_source_jobs",
+    "RLS 기준": "본인 행 조회만. 갱신은 RPC만",
+    "비고": "원자 차감 RPC `consume_quota(kind, n)`: 조건부 UPDATE … RETURNING으로 한도 확인·증가를 한 문장에서 처리(경쟁 조건 방지). 기간 초기화는 5장"
+   },
+   "source": "docs/05_DATA_MODEL.md"
+  },
+  "idempotency_keys": {
+   "name": "idempotency_keys",
+   "row": {
+    "테이블": "idempotency_keys",
+    "목적": "중복 요청 방지(A-04·05·06·08)",
+    "주요 컬럼": "user_id, key, request_hash, resource_type, resource_id, created_at",
+    "RLS 기준": "직접 접근 없음. RPC 안에서만",
+    "비고": "unique (user_id, key). 같은 키+다른 request_hash는 409. 업로드는 파일마다 키"
    },
    "source": "docs/05_DATA_MODEL.md"
   }

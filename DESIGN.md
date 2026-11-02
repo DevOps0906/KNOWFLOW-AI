@@ -28,7 +28,7 @@
 - 강조색은 주 버튼·선택 상태·포커스 링에만. 형광 노랑은 근거 하이라이트에만.
 
 ## 3. 팔레트 (토큰 사본 — 정답은 `apps/web/src/styles/tokens.css`)
-후보 2안 중 **A안이 tokens.css에 적용**돼 있다. 확정은 사람이 `design/prototype/index.html`을 보고 한다.
+**A안 확정**(2026-11-02, [ADR-0002](docs/adr/0002-mvp-tech-decisions.md)). B안은 기록으로만 남긴다. 서체: Pretendard(UI) + Noto Serif KR(읽기 영역) 확정.
 
 | 역할(shadcn 이름) | A안 청록 잉크 라이트 | A안 다크 | B안 먹물 남색 라이트 |
 |---|---|---|---|

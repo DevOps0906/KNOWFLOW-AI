@@ -11,7 +11,8 @@ PDF·웹 페이지를 모아 분석하고, 자료에 근거한 질의응답과 �
 |---|---|---|
 | 웹 | Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS v4 · shadcn/ui | `apps/web` |
 | DB·인증 | Supabase (Postgres · RLS · Auth · Storage · Edge Functions) | `supabase/` |
-| AI·Worker | 작업 큐 + Worker(추출·청킹·임베딩·색인). 실행 환경·큐·임베딩 모델 미정 → `docs/diagrams/01-system-architecture.md#4` | 미정 |
+| Worker | TypeScript(Node) 상시 컨테이너. Supabase 기반 큐(pgmq), 추출·청킹·임베딩·색인·리포트 생성 ([ADR-0002](docs/adr/0002-mvp-tech-decisions.md)) | `apps/worker` |
+| 임베딩 | 임베딩 서버 컨테이너, 잠정 bge-m3(골든셋으로 확정) | 컨테이너 |
 | 검색 | pgvector + 전문검색(하이브리드, 제안) | `supabase/` |
 
 ## 3. 명령
@@ -20,7 +21,7 @@ PDF·웹 페이지를 모아 분석하고, 자료에 근거한 질의응답과 �
 | 설치 | `pnpm install` |
 | 개발 서버 | `pnpm dev` |
 | 린트 · 타입 | `pnpm lint` · `pnpm typecheck` |
-| 테스트 | `pnpm test` · `cd apps/api && pytest -q` |
+| 테스트 | `pnpm test` · `pnpm --filter worker test` |
 | DB 초기화 · 타입 | `supabase db reset` · `supabase gen types typescript --local > apps/web/src/types/db.ts` |
 | ERD 갱신 | `~/.claude/nomad/bin/sql2erd supabase/migrations -o docs/diagrams/erd.mmd` |
 긴 출력 명령은 `~/.claude/nomad/bin/q <명령>`으로 실행한다.
@@ -56,7 +57,7 @@ PDF·웹 페이지를 모아 분석하고, 자료에 근거한 질의응답과 �
 | 작업 경로 | 규칙 파일 |
 |---|---|
 | `apps/web/**` | `.claude/rules/web.md` |
-| `apps/api/**` | `.claude/rules/api.md` |
+| `apps/worker/**` | `.claude/rules/worker.md` |
 | `supabase/**` | `.claude/rules/db.md` |
 | `docs/**` · `DESIGN.md` | `.claude/rules/docs.md` |
 - 읽지 않는 파일: `.env*` · lock 파일 · `node_modules/` · `.next/` · `dist/` · `build/` · `coverage/` (Claude는 `.claude/settings.json`, Gemini는 `.geminiignore`가 강제, ChatGPT Codex는 이 줄로 지킨다).

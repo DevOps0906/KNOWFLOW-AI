@@ -28,14 +28,14 @@ flowchart LR
   subgraph ext_media ["매체 확장 (이후)"]
     adp["매체별 추출 어댑터<br/>ocr · transcribe · 추가 포맷"]
   end
+  br -->|"anon 키 + 사용자 JWT · SELECT만"| sb
   br -->|"HTTPS · 세션 쿠키"| rh
-  br -->|"사용자 JWT · RLS 읽기만"| sb
   rh --> ai
-  svc -->|"processing_jobs 생성 (멱등 키)"| jq
-  svc -->|"서명 URL · 상태 조회"| sb
-  ai -->|"project_id · user_id 강제 검색"| sb
+  svc -->|"enqueue_job RPC (작업 행 + pgmq)"| jq
+  svc -->|"웹 서버 쓰기 RPC · 서명 URL · 상태 조회"| sb
+  ai -->|"match_chunks 사용자 권한"| sb
   ai --> llm
-  wk -->|"서비스 키로 상태 · 청크 저장"| sb
+  wk -->|"service_role만 · 상태 · 청크 저장 · match_chunks_for_job"| sb
   wk --> emb
   wk -->|"SSRF · 리디렉션 검사 후 fetch"| web
   wk -.-> adp

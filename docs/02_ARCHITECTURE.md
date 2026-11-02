@@ -25,19 +25,29 @@
 | 브라우저 | Route Handlers | HTTPS, Supabase 세션 쿠키 | AI 공급자·서비스 키 직접 접근 |
 | 브라우저 | Supabase | 사용자 JWT + RLS가 허용한 읽기만 | 쓰기·상태 전이 직접 수행 |
 | Route Handlers | 서비스 계층 | 함수 호출 | 요청 본문 user_id 신뢰, 장시간 처리 |
-| 서비스 계층 | 작업 큐 | `processing_jobs` 행 생성(멱등 키 포함) | Worker 직접 호출 |
-| Worker | Supabase | 서비스 키로 상태 갱신·청크 저장 | 서비스 키를 브라우저·로그에 노출 |
-| AI 오케스트레이션 | 검색 함수 | `project_id`·`user_id` 강제 함수 호출 | 프로젝트 간 검색, 근거 없는 출처 생성 |
+| 서비스 계층 | 작업 큐 | RPC `enqueue_job`(작업 행 생성+pgmq 전송, 같은 트랜잭션, 멱등 키는 `idempotency_keys`) | Worker 직접 호출 |
+| Worker | Supabase | service_role로 상태 갱신·청크 저장 | 서비스 키를 브라우저·로그에 노출 |
+| AI 오케스트레이션(웹) | 검색 함수 | `match_chunks(project_id, …)` — 사용자 권한으로 실행 | 프로젝트 간 검색, 근거 없는 출처 생성 |
+| Worker | 검색 함수 | `match_chunks_for_job(job_id)` — 작업 행의 user_id·project_id로 범위 강제 | 임의 project_id 지정 |
 | 서비스·Worker | AI·임베딩 공급자 | 인터페이스 어댑터 | 공급자 SDK를 업무 로직에 직접 의존 |
 | 서비스 | 웹 URL | SSRF·리디렉션 검사 후 fetch | 사설망·메타데이터 주소 접근 |
 | 저장소 경로 | Storage | 첫 폴더 = `user_id`, 읽기는 서명 URL | 공개 버킷에 원본 저장 |
+- 두 검색 함수 모두 `deleted_at`이 있는 프로젝트·자료를 제외한다.
+
+### 키 사용 (ADR-0002)
+| 주체 | 키·신원 | 할 수 있는 일 |
+|---|---|---|
+| 브라우저 | anon 키 + 사용자 JWT | RLS가 허용한 SELECT만 |
+| 웹 서버 | 사용자 세션 | 쓰기 RPC 호출(`auth.uid()`·한도 검사 포함) |
+| Worker | service_role (유일) | 상태 갱신·청크 저장·작업 회수 |
+- `authenticated` 롤은 모든 테이블의 INSERT·UPDATE·DELETE 권한을 회수한다. 쓰기는 SECURITY DEFINER RPC로만 한다.
 - 가져온 웹 텍스트는 신뢰하지 않는 데이터로 다룬다(프롬프트 인젝션 방어).
 - 상태 전이는 서버 함수만 수행한다. 사용자는 재시도·취소 요청만 보낸다([JOBS.md](blueprints/contracts/JOBS.md)).
 
 ## 3. 주요 흐름
 | 흐름 | 요약 | 그림·근거 |
 |---|---|---|
-| 자료 수집 | 검증 → 원본 저장 → 해시 중복 확인 → 작업 생성 → Worker 처리 → 완료/실패 | [`02-rag-and-job-flow §1`](diagrams/02-rag-and-job-flow.md), [`seq-ingest.mmd`](diagrams/seq-ingest.mmd) |
+| 자료 수집 | (PDF) 서명 업로드 URL → 브라우저가 Storage 직접 업로드 → 등록 요청 → 검증 → 해시 중복 확인 → `enqueue_job` → Worker 처리 → 완료/실패 | [`02-rag-and-job-flow §1`](diagrams/02-rag-and-job-flow.md), [`seq-ingest.mmd`](diagrams/seq-ingest.mmd) |
 | 자료 처리 상태 | `queued`→`processing`→`completed`/`failed`, 사용자 재시도 | [`02-rag-and-job-flow §2`](diagrams/02-rag-and-job-flow.md), [`state-source-job.mmd`](diagrams/state-source-job.mmd) |
 | 질의응답 | 쿼터 → 하이브리드 검색 → 생성 → 인용 검증(실패 시 1회 재생성) → 저장 | [`02-rag-and-job-flow §3`](diagrams/02-rag-and-job-flow.md), [`seq-ask.mmd`](diagrams/seq-ask.mmd) |
 | 리포트 생성 | 202 → 작업 → 근거 검색 → 생성 → 인용 검증 → reports.status | [`seq-report.mmd`](diagrams/seq-report.mmd) |
@@ -53,12 +63,13 @@
 | 단계 표 | [`05_DATA_MODEL.md#4`](05_DATA_MODEL.md) | 추출·OCR·전사는 이후 |
 | 공급자·모델 교체 | 인터페이스 뒤 + `embedding_model` 기록으로 재색인 대상 식별 | Claude API |
 
-## 5. 미정 (Phase 0 결정 기록 대상)
-| 항목 | 후보 | 상태 |
-|---|---|---|
-| 작업 큐 | Supabase 기반(pgmq 또는 테이블 폴링), 별도 큐 | MVP는 Supabase 기반 제안. 처리량 한도 **미확인**(착수 시 측정) |
-| Worker 실행 환경 | 서버리스 함수, 상시 컨테이너 | 큰 PDF 처리 시간 측정 후 결정. **팀장 결정 필요** |
-| 임베딩 모델 | 다국어 모델(후보: bge-m3 등) | 한국어 골든셋 비교 후 결정. 라이선스·순위 **미확인** |
-| 하이브리드 검색 | 벡터 + 전문검색 | 한국어 키워드 방식(PGroonga·pg_trgm) 실험 후 확정, Supabase 확장 가능 여부 **미확인** |
-| 청킹 크기·겹침 | — | 골든셋 실험 후 ADR로 기록 |
-| 인프라·배포 | — | `01_PRD.md#8` 보안 레벨(L1→L2)에 맞춰 결정. `docs/adr/`에 ADR 작성 |
+## 5. 결정 사항 ([ADR-0002](adr/0002-mvp-tech-decisions.md))
+| 항목 | 결정 |
+|---|---|
+| 작업 큐 | Supabase 기반 큐(pgmq 우선, 불가 시 테이블 폴링). 처리량은 착수 시 측정 |
+| Worker 실행 환경 | 상시 컨테이너, 외부 연결은 허용 목록(DB·임베딩 서버·AI 공급자)만([PRD 8-1](01_PRD.md)) |
+| ADR 예약 | 0003 호스팅·업로드 경로(task-002), 0004 임베딩·청킹(task-013) |
+| 임베딩 모델 | 잠정 bge-m3, 골든셋·라이선스 확인 후 확정 |
+| 하이브리드 검색 | pgvector + pg_trgm |
+| 청킹 크기·겹침 | 골든셋 작업에서 실험 후 ADR로 기록 |
+| 인프라·배포 | ADR-0003(보안 레벨 L2) |
