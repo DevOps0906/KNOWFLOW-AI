@@ -1,0 +1,9 @@
+#!/bin/sh
+# 커밋 전 비밀 스캔(staged). 로컬 gitleaks가 없으면 경고만 한다.
+# 진짜 관문은 CI의 gitleaks 단계다. 이 훅은 빠른 사전 차단용.
+# 설치: git config core.hooksPath scripts/secure
+if ! command -v gitleaks >/dev/null 2>&1; then
+  echo "[secure] gitleaks 없음 - 로컬 비밀 스캔을 건너뜁니다 (CI에서 검사)." >&2
+  exit 0
+fi
+exec gitleaks git --staged --redact --no-banner .

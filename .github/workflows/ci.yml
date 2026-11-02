@@ -5,6 +5,45 @@ on:
 permissions:
   contents: read
 jobs:
+  secrets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GITLEAKS_VERSION: 8.30.1
+      # gitleaks_8.30.1_checksums.txt (공식 릴리스)의 linux_x64 값. 버전을 올리면 함께 갱신
+      GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+      EVENT_NAME: ${{ github.event_name }}
+      PUSH_BEFORE: ${{ github.event.before }}
+      PR_BASE: ${{ github.event.pull_request.base.sha }}
+      PR_HEAD: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: gitleaks 설치 (체크섬 검증)
+        run: |
+          set -euo pipefail
+          f="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -sSfL -o "$RUNNER_TEMP/$f" "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/$f"
+          echo "${GITLEAKS_SHA256}  $RUNNER_TEMP/$f" | sha256sum -c -
+          mkdir "$RUNNER_TEMP/gl" && tar -xzf "$RUNNER_TEMP/$f" -C "$RUNNER_TEMP/gl" gitleaks
+      - name: 비밀 스캔
+        run: |
+          set -euo pipefail
+          zero=0000000000000000000000000000000000000000
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            range="${PR_BASE}..${PR_HEAD}"
+          elif [ -n "$PUSH_BEFORE" ] && [ "$PUSH_BEFORE" != "$zero" ] && git cat-file -e "${PUSH_BEFORE}^{commit}" 2>/dev/null; then
+            range="${PUSH_BEFORE}..${GITHUB_SHA}"
+          else
+            range=""
+          fi
+          if [ -n "$range" ]; then
+            "$RUNNER_TEMP/gl/gitleaks" git --redact --no-banner --log-opts="$range" .
+          else
+            "$RUNNER_TEMP/gl/gitleaks" git --redact --no-banner .
+          fi
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -22,3 +61,7 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+      # L1: 보고만(차단은 L2). 네트워크 오류도 빌드를 막지 않는다.
+      - name: 의존성 취약점 보고 (차단 안 함)
+        run: pnpm audit --prod --audit-level=high
+        continue-on-error: true

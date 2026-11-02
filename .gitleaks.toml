@@ -1,0 +1,9 @@
+# 기본 규칙 그대로 + 오탐 예외만 추가
+[extend]
+useDefault = true
+
+[[allowlists]]
+# 이 파일은 nomad-os가 생성하는 모듈 등록부다. 체크섬이 generic-api-key로 오탐돼 파일 하나만 예외로 둔다.
+# 이 파일에 비밀을 넣지 않는다. 예외를 넓히지 말 것.
+description = "nomad-modules.json: 파일별 SHA-256 체크섬 목록(비밀 아님)"
+paths = ['''^nomad-modules\.json$''']
