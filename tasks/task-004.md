@@ -37,11 +37,11 @@
 - 적용된 마이그레이션 수정(새 번호 추가만), 앱 화면 코드, 검색 함수(task-014)
 
 ## 완료 조건 (실행 가능한 확인)
-- [ ] `pnpm --filter db-tests test`가 빈 Postgres에 호환 SQL + 모든 마이그레이션을 순서대로 적용하고 통과
-- [ ] RLS 위반 테스트(타인 행 접근 실패, 직접 SELECT 금지 테이블) 통과 — CI `db` job으로 실행
-- [ ] anon 키로 테이블에 직접 INSERT 시 거부되는 테스트 통과
-- [ ] 카탈로그 게이트 테스트(RLS 미적용 테이블·search_path 미고정 DEFINER 함수·anon/authenticated에 열린 쓰기 권한이 있으면 실패) 통과
-- [ ] 테스트: `consume_quota` 동시 N연결 요청에서 차감 총량이 한도를 넘지 않음, `refund_quota`는 service_role만·음수 불가, authenticated가 consume·refund·enqueue를 직접 호출하면 거부
-- [ ] 테스트: 소프트 삭제된 프로젝트·하위 행이 SELECT에 안 보임, 같은 멱등 키 동시 요청에서 자원 1개, supabase_auth_admin으로 auth.users INSERT 시 profiles·user_quotas 생성
-- [ ] 게이트: anon EXECUTE 가능한 DEFINER 함수 0개, authenticated EXECUTE 목록 = 허용 목록, TRUNCATE·REFERENCES·TRIGGER 권한 0
-- [ ] `sql2erd supabase/migrations -o docs/diagrams/erd.mmd` 생성, `mmd-check` 통과
+- [x] `pnpm test:db`가 빈 Postgres에 호환 SQL + 모든 마이그레이션을 순서대로 적용하고 통과
+- [x] RLS 위반 테스트(타인 행 접근 실패, 직접 SELECT 금지 테이블) 통과 — CI `db` job으로 실행
+- [x] anon 키로 테이블에 직접 INSERT 시 거부되는 테스트 통과
+- [x] 카탈로그 게이트 테스트(RLS 미적용 테이블·search_path 미고정 DEFINER 함수·anon/authenticated에 열린 쓰기 권한이 있으면 실패) 통과
+- [x] 테스트: `consume_quota` 동시 N연결 요청에서 차감 총량이 한도를 넘지 않음, `refund_quota`는 service_role만·음수 불가, authenticated가 consume·refund·enqueue를 직접 호출하면 거부
+- [x] 테스트: 소프트 삭제된 프로젝트·하위 행이 SELECT에 안 보임, 같은 멱등 키 동시 요청에서 자원 1개, supabase_auth_admin으로 auth.users INSERT 시 profiles·user_quotas 생성
+- [x] 게이트: anon EXECUTE 가능한 DEFINER 함수 0개, authenticated EXECUTE 목록 = 허용 목록, TRUNCATE·REFERENCES·TRIGGER 권한 0
+- [x] `sql2erd supabase/migrations -o docs/diagrams/erd.mmd` 생성, `mmd-check` 통과

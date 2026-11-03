@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import EmbeddedPostgres from "embedded-postgres";
 import pg from "pg";
 import type { TestProject } from "vitest/node";
+import { assertSafeToReset } from "./safe-reset";
 
 declare module "vitest" {
   export interface ProvidedContext {
@@ -26,14 +27,6 @@ function freePort(): Promise<number> {
       srv.close(() => resolve(port));
     });
   });
-}
-
-// 외부 DB(TEST_DATABASE_URL)는 스키마를 통째로 지우므로 로컬/컨테이너 호스트만 허용한다(개발 Supabase 보호).
-function assertSafeToReset(url: string) {
-  const host = new URL(url).hostname;
-  if (!["localhost", "127.0.0.1", "::1", "[::1]"].includes(host) && process.env.DB_TESTS_ALLOW_RESET !== "1") {
-    throw new Error(`TEST_DATABASE_URL 호스트(${host})는 로컬이 아니다. 스키마를 지우므로 거부한다.`);
-  }
 }
 
 const RESET_SQL = `
@@ -64,7 +57,7 @@ async function applySql(url: string) {
 export default async function setup(project: TestProject) {
   const external = process.env.TEST_DATABASE_URL;
   if (external) {
-    assertSafeToReset(external);
+    assertSafeToReset(external, process.env.DB_TESTS_ALLOW_RESET);
     await applySql(external);
     project.provide("dbUrl", external);
     return;

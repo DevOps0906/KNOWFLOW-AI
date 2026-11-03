@@ -1,0 +1,150 @@
+erDiagram
+  plans {
+    text code PK
+    integer max_projects
+    integer max_sources_per_project
+    integer monthly_questions
+    integer monthly_reports
+    integer monthly_source_jobs
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  profiles {
+    uuid id PK,FK
+    text display_name
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  user_quotas {
+    uuid user_id PK,FK
+    text plan_code FK
+    date period_start
+    integer used_questions
+    integer used_reports
+    integer used_source_jobs
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  projects {
+    uuid id PK
+    uuid user_id FK
+    text name
+    text description
+    timestamptz archived_at
+    timestamptz deleted_at
+    text summary
+    jsonb suggested_questions
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  sources {
+    uuid id PK
+    uuid project_id
+    uuid user_id
+    text source_type
+    text title
+    text original_url
+    text storage_path
+    text content_hash
+    text status
+    text error_code
+    text error_message_safe
+    timestamptz deleted_at
+    string more_2_cols
+  }
+  source_chunks {
+    uuid id PK
+    uuid source_id
+    uuid project_id
+    integer chunk_index
+    text content
+    jsonb locator
+    text embedding_model
+    tsvector content_tsv
+    timestamptz created_at
+  }
+  conversations {
+    uuid id PK
+    uuid project_id
+    uuid user_id
+    text title
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  messages {
+    uuid id PK
+    uuid conversation_id FK
+    text role
+    text content
+    jsonb citation_metadata
+    timestamptz created_at
+  }
+  reports {
+    uuid id PK
+    uuid project_id
+    uuid user_id
+    text title
+    text content
+    text format
+    text status
+    timestamptz created_at
+    timestamptz updated_at
+  }
+  report_citations {
+    uuid id PK
+    uuid report_id FK
+    uuid chunk_id FK
+    integer position
+    timestamptz created_at
+  }
+  processing_jobs {
+    uuid id PK
+    uuid user_id FK
+    uuid source_id FK
+    uuid report_id FK
+    text job_type
+    text status
+    text current_step
+    integer progress
+    integer attempt_count
+    integer max_attempts
+    timestamptz locked_until
+    timestamptz heartbeat_at
+    string more_5_cols
+  }
+  usage_events {
+    uuid id PK
+    uuid user_id FK
+    uuid project_id FK
+    text event_type
+    text provider
+    text model
+    integer input_tokens
+    integer output_tokens
+    bigint estimated_cost
+    timestamptz created_at
+  }
+  idempotency_keys {
+    uuid user_id PK,FK
+    text key PK
+    text request_hash
+    text resource_type
+    uuid resource_id
+    timestamptz created_at
+  }
+  profiles ||--o{ user_quotas : "user_id"
+  plans ||--o{ user_quotas : "plan_code"
+  profiles ||--o{ projects : "user_id"
+  projects ||--o{ sources : "project_id"
+  sources ||--o{ source_chunks : "source_id"
+  projects ||--o{ conversations : "project_id"
+  conversations ||--o{ messages : "conversation_id"
+  projects ||--o{ reports : "project_id"
+  reports ||--o{ report_citations : "report_id"
+  source_chunks ||--o{ report_citations : "chunk_id"
+  profiles ||--o{ processing_jobs : "user_id"
+  sources ||--o{ processing_jobs : "source_id"
+  reports ||--o{ processing_jobs : "report_id"
+  profiles ||--o{ usage_events : "user_id"
+  projects ||--o{ usage_events : "project_id"
+  profiles ||--o{ idempotency_keys : "user_id"
