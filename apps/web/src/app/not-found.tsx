@@ -14,9 +14,8 @@ export default function NotFound() {
         description="주소를 확인하거나 처음 화면에서 다시 시작해 주세요."
         className="w-full"
       >
-        {/* task-007: 대시보드 생기면 /dashboard로 교체 */}
         <Button asChild>
-          <Link href="/">처음으로</Link>
+          <Link href="/dashboard">처음으로</Link>
         </Button>
       </StateCard>
     </main>

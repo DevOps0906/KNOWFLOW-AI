@@ -11,7 +11,7 @@
 | [task-004](task-004.md) | Supabase 마이그레이션 12테이블 + RLS | W1 | task-003 | 높음 | builder (+tester) · 착수 전 challenger | 완료 |
 | [task-005](task-005.md) | 인증 S-02~S-04 | W1 | task-004, task-006 | 높음 | builder (+tester) · 착수 전 challenger | 완료 |
 | [task-006](task-006.md) | 앱 셸·공통 컴포넌트 | W1 | task-002 | 낮음 | builder (+tester) | 완료 |
-| [task-007](task-007.md) | 프로젝트 S-05~S-07 · A-02 | W2 | task-004, task-005, task-006 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
+| [task-007](task-007.md) | 프로젝트 S-05~S-07 · A-02 | W2 | task-004, task-005, task-006 | 높음 | builder (+tester) · 착수 전 challenger | 완료 |
 | [task-008](task-008.md) | PDF 업로드·Storage S-09 · A-04 | W2 | task-007 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
 | [task-009](task-009.md) | URL 가져오기(SSRF 방어) | W2 | task-010 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
 | [task-010](task-010.md) | 작업 큐(테이블 폴링)·Worker 골격·A-05 재시도 | W2 | task-004, task-008 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |

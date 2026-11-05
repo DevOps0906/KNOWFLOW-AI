@@ -20,9 +20,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
             >
               다시 시도
             </button>
-            {/* task-007: 대시보드 생기면 /dashboard로 교체 */}
-            {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- 루트 레이아웃 밖이라 전체 새로고침이 안전 */}
-            <a href="/" className="text-caption text-muted-foreground underline underline-offset-4">
+            <a href="/dashboard" className="text-caption text-muted-foreground underline underline-offset-4">
               처음으로
             </a>
           </div>

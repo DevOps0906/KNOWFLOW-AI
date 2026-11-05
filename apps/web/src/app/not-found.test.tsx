@@ -10,7 +10,7 @@ describe("S-14 not-found", () => {
     render(<NotFound />);
     expect(screen.getByText("찾을 수 없거나 접근 권한이 없습니다")).toBeTruthy();
     expect(screen.getByRole("heading", { level: 1 })).toBeTruthy();
-    expect(screen.getByRole("link", { name: "처음으로" }).getAttribute("href")).toBe("/");
+    expect(screen.getByRole("link", { name: "처음으로" }).getAttribute("href")).toBe("/dashboard");
   });
 });
 
@@ -20,7 +20,7 @@ describe("S-15 error", () => {
     const error = Object.assign(new Error("secret db password"), { digest: "abc123" });
     const { container } = render(<ErrorPage error={error} reset={reset} />);
     expect(screen.getByRole("heading", { level: 1 })).toBeTruthy();
-    expect(screen.getByRole("link", { name: "처음으로" }).getAttribute("href")).toBe("/");
+    expect(screen.getByRole("link", { name: "처음으로" }).getAttribute("href")).toBe("/dashboard");
     fireEvent.click(screen.getByRole("button", { name: "다시 시도" }));
     expect(reset).toHaveBeenCalledOnce();
     expect(container.textContent).toContain("abc123");
