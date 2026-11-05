@@ -6,6 +6,7 @@ export const AUTHENTICATED_EXECUTE = [
   "create_project",
   "delete_project",
   "register_pdf_source",
+  "retry_source",
   "update_profile",
   "update_project",
 ];
@@ -14,7 +15,7 @@ export const AUTHENTICATED_EXECUTE = [
 export const ANON_EXECUTE = ["consume_auth_rate_limit"];
 
 /** service_role(Worker)이 EXECUTE 할 수 있는 public 함수 */
-export const SERVICE_ROLE_EXECUTE = ["refund_quota"];
+export const SERVICE_ROLE_EXECUTE = ["claim_job", "complete_job", "fail_job", "heartbeat_job", "progress_job", "refund_quota"];
 
 /** authenticated가 SELECT 할 수 있는 public 테이블 (source_chunks·idempotency_keys는 없음) */
 export const AUTHENTICATED_SELECT = [

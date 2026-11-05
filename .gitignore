@@ -18,3 +18,15 @@ docs/diagrams/*.svg
 *.tsbuildinfo
 next-env.d.ts
 coverage/
+
+# task-010: apps/worker 안의 다른 브랜치 작업 잔재(파이썬 환경·캐시)는 추적하지 않는다
+apps/worker/.venv/
+apps/worker/.pytest_cache/
+apps/worker/.ruff_cache/
+apps/worker/dist/
+
+# 로컬 실행 캐시와 Supabase CLI 임시 파일
+__pycache__/
+.pytest_cache/
+supabase/.branches/
+supabase/.temp/
