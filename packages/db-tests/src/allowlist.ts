@@ -1,7 +1,10 @@
 // 허용 목록. 기능 작업이 새 RPC/테이블을 추가할 때 이 파일을 함께 고치고 리뷰를 받는다(게이트의 요점).
 
 /** authenticated가 EXECUTE 할 수 있는 public 함수 */
-export const AUTHENTICATED_EXECUTE = ["update_profile"];
+export const AUTHENTICATED_EXECUTE = ["consume_auth_rate_limit", "update_profile"];
+
+/** anon이 EXECUTE 할 수 있는 public 함수 (로그인 전 인증 한도, 한도 값은 함수 안에 고정) */
+export const ANON_EXECUTE = ["consume_auth_rate_limit"];
 
 /** service_role(Worker)이 EXECUTE 할 수 있는 public 함수 */
 export const SERVICE_ROLE_EXECUTE = ["refund_quota"];
@@ -22,6 +25,7 @@ export const AUTHENTICATED_SELECT = [
 ];
 
 export const ALL_TABLES = [
+  "auth_rate_limits",
   "conversations",
   "idempotency_keys",
   "messages",

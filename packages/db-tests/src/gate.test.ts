@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { admin } from "./db";
-import { ALL_TABLES, AUTHENTICATED_EXECUTE, AUTHENTICATED_SELECT, SERVICE_ROLE_EXECUTE } from "./allowlist";
+import { ALL_TABLES, ANON_EXECUTE, AUTHENTICATED_EXECUTE, AUTHENTICATED_SELECT, SERVICE_ROLE_EXECUTE } from "./allowlist";
 
 // 카탈로그 기반 게이트: 앞으로 추가되는 테이블·함수에도 자동 적용된다.
 
@@ -111,12 +111,12 @@ describe("카탈로그 게이트: 함수", () => {
     expect(t).toEqual([]);
   });
 
-  it("anon이 EXECUTE 할 수 있는 public 함수가 0개다 (PUBLIC 부여 포함)", async () => {
+  it("anon EXECUTE 목록 = 허용 목록 (PUBLIC 부여 포함)", async () => {
     const t = await names(
       `select p.proname as name from pg_proc p join pg_namespace n on n.oid = p.pronamespace
         where n.nspname = 'public' and has_function_privilege('anon', p.oid, 'EXECUTE')`,
     );
-    expect(t).toEqual([]);
+    expect(t).toEqual([...ANON_EXECUTE].sort());
   });
 
   it("PUBLIC에 EXECUTE가 열린 public 함수가 없다", async () => {

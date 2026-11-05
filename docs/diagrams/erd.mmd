@@ -132,6 +132,12 @@ erDiagram
     uuid resource_id
     timestamptz created_at
   }
+  auth_rate_limits {
+    text scope PK
+    text key_hash PK
+    timestamptz window_start PK
+    integer hits
+  }
   profiles ||--o{ user_quotas : "user_id"
   plans ||--o{ user_quotas : "plan_code"
   profiles ||--o{ projects : "user_id"
