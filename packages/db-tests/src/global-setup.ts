@@ -90,6 +90,11 @@ export default async function setup(project: TestProject) {
   project.provide("dbUrl", url);
   return async () => {
     await server.stop();
-    fs.rmSync(dir, { recursive: true, force: true });
+    // Windows에서는 종료 직후 파일이 잠겨 있을 수 있어 재시도하고, 끝내 실패해도 테스트 결과는 바꾸지 않는다(임시 폴더)
+    try {
+      fs.rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 300 });
+    } catch {
+      // 임시 폴더는 OS가 정리한다
+    }
   };
 }

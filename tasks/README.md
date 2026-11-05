@@ -12,7 +12,7 @@
 | [task-005](task-005.md) | 인증 S-02~S-04 | W1 | task-004, task-006 | 높음 | builder (+tester) · 착수 전 challenger | 완료 |
 | [task-006](task-006.md) | 앱 셸·공통 컴포넌트 | W1 | task-002 | 낮음 | builder (+tester) | 완료 |
 | [task-007](task-007.md) | 프로젝트 S-05~S-07 · A-02 | W2 | task-004, task-005, task-006 | 높음 | builder (+tester) · 착수 전 challenger | 완료 |
-| [task-008](task-008.md) | PDF 업로드·Storage S-09 · A-04 | W2 | task-007 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
+| [task-008](task-008.md) | PDF 업로드·Storage S-09 · A-04 | W2 | task-007 | 높음 | builder (+tester) · 착수 전 challenger | 완료 |
 | [task-009](task-009.md) | URL 가져오기(SSRF 방어) | W2 | task-010 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
 | [task-010](task-010.md) | 작업 큐(테이블 폴링)·Worker 골격·A-05 재시도 | W2 | task-004, task-008 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
 | [task-011](task-011.md) | 추출·청킹·임베딩·색인 | W2 | task-009, task-010 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
@@ -35,6 +35,8 @@
 ## 발견한 문제 (범위 밖 — 나중 작업 후보)
 | 날짜 | 위치 | 내용 | 제안 |
 |---|---|---|---|
+| 2026-11-06 | task-008 등록 검증 | 매직 바이트 검사에 실패하거나 등록하지 않은 업로드 객체는 Storage에 남는다(사용자 UPDATE·DELETE 정책 없음) | 고아 객체 정리 배치를 task-019(소프트 삭제 정리)에 포함 |
+| 2026-11-06 | task-008 content_hash | 등록 시 content_hash는 클라이언트 값(중복 안내용). 신뢰 값은 아님 | Worker가 계산한 해시로 덮어쓰기(task-011) |
 
 ## 교훈 (다음 작업에 그대로 적용할 것만, 20줄 이내 유지)
 - 
