@@ -253,6 +253,9 @@ importers:
       pg:
         specifier: 8.23.1
         version: 8.23.1
+      unpdf:
+        specifier: 2.1.0
+        version: 2.1.0
     devDependencies:
       '@types/node':
         specifier: 26.6.6
@@ -3527,6 +3530,15 @@ packages:
   undici@8.12.3:
     resolution: {integrity: sha512-+fdndUTwBP86cVjihTp21hZHo7d6oj1c/47XPA3lL8mM0XHs+C4EkcjmgRsFnFk2f/UONGDy9ItBItmXsLOQHw==}
     engines: {node: '>=22.19.0'}
+
+  unpdf@2.1.0:
+    resolution: {integrity: sha512-G/Hsrm++g0EoubUhV8TDFItq6oQ+FUu9EMvIRtHUwseKXB0iJoCvaLvBGOpYUBqyvggv/XfxhYYtohL2QpE3xQ==}
+    engines: {node: '>=24'}
+    peerDependencies:
+      '@napi-rs/canvas': ^0.1.69 || ^1.0.0
+    peerDependenciesMeta:
+      '@napi-rs/canvas':
+        optional: true
 
   unrs-resolver@1.13.0:
     resolution: {integrity: sha512-mcPQo9Vm6kXd84d/WqMiYBi2CcA57QHBX/ev5PoUEb8b2oQzUvJ6xYsfseQblnCncgnVmCZGWiFwK7KkS5JZJA==}
@@ -7106,6 +7118,8 @@ snapshots:
   undici-types@8.9.0: {}
 
   undici@8.12.3: {}
+
+  unpdf@2.1.0: {}
 
   unrs-resolver@1.13.0:
     dependencies:

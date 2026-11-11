@@ -15,13 +15,17 @@ export interface LogFields {
   jobsPerMinute?: number;
   windowSeconds?: number;
   errorName?: string;
+  /** 자료 처리 통계(본문 없음) */
+  pages?: number;
+  skippedPages?: number;
+  chunks?: number;
 }
 
 export type Logger = (fields: LogFields) => void;
 
 const ALLOWED = new Set([
   "event", "jobId", "jobType", "attempt", "outcome", "reason", "workerId", "claimed", "succeeded",
-  "failed", "requeued", "stale", "jobsPerMinute", "windowSeconds", "errorName",
+  "failed", "requeued", "stale", "jobsPerMinute", "windowSeconds", "errorName", "pages", "skippedPages", "chunks",
 ]);
 
 export function sanitize(fields: LogFields): Record<string, string | number> {

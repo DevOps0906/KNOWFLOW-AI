@@ -9,6 +9,14 @@ export class PermanentError extends Error {
   }
 }
 
+/** 펜싱된 쓰기가 거부됐다(다른 시도가 작업을 가져감). 실패로 기록하지 않고 결과를 버린다. */
+export class StaleAttemptError extends Error {
+  constructor() {
+    super("stale_attempt");
+    this.name = "StaleAttemptError";
+  }
+}
+
 export interface HandlerContext {
   job: Job;
   /** 임대를 잃으면(다른 Worker가 가져감) 중단된다. 핸들러는 이 신호를 존중해야 한다. */
@@ -16,7 +24,17 @@ export interface HandlerContext {
   progress(step: string, percent: number): Promise<void>;
 }
 
-export type Handler = (ctx: HandlerContext) => Promise<void>;
+export interface HandlerResult {
+  /** 핸들러가 결과 저장과 같은 트랜잭션에서 작업을 이미 완료했다(runner는 complete를 부르지 않는다) */
+  completed?: boolean;
+  /**
+   * 완료 뒤 후행 단계(예: 프로젝트 요약). 실패해도 작업 결과를 바꾸지 않고 로그만 남긴다.
+   * 돌려준 문자열은 결과 표시(outcome)로 로그에 남긴다.
+   */
+  afterComplete?: () => Promise<string | void>;
+}
+
+export type Handler = (ctx: HandlerContext) => Promise<void | HandlerResult>;
 export type Handlers = Partial<Record<Job["job_type"], Handler>>;
 
 export interface RunnerDeps {
@@ -85,6 +103,8 @@ export async function runOnce(deps: RunnerDeps): Promise<RunOutcome> {
   }, deps.heartbeatSeconds * 1000);
   lost.signal.addEventListener("abort", () => clearInterval(heartbeat), { once: true });
 
+  let after: HandlerResult["afterComplete"];
+  let outcome: RunOutcome;
   try {
     const handler = deps.handlers[job.job_type];
     if (!handler) {
@@ -92,8 +112,9 @@ export async function runOnce(deps: RunnerDeps): Promise<RunOutcome> {
       log({ event: "job_finished", ...base, outcome: result, reason: "no_handler" });
       return result;
     }
+    let result: void | HandlerResult;
     try {
-      await handler({
+      result = await handler({
         job,
         signal: lost.signal,
         progress: async (step, percent) => {
@@ -102,28 +123,42 @@ export async function runOnce(deps: RunnerDeps): Promise<RunOutcome> {
         },
       });
     } catch (e) {
-      if (lost.signal.aborted) {
-        log({ event: "job_finished", ...base, outcome: "stale", reason: "lease_lost" });
+      if (lost.signal.aborted || e instanceof StaleAttemptError) {
+        log({ event: "job_finished", ...base, outcome: "stale", reason: lost.signal.aborted ? "lease_lost" : "fenced" });
         return "stale";
       }
       const permanent = e instanceof PermanentError;
       const code = permanent ? e.code : "handler_error";
-      const result = await queue.fail(job.id, attempt, code, !permanent);
-      log({ event: "job_finished", ...base, outcome: result, reason: code, errorName: e instanceof Error ? e.name : "unknown" });
-      return result;
+      const failed = await queue.fail(job.id, attempt, code, !permanent);
+      log({ event: "job_finished", ...base, outcome: failed, reason: code, errorName: e instanceof Error ? e.name : "unknown" });
+      return failed;
     }
-    if (lost.signal.aborted) {
+    if (result?.completed) {
+      // 핸들러가 펜싱된 트랜잭션으로 이미 완료했다. 그 뒤의 임대 상실 신호는 완료 때문에 생긴 것이다.
+      outcome = "succeeded";
+    } else if (lost.signal.aborted) {
       log({ event: "job_finished", ...base, outcome: "stale", reason: "lease_lost" });
       return "stale";
+    } else {
+      // 완료는 현재 시도의 소유자만 할 수 있다. false면 다른 시도가 가져갔으므로 결과를 버린다.
+      outcome = (await queue.complete(job.id, attempt)) ? "succeeded" : "stale";
     }
-    // 완료는 현재 시도의 소유자만 할 수 있다. false면 다른 시도가 가져갔으므로 결과를 버린다.
-    const done = await queue.complete(job.id, attempt);
-    const outcome: RunOutcome = done ? "succeeded" : "stale";
     log({ event: "job_finished", ...base, outcome });
-    return outcome;
+    if (outcome === "succeeded") after = result?.afterComplete;
   } finally {
     finished = true;
     clearInterval(heartbeat);
     clearTimeout(deadlineTimer);
   }
+
+  // 후행 단계는 작업이 끝난 뒤 하트비트 없이 돈다. 실패는 작업 결과를 바꾸지 않는다.
+  if (after) {
+    try {
+      const label = await after();
+      log({ event: "after_complete", ...base, outcome: label || "done" });
+    } catch (e) {
+      log({ event: "after_complete", ...base, outcome: "failed", errorName: e instanceof Error ? e.name : "unknown" });
+    }
+  }
+  return outcome;
 }

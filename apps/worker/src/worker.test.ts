@@ -3,7 +3,7 @@ import { loadConfig } from "./config.js";
 import { verifyDbIdentity } from "./db.js";
 import { sanitize } from "./log.js";
 import type { FailResult, Job, JobQueue } from "./queue.js";
-import { backoffMs, PermanentError, runOnce, type Handlers } from "./runner.js";
+import { backoffMs, PermanentError, runOnce, StaleAttemptError, type Handlers } from "./runner.js";
 
 const job: Job = {
   id: "j1",
@@ -211,6 +211,27 @@ describe("runOnce", () => {
     }
   });
 
+  it("핸들러가 이미 완료했으면(completed) complete를 부르지 않고, 후행 단계 실패는 결과를 바꾸지 않는다", async () => {
+    const q = fakeQueue();
+    const after = vi.fn(async () => {
+      throw new Error("요약 실패");
+    });
+    expect(await run(q, { source_ingest: async () => ({ completed: true, afterComplete: after }) })).toBe("succeeded");
+    expect(q.complete).not.toHaveBeenCalled();
+    expect(after).toHaveBeenCalledOnce();
+    expect(q.calls).toEqual([]);
+  });
+
+  it("펜싱 거부(StaleAttemptError)는 실패로 기록하지 않고 stale, 후행 단계도 돌지 않는다", async () => {
+    const q = fakeQueue();
+    expect(await run(q, { source_ingest: async () => { throw new StaleAttemptError(); } })).toBe("stale");
+    expect(q.calls).toEqual([]);
+    const after = vi.fn(async () => {});
+    const q2 = fakeQueue({ complete: vi.fn(async () => false) });
+    expect(await run(q2, { source_ingest: async () => ({ afterComplete: after }) })).toBe("stale");
+    expect(after).not.toHaveBeenCalled();
+  });
+
   it("진행률은 0~99로 제한해 전달한다", async () => {
     const q = fakeQueue();
     await run(q, { source_ingest: async ({ progress }) => { await progress("x", 250); await progress("y", -5); } });
@@ -264,6 +285,20 @@ describe("config · log", () => {
       expect(() => loadConfig({ DATABASE_URL: url, WORKER_DUMMY_HANDLERS: "1" })).toThrow(/DATABASE_URL 형식|더미 핸들러/);
     }
     expect(loadConfig({ DATABASE_URL: "postgres://u:p@db.abc.supabase.co:5432/k" }).dummyHandlers).toBe(false);
+  });
+  it("고정 파일 어댑터·스텁 요약은 로컬 DB에서만, 기본값은 storage·none", () => {
+    const local = "postgres://u:p@db:5432/k";
+    const remote = "postgres://u:p@db.abc.supabase.co:5432/k";
+    expect(loadConfig({ DATABASE_URL: remote })).toMatchObject({ sourceReader: "storage", fixtureDir: null, summaryProvider: "none" });
+    expect(loadConfig({ DATABASE_URL: local, WORKER_SOURCE_READER: "fixture", WORKER_FIXTURE_DIR: "/fixtures", WORKER_SUMMARY_PROVIDER: "stub" })).toMatchObject({
+      sourceReader: "fixture",
+      fixtureDir: "/fixtures",
+      summaryProvider: "stub",
+    });
+    expect(() => loadConfig({ DATABASE_URL: local, WORKER_SOURCE_READER: "fixture" })).toThrow(/WORKER_FIXTURE_DIR/);
+    expect(() => loadConfig({ DATABASE_URL: remote, WORKER_SOURCE_READER: "fixture", WORKER_FIXTURE_DIR: "/f" })).toThrow(/고정 파일 어댑터/);
+    expect(() => loadConfig({ DATABASE_URL: remote, WORKER_SUMMARY_PROVIDER: "stub" })).toThrow(/스텁 요약/);
+    expect(() => loadConfig({ DATABASE_URL: local, WORKER_SUMMARY_PROVIDER: "openai" })).toThrow(/WORKER_SUMMARY_PROVIDER/);
   });
   it("설정 오류 메시지에 연결 문자열이 들어가지 않는다", () => {
     try {

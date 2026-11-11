@@ -25,11 +25,11 @@
 - 질의응답·인용 생성, 골든셋 평가·모델 확정(task-013), 공급자 키를 코드에 직접 기재, 청크 본문 로그
 
 ## 완료 조건 (실행 가능한 확인)
-- [ ] `pnpm --filter worker test` 통과(샘플 PDF 2종, 스캔 PDF·500쪽 초과 failed+error_code 케이스 포함)
-- [ ] 테스트: 파싱 하위 프로세스 환경에 비밀 키 없음, 네트워크 시도 실패
-- [ ] 테스트: 같은 source 재처리 시 청크 중복 없음, 다른 임베딩 모델 청크 혼합 거부
-- [ ] 테스트: 하위 프로세스가 `/proc/1/environ` 읽기, db·프록시 접속에 실패
-- [ ] compose에서 고정 파일 어댑터로 queued→completed 종단 확인, 청크 locator.page 존재, projects.summary·suggested_questions 채워짐(스텁 공급자)
+- [x] `pnpm --filter worker test` 통과(샘플 PDF 2종, 스캔 PDF·500쪽 초과 failed+error_code 케이스 포함)
+- [x] 테스트: 파싱 하위 프로세스 환경에 비밀 키 없음, 네트워크 시도 실패
+- [x] 테스트: 같은 source 재처리 시 청크 중복 없음, 다른 임베딩 모델 청크 혼합 거부
+- [x] 테스트: 하위 프로세스가 `/proc/1/environ` 읽기, db·프록시 접속에 실패
+- [x] compose에서 고정 파일 어댑터로 queued→completed 종단 확인, 청크 locator.page 존재, projects.summary·suggested_questions 채워짐(스텁 공급자)
 
 ## 구현 결정 (2026-11-11 challenger 반영, 팀장 확정)
 쓰기 범위: `apps/worker/**`(egress-proxy 허용 목록 제외), `compose.yaml`(worker 핸들러 모드 변수화·mem_limit만), `apps/worker/package.json`·`pnpm-lock.yaml`(파서 의존성만), `supabase/migrations/20261111000400_*`(새 파일 1개), `packages/db-tests/**`.
@@ -50,3 +50,12 @@
 12. 사용 기록·단계: `current_step`·`progress` 갱신, `usage_events` 기록. 월 처리 차감은 하지 않는다. 청크 본문 로그 금지.
 
 완료 확인(실제 실행, q 사용): `pnpm --filter worker test`(샘플 PDF 2종·스캔·500쪽 초과·암호화·해시 불일치), `pnpm test:db`, `pnpm typecheck`, `secscan license`, Docker 안 `verify-parser-sandbox.mjs`, compose에서 고정 파일 어댑터로 queued→completed 종단 확인(청크 locator.page, projects.summary·suggested_questions 채워짐), 기존 `verify-egress.mjs` 회귀.
+
+### 1단계 결과·팀장 결정 (2026-11-12)
+- 파서 unpdf 2.1.0(MIT, 의존성 0). 공개 API `parsePdf(bytes, expectedHash, opts)` · `sha256Hex` (`apps/worker/src/pdf/`).
+- `isEvalSupported` 옵션은 unpdf 타입에 없어 빼고, V8 `--disallow-code-generation-from-strings`로 대체(승인: 더 아래 계층에서 막음, 테스트·Docker에서 EvalError 확인).
+- 스캔 임계값: 쪽당 유효 문자 10자·유효 비율 0.5·PUA 0.2, 텍스트 쪽 비율 0.3 미만이면 scanned. 한도 120초·512MB·출력 64MB. 소유자 암호만 있는 PDF는 정상 처리.
+- 호스트 Node가 24이면 `--allow-net`이 없어 fail-closed로 PDF 테스트가 실패한다 → 호스트 Node 26 필요(사용자 할 일).
+- `secscan license`는 lockfile 라이선스 정보가 없어 판정 불가. 팀장이 설치본 `node_modules/unpdf/package.json`(license MIT, dependencies 없음)과 LICENSE 파일(MIT)을 직접 확인해 승인(2026-11-12). secscan 도구 개선은 별도 과제.
+- 1단계 보안 리뷰 🟡(2단계 뒤 반영): 실행 전 입력 바이트 상한, `text.ts` 문자 계산을 배열 없는 순회로, 종료 signal 보존·OOM 판정 명확화, 심볼릭 링크 탈출 테스트.
+- 완료(2026-11-12): 리뷰 🟡 9건 반영. 팀장 재실행으로 worker 127(+1 Windows 건너뜀, 같은 확인은 Docker에서), db 105, typecheck·lint, verify-ingest·verify-parser-sandbox·verify-egress 통과. 남은 것: Storage 어댑터(실제 Supabase 준비 후), 로컬 모드 가드 강화(task-024), error_code 화면 문구 매핑(task-012), 입력 상한 50MB 상수 2곳(PARSER_LIMITS·SOURCE_MAX_BYTES) 유지.

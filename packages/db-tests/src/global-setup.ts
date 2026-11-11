@@ -29,6 +29,8 @@ function freePort(): Promise<number> {
   });
 }
 
+const UTF8_LOCALE = process.platform === "win32" ? "en-US" : process.platform === "darwin" ? "en_US.UTF-8" : "C.UTF-8";
+
 const RESET_SQL = `
 drop schema if exists public, auth, storage, extensions cascade;
 create schema public authorization pg_database_owner;
@@ -72,7 +74,9 @@ export default async function setup(project: TestProject) {
     password: "postgres",
     port,
     persistent: false,
-    initdbFlags: ["--encoding=UTF8", "--locale=C"],
+    // 한국어 pg_trgm(show_trgm)은 문자 분류(LC_CTYPE)가 C이면 한글 trigram을 만들지 않는다(운영 Supabase와 달라진다).
+    // Windows는 collate·ctype을 따로 줄 수 없어 locale 전체를 UTF-8 로캘로 둔다.
+    initdbFlags: ["--encoding=UTF8", `--locale=${UTF8_LOCALE}`],
     postgresFlags: ["-c", "max_connections=200"],
     onLog: () => {},
     onError: () => {},

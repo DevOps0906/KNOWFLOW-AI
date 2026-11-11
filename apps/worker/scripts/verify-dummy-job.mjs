@@ -3,7 +3,8 @@
 import { spawn } from "node:child_process";
 import { compose, bringUpDependencies, composeCapture, createVerifyEnv, repoRoot, tearDown } from "./compose-env.mjs";
 
-const env = createVerifyEnv("knowflow-verify-job", 54337);
+// 이 검증은 더미 핸들러로 상태 전이만 본다(실제 처리 종단은 verify-ingest.mjs)
+const env = { ...createVerifyEnv("knowflow-verify-job", 54337), WORKER_DUMMY_HANDLERS: "1" };
 
 function psql(sql) {
   const r = composeCapture(env, ["exec", "-T", "db", "psql", "-U", "postgres", "-d", "knowflow", "-X", "-At", "-v", "ON_ERROR_STOP=1"], sql);

@@ -25,7 +25,7 @@ try {
   refuseStart(e instanceof DbIdentityError ? e.code : "db_identity_check_failed", e);
 }
 const queue = createPgQueue(pool);
-const handlers = buildHandlers({ dummy: config.dummyHandlers });
+const handlers = buildHandlers(config, pool, log);
 
 let stopping = false;
 let wake: (() => void) | null = null;

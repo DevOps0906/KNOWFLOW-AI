@@ -11,11 +11,14 @@
     "test": "vitest run",
     "verify:egress": "node scripts/verify-egress.mjs",
     "verify:dummy-job": "node scripts/verify-dummy-job.mjs",
-    "verify:secrets": "node scripts/verify-secrets.mjs"
+    "verify:secrets": "node scripts/verify-secrets.mjs",
+    "verify:ingest": "node scripts/verify-ingest.mjs",
+    "verify:parser-sandbox": "node scripts/verify-parser-sandbox.mjs"
   },
   "dependencies": {
     "citations": "workspace:*",
-    "pg": "8.23.1"
+    "pg": "8.23.1",
+    "unpdf": "2.1.0"
   },
   "devDependencies": {
     "@types/node": "26.6.6",

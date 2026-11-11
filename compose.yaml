@@ -1,4 +1,5 @@
 # 로컬 전용(운영 배포 아님). 값은 .env 또는 셸 환경 변수로 준다: .env.example 참고.
+# 로컬 개발 전용: worker의 fixture 리더(WORKER_SOURCE_READER=fixture)·stub 요약(WORKER_SUMMARY_PROVIDER=stub)은 운영 배포에 쓰지 않는다.
 # 격리: worker는 internal 망에만 붙는다. 외부로 나가는 길은 이중 소속 egress-proxy뿐이다(프록시를 안 타면 실패).
 name: knowflow
 
@@ -92,7 +93,16 @@ services:
       # pg는 프록시를 탈 수 없어 내부망으로 직접 붙는다
       DATABASE_URL: postgres://knowflow_worker:${WORKER_DB_PASSWORD:?.env.example을 참고해 값을 지정하세요}@db:5432/knowflow
       WORKER_DB_ROLE: service_role
-      WORKER_DUMMY_HANDLERS: "1"
+      # 기본은 실제 핸들러. 더미(전이 검증용)는 WORKER_DUMMY_HANDLERS=1로 켠다(verify-dummy-job.mjs)
+      WORKER_DUMMY_HANDLERS: ${WORKER_DUMMY_HANDLERS:-0}
+      # 로컬 전용: 원본은 마운트한 픽스처 폴더에서 읽고, 요약은 스텁 공급자로 만든다(둘 다 로컬 DB에서만 허용)
+      WORKER_SOURCE_READER: ${WORKER_SOURCE_READER:-fixture}
+      WORKER_FIXTURE_DIR: /fixtures
+      WORKER_SUMMARY_PROVIDER: ${WORKER_SUMMARY_PROVIDER:-stub}
+    volumes:
+      - ./apps/worker/fixtures:/fixtures:ro
+    # 파서 하위 프로세스 힙 512MB(pdf/settings.ts) + Worker 본체
+    mem_limit: 1g
     stop_grace_period: 30s
     networks: [worker_internal]
 

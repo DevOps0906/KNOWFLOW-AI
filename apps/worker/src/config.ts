@@ -10,6 +10,11 @@ export interface WorkerConfig {
   shutdownGraceMs: number;
   metricsIntervalMs: number;
   dummyHandlers: boolean;
+  /** 원본 읽기 어댑터. fixture는 로컬 검증 전용(마운트한 폴더), storage는 미구현 */
+  sourceReader: "fixture" | "storage";
+  fixtureDir: string | null;
+  /** 후행 요약 공급자. stub은 로컬 검증 전용, none이면 요약하지 않는다 */
+  summaryProvider: "stub" | "none";
 }
 
 function int(env: NodeJS.ProcessEnv, name: string, fallback: number, min: number, max: number): number {
@@ -20,17 +25,25 @@ function int(env: NodeJS.ProcessEnv, name: string, fallback: number, min: number
   return n;
 }
 
+/** 허용 값 중 하나. 비어 있으면 첫 값(기본값) */
+function oneOf<const T extends readonly string[]>(env: NodeJS.ProcessEnv, name: string, values: T): T[number] {
+  const raw = env[name];
+  if (raw === undefined || raw === "") return values[0] as T[number];
+  if (!values.includes(raw)) throw new Error(`${name} 값은 ${values.join("·")} 중 하나여야 합니다`);
+  return raw as T[number];
+}
+
 const DUMMY_DB_HOSTS = new Set(["db", "localhost", "127.0.0.1", "[::1]"]);
 
-// 더미 핸들러는 작업을 실제로 처리하지 않고 succeeded로 닫으므로 로컬 DB에서만 허용한다
-function assertDummyAllowed(databaseUrl: string) {
+// 더미 핸들러·고정 파일 어댑터·스텁 요약은 실제 처리가 아니므로 로컬 DB에서만 허용한다
+function assertLocalDb(databaseUrl: string, what: string) {
   let host: string;
   try {
     host = new URL(databaseUrl).hostname.toLowerCase();
   } catch {
     throw new Error("DATABASE_URL 형식이 올바르지 않습니다");
   }
-  if (!DUMMY_DB_HOSTS.has(host)) throw new Error("더미 핸들러는 compose db·loopback DB에서만 쓸 수 있습니다");
+  if (!DUMMY_DB_HOSTS.has(host)) throw new Error(`${what}는 compose db·loopback DB에서만 쓸 수 있습니다`);
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): WorkerConfig {
@@ -42,7 +55,15 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): WorkerConfig {
   const heartbeatSeconds = int(env, "WORKER_HEARTBEAT_SECONDS", 30, 1, 1800);
   if (heartbeatSeconds * 2 > leaseSeconds) throw new Error("heartbeat 주기는 임대 시간의 절반 이하여야 합니다");
   const dummyHandlers = env.WORKER_DUMMY_HANDLERS === "1";
-  if (dummyHandlers) assertDummyAllowed(databaseUrl);
+  if (dummyHandlers) assertLocalDb(databaseUrl, "더미 핸들러");
+  const sourceReader = oneOf(env, "WORKER_SOURCE_READER", ["storage", "fixture"] as const);
+  const fixtureDir = env.WORKER_FIXTURE_DIR || null;
+  if (sourceReader === "fixture") {
+    assertLocalDb(databaseUrl, "고정 파일 어댑터");
+    if (!fixtureDir) throw new Error("WORKER_SOURCE_READER=fixture에는 WORKER_FIXTURE_DIR이 필요합니다");
+  }
+  const summaryProvider = oneOf(env, "WORKER_SUMMARY_PROVIDER", ["none", "stub"] as const);
+  if (summaryProvider === "stub") assertLocalDb(databaseUrl, "스텁 요약 공급자");
   return {
     databaseUrl,
     dbRole,
@@ -53,5 +74,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): WorkerConfig {
     shutdownGraceMs: int(env, "WORKER_SHUTDOWN_GRACE_MS", 25_000, 0, 600_000),
     metricsIntervalMs: int(env, "WORKER_METRICS_INTERVAL_MS", 30_000, 1000, 3_600_000),
     dummyHandlers,
+    sourceReader,
+    fixtureDir,
+    summaryProvider,
   };
 }
