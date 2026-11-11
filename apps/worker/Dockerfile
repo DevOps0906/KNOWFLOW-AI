@@ -4,7 +4,9 @@ WORKDIR /repo
 RUN npm install -g pnpm@12.16.1
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY apps/worker/package.json apps/worker/
+COPY packages/citations/package.json packages/citations/
 RUN pnpm install --frozen-lockfile --filter worker
+COPY packages/citations/src packages/citations/src
 COPY apps/worker/tsconfig.json apps/worker/tsconfig.build.json apps/worker/
 COPY apps/worker/src apps/worker/src
 RUN pnpm --filter worker build

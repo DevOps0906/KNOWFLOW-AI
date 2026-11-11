@@ -36,7 +36,7 @@
 | [task-029](task-029.md) | 영상 요약·장면 카드(L0)·S-10 플레이어 | WY | task-028, task-012, task-032 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
 | [task-030](task-030.md) | 사용자 승인 탭 캡처(L1) | WY | task-029, task-026 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
 | [task-031](task-031.md) | 랜딩 S-01 유튜브 문구 반영(예정 기능만) | WY | task-025 | 낮음 | builder | 대기 |
-| [task-032](task-032.md) | 유튜브 게이트 무관 기반(unavailable_at·packages/citations) | WY | task-010 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
+| [task-032](task-032.md) | 유튜브 게이트 무관 기반(unavailable_at·packages/citations) | WY | task-010 | 높음 | builder (+tester) · 착수 전 challenger | 완료 |
 
 상태: 대기 / 진행 / 완료 / 보류
 
