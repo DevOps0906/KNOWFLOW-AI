@@ -1,7 +1,7 @@
 # NOW — 재진입 스냅샷 (30줄 이내, 매 작업 끝에 덮어쓴다)
 
 - 갱신: 2026-11-11
-- 현재 작업: 없음(task-032까지 완료). 브랜치 `wip/task-004`(분리·푸시는 사용자 결정)
+- 현재 작업: task-025 진행. 측정 도구(`scripts/phase0-youtube`, 테스트 50건) 완료, 실측 대기(키를 `apps/web/.env.local`의 `GEMINI_API_KEY`에, 권리 있는 영상 10편·라벨, 판정 기준 승인은 `docs/youtube-phase0-result.md` 1장). API 키 설정 탭은 task-027 착수 때 결정으로 보류. 브랜치 `wip/task-004`(분리·푸시는 사용자 결정)
 - 마지막으로 한 일: task-032 `sources.unavailable_at`, 공유 패키지 `citations`(`verifyCitations`, 빌드 없는 ESM+d.ts). task-010 Worker 컨테이너·이그레스 프록시·A-05.
 - 검증: worker 83건, web 129건, citations 21건, `pnpm test:db` 93건, typecheck·lint 통과. Worker 이미지 안 import와 임시 import `next build` 1회 확인.
 - 미검증: 실제 Supabase 전반(Storage, `grant service_role to knowflow_worker`), 운영(Fly) 격리 방식(배포 전 결정), Codex 리뷰(사용 한도로 reviewer로 대체).

@@ -1,0 +1,5 @@
+# 실제 영상 목록·정답 라벨·원응답·측정 산출물은 커밋하지 않는다(전사 포함, 판정 후 삭제 대상).
+videos.json
+labels/
+responses/
+output/

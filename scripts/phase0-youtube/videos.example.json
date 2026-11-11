@@ -1,0 +1,20 @@
+[
+  {
+    "id": "sample-ko-01",
+    "url": "https://www.youtube.com/watch?v=AAAAAAAAAAA",
+    "language": "ko",
+    "rights_basis": "가짜 예시: 본인 채널 업로드 영상",
+    "duration_sec": 600,
+    "burned_in_subtitles": false,
+    "has_nonspeech": true
+  },
+  {
+    "id": "sample-en-01",
+    "url": "https://youtu.be/BBBBBBBBBBB",
+    "language": "en",
+    "rights_basis": "가짜 예시: CC BY 4.0, 출처 링크",
+    "duration_sec": 3000,
+    "burned_in_subtitles": true,
+    "has_nonspeech": false
+  }
+]

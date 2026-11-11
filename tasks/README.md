@@ -29,7 +29,7 @@
 | [task-022](task-022.md) | E2E F-01~F-05 + 반응형 캡처 | W5 | task-016, task-018, task-019, task-021, task-029 | 보통 | tester (+builder 시드) | 대기 |
 | [task-023](task-023.md) | 보안 L2 상향 점검 | W5 | task-020, task-022 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
 | [task-024](task-024.md) | 베타 배포(인프라 ADR·Worker 배포) | W5 | task-023 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
-| [task-025](task-025.md) | 유튜브 Phase 0 검증(미달 시 철회) | WY | task-010 | 높음 | builder (+사람 라벨) · 착수 전 challenger | 대기 |
+| [task-025](task-025.md) | 유튜브 Phase 0 검증(미달 시 철회) | WY | task-010 | 높음 | builder (+사람 라벨) · 착수 전 challenger | 진행 |
 | [task-026](task-026.md) | 법무 게이트(전사 저장·재제공, 프레임 저장) | WY | task-025 | 보통 | 사용자 · 팀장 | 대기 |
 | [task-027](task-027.md) | 유튜브 수집(URL 검증·Gemini 분석·시각 검증) | WY | task-010, task-026, task-032 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
 | [task-028](task-028.md) | 공용 청킹 연결(전사 구간 → task-011 파이프라인) | WY | task-027, task-011 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |

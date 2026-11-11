@@ -1,0 +1,22 @@
+{
+  "video_id": "sample-ko-01",
+  "fillers": "ignore",
+  "eval_windows": [{ "start": 60, "end": 180 }],
+  "segments": [
+    { "t_start": 62, "t_end": 68, "text": "가짜 예시 문장입니다. 2024년 매출은 3억 원이었습니다." },
+    { "t_start": 70, "t_end": 75, "text": "예시회사의 다음 계획을 설명합니다." }
+  ],
+  "numbers": [
+    { "segment": 0, "surface": "2024", "forms": ["2024", "이천이십사"] },
+    { "segment": 0, "surface": "3", "forms": ["3", "삼"] }
+  ],
+  "proper_nouns": [
+    { "segment": 1, "surface": "예시회사", "aliases": ["Example Co"] }
+  ],
+  "nonspeech": [
+    { "start": 200, "end": 260, "kind": "music" },
+    { "start": 300, "end": 345, "kind": "silence" },
+    { "start": 400, "end": 440, "kind": "lyrics" }
+  ],
+  "scenes": [{ "t": 72 }]
+}
