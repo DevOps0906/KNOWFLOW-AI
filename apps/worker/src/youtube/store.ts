@@ -62,3 +62,76 @@ export function createPgYoutubeStore(pool: Pick<Pool, "query" | "connect">): You
     },
   };
 }
+
+// ── 메타데이터 재확인(task-027d) ──
+
+/** 재확인 대상 자료. 삭제·비활성이면 Worker는 조회 없이 작업만 끝낸다 */
+export interface RecheckTarget {
+  video_id: string | null;
+  duration_seconds: number | null;
+  deleted: boolean;
+  unavailable: boolean;
+}
+
+/** apply_source_recheck 결과 형식. missing(결과 없음)은 DB가 2회 연속일 때만 비활성으로 확정한다 */
+export type RecheckResult =
+  | { kind: "available"; title: string; channel_title: string; duration_seconds: number }
+  | { kind: "unavailable" }
+  | { kind: "missing" };
+
+export interface SweepResult {
+  enqueued: number;
+  purged: number;
+  /** 지운 오래된 failed 재확인 작업 수 */
+  cleaned: number;
+  /** 24시간 넘게 queued인 재확인 작업 수 */
+  stale_queued: number;
+}
+
+export interface RecheckStore {
+  loadRecheckTarget(sourceId: string): Promise<RecheckTarget | null>;
+  /** 결과 반영 → complete_job을 한 트랜잭션에서. 펜싱에 걸리면 아무것도 바꾸지 않고 false. 형식 거부(22023)는 PermanentError */
+  applyRecheckAndComplete(jobId: string, attempt: number, result: RecheckResult): Promise<boolean>;
+  /** 파기 + 재확인 작업 생성(sweep_source_rechecks) */
+  sweep(limit: number): Promise<SweepResult>;
+}
+
+export function createPgRecheckStore(pool: Pick<Pool, "query" | "connect">): RecheckStore {
+  return {
+    async loadRecheckTarget(sourceId) {
+      const r = await pool.query<RecheckTarget>(
+        `select s.video_id, s.duration_seconds, (s.deleted_at is not null or p.deleted_at is not null) as deleted,
+                s.unavailable_at is not null as unavailable
+           from public.sources s join public.projects p on p.id = s.project_id
+          where s.id = $1`,
+        [sourceId],
+      );
+      return r.rows[0] ?? null;
+    },
+    async applyRecheckAndComplete(jobId, attempt, result) {
+      const client = await pool.connect();
+      try {
+        await client.query("begin");
+        const step = async (sql: string, params: unknown[]) => (await client.query<{ ok: boolean }>(sql, params)).rows[0]?.ok === true;
+        let ok = await step("select public.apply_source_recheck($1, $2, $3::jsonb) as ok", [jobId, attempt, JSON.stringify(result)]);
+        if (ok) ok = await step("select public.complete_job($1, $2) as ok", [jobId, attempt]);
+        if (!ok) {
+          await client.query("rollback");
+          return false;
+        }
+        await client.query("commit");
+        return true;
+      } catch (e) {
+        await client.query("rollback").catch(() => {});
+        if ((e as { code?: string }).code === "22023") throw new PermanentError(YOUTUBE_ERROR_CODES.invalidRecheckResult);
+        throw e;
+      } finally {
+        client.release();
+      }
+    },
+    async sweep(limit) {
+      const r = await pool.query<{ r: SweepResult }>("select public.sweep_source_rechecks($1) as r", [limit]);
+      return r.rows[0]!.r;
+    },
+  };
+}

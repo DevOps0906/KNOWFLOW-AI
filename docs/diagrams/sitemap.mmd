@@ -24,6 +24,9 @@ flowchart LR
     n_S_10["S-10 문서 뷰어<br/>/sources/[sourceId]"]
     n_S_12["S-12 리포트<br/>/reports/[reportId]"]
   end
+  subgraph g4["로그인(제안, ADR-0007 #2)"]
+    n_S_18["S-18 앱 설치<br/>/download"]
+  end
   n_S_01 --> n_S_02
   n_S_01 --> n_S_03
   n_S_01 --> n_S_16
@@ -43,6 +46,7 @@ flowchart LR
   n_S_06 --> n_S_08
   n_S_06 --> n_S_11
   n_S_06 --> n_S_13
+  n_S_06 --> n_S_18
   n_S_07 --> n_S_08
   n_S_08 --> n_S_09
   n_S_08 --> n_S_10
@@ -63,3 +67,5 @@ flowchart LR
   n_S_16 --> n_S_01
   n_S_17 --> n_S_16
   n_S_17 --> n_S_01
+  n_S_18 --> n_S_06
+  n_S_18 --> n_S_02

@@ -105,6 +105,10 @@ services:
       YOUTUBE_ANALYZER: ${YOUTUBE_ANALYZER:-stub}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       GEMINI_MODEL: ${GEMINI_MODEL:-}
+      # 메타데이터 재확인(task-027d): 기본은 스텁 videos.list. 실제 호출은 YOUTUBE_METADATA_PROVIDER=youtube일 때만,
+      # 키는 Worker 전용 YOUTUBE_WORKER_API_KEY(웹의 YOUTUBE_API_KEY와 별개)를 셸 환경 변수로만 넘긴다
+      YOUTUBE_METADATA_PROVIDER: ${YOUTUBE_METADATA_PROVIDER:-stub}
+      YOUTUBE_WORKER_API_KEY: ${YOUTUBE_WORKER_API_KEY:-}
     volumes:
       - ./apps/worker/fixtures:/fixtures:ro
     # 파서 하위 프로세스 힙 512MB(pdf/settings.ts) + Worker 본체

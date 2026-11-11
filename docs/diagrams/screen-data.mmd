@@ -17,6 +17,7 @@ flowchart LR
     n_S_15["S-15 오류"]
     n_S_16["S-16 이용약관"]
     n_S_17["S-17 개인정보처리방침"]
+    n_S_18["S-18 앱 설치"]
   end
   subgraph AP["API"]
     n_api_A_01["A-01 POST /api/auth/signup · login · logout · reset-password · update-password"]
@@ -45,6 +46,7 @@ flowchart LR
     n_t_sources[("sources")]
     n_t_usage_events[("usage_events")]
     n_t_user_quotas[("user_quotas")]
+    n_t_배포_목록_정적_매니페스트_[("배포 목록(정적 매니페스트)")]
   end
   n_S_02 --> n_api_A_01
   n_S_02 -.-> n_t_profiles
@@ -94,3 +96,4 @@ flowchart LR
   n_S_13 -.-> n_t_usage_events
   n_S_13 -.-> n_t_plans
   n_S_13 -.-> n_t_user_quotas
+  n_S_18 -.-> n_t_배포_목록_정적_매니페스트_

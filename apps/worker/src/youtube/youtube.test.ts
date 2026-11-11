@@ -561,7 +561,10 @@ function fakePool(failOn?: string) {
 }
 
 describe("buildHandlers · pg 유튜브 저장소", () => {
-  const base = { dummyHandlers: false, sourceReader: "storage", fixtureDir: null, summaryProvider: "none", youtubeAnalyzer: "stub", geminiApiKey: null, geminiModel: "gemini-test" } as const;
+  const base = {
+    dummyHandlers: false, sourceReader: "storage", fixtureDir: null, summaryProvider: "none", youtubeAnalyzer: "stub", geminiApiKey: null, geminiModel: "gemini-test",
+    youtubeMetadataProvider: "stub", youtubeWorkerApiKey: null,
+  } as const;
 
   it("플래그 꺼짐: 유튜브 처리를 등록하지 않아 youtube_disabled로 영구 실패", async () => {
     const { pool } = fakePool();
@@ -604,7 +607,12 @@ describe("config · 유튜브 플래그", () => {
       expect((e as Error).message).toMatch(/GEMINI_API_KEY/);
       expect((e as Error).message).not.toContain("bad key");
     }
-    expect(loadConfig({ DATABASE_URL: REMOTE, YOUTUBE_ENABLED: "1", YOUTUBE_ANALYZER: "gemini", GEMINI_API_KEY: "AIza-ok" })).toMatchObject({
+    // 운영은 재확인용 videos.list도 실제 공급자(027d)여야 한다
+    expect(() => loadConfig({ DATABASE_URL: REMOTE, YOUTUBE_ENABLED: "1", YOUTUBE_ANALYZER: "gemini", GEMINI_API_KEY: "AIza-ok" })).toThrow(/스텁 메타데이터/);
+    expect(loadConfig({
+      DATABASE_URL: REMOTE, YOUTUBE_ENABLED: "1", YOUTUBE_ANALYZER: "gemini", GEMINI_API_KEY: "AIza-ok",
+      YOUTUBE_METADATA_PROVIDER: "youtube", YOUTUBE_WORKER_API_KEY: "AIza-worker",
+    })).toMatchObject({
       youtubeEnabled: true,
       youtubeAnalyzer: "gemini",
       geminiApiKey: "AIza-ok",

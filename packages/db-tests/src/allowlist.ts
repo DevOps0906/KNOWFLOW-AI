@@ -5,6 +5,8 @@ export const AUTHENTICATED_EXECUTE = [
   "consume_auth_rate_limit",
   "create_project",
   "delete_project",
+  "delete_sources",
+  "get_source_chunks",
   "list_project_jobs",
   "register_pdf_source",
   "retry_source",
@@ -17,6 +19,7 @@ export const ANON_EXECUTE = ["consume_auth_rate_limit"];
 
 /** service_role(Worker)이 EXECUTE 할 수 있는 public 함수 */
 export const SERVICE_ROLE_EXECUTE = [
+  "apply_source_recheck",
   "claim_job",
   "complete_job",
   "fail_job",
@@ -26,6 +29,7 @@ export const SERVICE_ROLE_EXECUTE = [
   "register_youtube_source",
   "replace_source_chunks",
   "replace_source_moments",
+  "sweep_source_rechecks",
 ];
 
 /** authenticated가 SELECT 할 수 있는 public 테이블 (source_chunks·idempotency_keys는 없음) */

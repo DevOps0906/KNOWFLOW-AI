@@ -92,7 +92,7 @@
 | 활성화 게이트 | 스키마·RPC의 `youtube` 분기는 새 마이그레이션으로 먼저 넣는다(2026-11-12 사용자 결정). 등록 RPC는 service_role 전용이고, 기능 플래그가 꺼져 있으면 웹이 등록을 거부한다. 플래그는 task-025 통과·task-026 판정 뒤에만 켠다 |
 | 컬럼 | `source_type='youtube'`이면 `original_url`·`video_id` 필수, `storage_path`·`content_hash`는 null(CHECK). `title`·`channel_title`·`duration_seconds`는 `videos.list` 값. 다른 유형은 유튜브 컬럼 null |
 | 중복 | (project_id, video_id) 부분 유니크(`video_id` not null, `deleted_at` null) |
-| 재확인 | Worker 일일 스윕이 `metadata_checked_at`이 30일 지난 영상마다 `source_recheck` 작업 1건을 만든다(`source_id` 필수 CHECK 유지). 사용자 쿼터 미차감 |
-| 비활성 | `unavailable_at`은 `sources.status`·`deleted_at`과 별개다. 설정 즉시 검색·인용 제외. 소프트 삭제 30일 유예와 합치지 않는다. `title` NOT NULL과 API 데이터 30일 내 파기의 충돌 처리는 **팀장 결정 필요** |
+| 재확인 | Worker 일일 스윕(`sweep_source_rechecks`, 배치 상한)이 `metadata_checked_at`이 21일 지난 영상마다 `source_recheck` 작업 1건을 만든다(`source_id` 필수, 진행 중이거나 20시간 안에 만든 재확인 작업이 있으면 건너뜀). 사용자 쿼터·`sources.status` 불변, 사용자 작업보다 뒤에 회수, 작업 목록(`list_project_jobs`)에 보이지 않음. 3일 안에 실패한 재확인이 있는 자료는 배치 뒤로, 끝난 지 7일 지난 failed 재확인 작업은 정리, 24시간 넘게 queued면 Worker 경고. 비활성 판정은 `private`·업로드 `deleted`/`rejected`는 즉시, 결과 없음은 2회 연속일 때만(`recheck_missing_count`, 정상 응답이면 0)이고 `unlisted`는 아님. 쿼터 초과(403 quota·429)·장애·길이 해석 불가는 판정 불가로 재시도, 요청 거절(400·401·키 권한 403)은 영구 실패. 파기는 마지막 확인 29일 지남·비활성·삭제 자료: `title` 고정 문구, `channel_title`·`duration_seconds` null(`video_seconds_charged` 유지), 비활성 판정 시 즉시 |
+| 비활성 | `unavailable_at`은 `sources.status`·`deleted_at`과 별개다. 설정 즉시 검색·인용 제외. 소프트 삭제 30일 유예와 합치지 않는다. `title` NOT NULL과 API 데이터 파기는 title을 고정 문구로 바꾸고 `channel_title`·`duration_seconds`를 null로 해결(2026-11-12 팀장 결정, 기간은 아래 재확인 행) |
 | 장면 카드 인용 | `source_moments`와 구간이 겹치는 청크가 있어야 리포트에 넣는다. `report_citations.chunk_id`에는 그 청크를 쓰고 카드 사본은 넣지 않는다 |
 | 캡처 저장 | L0는 이미지를 저장하지 않는다. L1은 법무 확인 후 새 마이그레이션으로 `source_moments`에 Storage 경로를 추가한다(경로·서명 URL 규칙은 2장, 초기값은 [검토 4장](youtube-mvp-review.md#4-중요-장면-캡처)). L2는 이후 |

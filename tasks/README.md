@@ -16,7 +16,7 @@
 | [task-009](task-009.md) | URL 가져오기(SSRF 방어) | W2 | task-010, task-029 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
 | [task-010](task-010.md) | 작업 큐(테이블 폴링)·Worker 골격·A-05 재시도 | W2 | task-004, task-008 | 높음 | builder (+tester) · 착수 전 challenger | 완료 |
 | [task-011](task-011.md) | 추출·청킹·임베딩·색인 | W2 | task-010 | 높음 | builder (+tester) · 착수 전 challenger | 완료 |
-| [task-012](task-012.md) | 자료 목록·원문 뷰어 S-08 · S-10 · A-03 · A-07 | W2 | task-007, task-011, task-032 | 높음 | builder (+tester) · 착수 전 challenger | 진행 |
+| [task-012](task-012.md) | 자료 목록·원문 뷰어 S-08 · S-10 · A-03 · A-07 | W2 | task-007, task-011, task-032 | 높음 | builder (+tester) · 착수 전 challenger | 완료 |
 | [task-013](task-013.md) | 골든셋 30~50문항 + 평가(임베딩·청킹 확정, 벡터 컬럼·저장 연결) | W3 | task-011 | 보통 | builder (+tester) | 대기 |
 | [task-014](task-014.md) | 하이브리드 검색 함수(project_id 강제) | W3 | task-013, task-032 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
 | [task-015](task-015.md) | 질의응답 A-06(인용 검증) | W3 | task-014, task-032 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |

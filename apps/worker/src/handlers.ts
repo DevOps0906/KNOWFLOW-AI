@@ -8,7 +8,9 @@ import type { Logger } from "./log.js";
 import type { Handler, Handlers } from "./runner.js";
 import { createStubVideoAnalyzer, type VideoAnalyzer } from "./youtube/analyzer.js";
 import { createGeminiVideoAnalyzer } from "./youtube/gemini.js";
-import { createPgYoutubeStore } from "./youtube/store.js";
+import { createStubMetadataProvider, createYoutubeDataApiProvider } from "./youtube/metadata.js";
+import { createRecheckHandler } from "./youtube/recheck.js";
+import { createPgRecheckStore, createPgYoutubeStore } from "./youtube/store.js";
 
 // 더미 핸들러는 기동·전이 검증용이다(WORKER_DUMMY_HANDLERS=1, 로컬 DB 전용).
 export const dummyHandler: Handler = async ({ progress, signal }) => {
@@ -20,7 +22,16 @@ export const dummyHandler: Handler = async ({ progress, signal }) => {
 export function buildHandlers(
   config: Pick<
     WorkerConfig,
-    "dummyHandlers" | "sourceReader" | "fixtureDir" | "summaryProvider" | "youtubeEnabled" | "youtubeAnalyzer" | "geminiApiKey" | "geminiModel"
+    | "dummyHandlers"
+    | "sourceReader"
+    | "fixtureDir"
+    | "summaryProvider"
+    | "youtubeEnabled"
+    | "youtubeAnalyzer"
+    | "geminiApiKey"
+    | "geminiModel"
+    | "youtubeMetadataProvider"
+    | "youtubeWorkerApiKey"
   >,
   db: Pick<pg.Pool, "query" | "connect">,
   log?: Logger,
@@ -36,7 +47,7 @@ export function buildHandlers(
         ? createGeminiVideoAnalyzer({ apiKey: config.geminiApiKey ?? "", model: config.geminiModel })
         : createStubVideoAnalyzer();
   }
-  return {
+  const handlers: Handlers = {
     source_ingest: createIngestHandler({
       store: createPgIngestStore(db),
       reader,
@@ -45,4 +56,13 @@ export function buildHandlers(
       log,
     }),
   };
+  // 메타데이터 재확인(027d)도 플래그가 켜졌을 때만 등록한다(꺼져 있으면 들어온 재확인 작업은 no_handler로 닫힌다).
+  if (config.youtubeEnabled) {
+    const provider =
+      config.youtubeMetadataProvider === "youtube"
+        ? createYoutubeDataApiProvider({ apiKey: config.youtubeWorkerApiKey ?? "" })
+        : createStubMetadataProvider();
+    handlers.source_recheck = createRecheckHandler({ provider, store: createPgRecheckStore(db), log });
+  }
+  return handlers;
 }

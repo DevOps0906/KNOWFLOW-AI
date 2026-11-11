@@ -53,6 +53,10 @@
   /* ── 크기 ── */
   --size-touch: 2.75rem; /* 터치 최소 영역 44px: 겉모습은 그대로, ::after로 히트 영역만 넓힌다 */
   --size-chat: 22.5rem; /* 태블릿 채팅 열 폭 */
+  --size-sheet: min(24rem, 88vw); /* 옆 시트 폭(S-08 자료 목록) */
+  --size-sheet-max-h: 85dvh; /* 하단 시트 최대 높이(S-08 모바일 채팅) */
+  --grid-workspace-tablet: minmax(0, 1fr) var(--size-chat); /* S-08 태블릿 2단: 요약·원문 | 채팅 */
+  --grid-workspace-desk: minmax(0, 6fr) minmax(0, 9fr) minmax(0, 5fr); /* S-08 데스크톱 3단 30:45:25 */
   --container-reading: 40rem; /* 리포트 본문 최대 폭 (max-w-reading) */
   --leading-reading: 1.95; /* 세리프 읽기 영역 줄 간격 (leading-reading) */
 

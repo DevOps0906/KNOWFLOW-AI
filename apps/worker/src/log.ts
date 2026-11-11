@@ -24,6 +24,13 @@ export interface LogFields {
   droppedSegments?: number;
   droppedScenes?: number;
   moments?: number;
+  /** 유튜브 재확인 통계(숫자만, 제목·채널명 없음): 저장돼 있던 길이·실제 길이(초), 스윕이 만든 작업 수·파기한 자료 수 */
+  previousDurationSeconds?: number;
+  durationSeconds?: number;
+  enqueued?: number;
+  purged?: number;
+  cleaned?: number;
+  staleQueued?: number;
 }
 
 export type Logger = (fields: LogFields) => void;
@@ -31,7 +38,8 @@ export type Logger = (fields: LogFields) => void;
 const ALLOWED = new Set([
   "event", "jobId", "jobType", "attempt", "outcome", "reason", "workerId", "claimed", "succeeded",
   "failed", "requeued", "stale", "jobsPerMinute", "windowSeconds", "errorName", "pages", "skippedPages", "chunks",
-  "windows", "droppedSegments", "droppedScenes", "moments",
+  "windows", "droppedSegments", "droppedScenes", "moments", "previousDurationSeconds", "durationSeconds", "enqueued", "purged", "cleaned",
+  "staleQueued",
 ]);
 
 export function sanitize(fields: LogFields): Record<string, string | number> {

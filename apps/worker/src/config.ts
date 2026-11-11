@@ -1,3 +1,4 @@
+import { createRequire } from "node:module";
 import { GEMINI_SETTINGS } from "./youtube/settings.js";
 
 // 환경 변수 → 설정. DATABASE_URL 등 비밀 값은 로그에 남기지 않는다(log.ts는 허용 필드만 출력).
@@ -24,6 +25,10 @@ export interface WorkerConfig {
   /** Worker 전용 Gemini 키. 로그에 남기지 않는다. 플래그 꺼짐·스텁이면 null */
   geminiApiKey: string | null;
   geminiModel: string;
+  /** 재확인용 videos.list 공급자(YOUTUBE_METADATA_PROVIDER). stub은 로컬 검증 전용, youtube는 명시적으로 고를 때만 */
+  youtubeMetadataProvider: "stub" | "youtube";
+  /** Worker 전용 YouTube Data API 키(YOUTUBE_WORKER_API_KEY, 웹 키와 별개). 로그에 남기지 않는다. 플래그 꺼짐·스텁이면 null */
+  youtubeWorkerApiKey: string | null;
 }
 
 function int(env: NodeJS.ProcessEnv, name: string, fallback: number, min: number, max: number): number {
@@ -42,17 +47,36 @@ function oneOf<const T extends readonly string[]>(env: NodeJS.ProcessEnv, name: 
   return raw as T[number];
 }
 
-const DUMMY_DB_HOSTS = new Set(["db", "localhost", "127.0.0.1", "[::1]"]);
+const DUMMY_DB_HOSTS = new Set(["db", "localhost", "127.0.0.1", "::1", "[::1]"]);
 
-// 더미 핸들러·고정 파일 어댑터·스텁 요약·스텁 영상 분석기는 실제 처리가 아니므로 로컬 DB에서만 허용한다
-function assertLocalDb(databaseUrl: string, what: string) {
-  let host: string;
+// pg가 실제로 쓰는 해석기(새 의존성 없음): ConnectionParameters는 pg 공개 경로(pg/lib/*), pg-connection-string은 pg 기준으로 해석한다
+const require = createRequire(import.meta.url);
+const ConnectionParameters = require("pg/lib/connection-parameters.js") as new (config: { connectionString: string }) => { host?: unknown };
+const { parse: parsePgUrl } = createRequire(require.resolve("pg"))("pg-connection-string") as {
+  parse: (url: string) => Record<string, unknown>;
+};
+
+/**
+ * pg가 이 연결 문자열로 실제 접속할 대상이 모두 로컬 허용 목록일 때만 true.
+ * 사용자 정보 뒤 호스트·쿼리 host 파라미터·환경 변수 기본값(PGHOST)은 pg 해석 결과로, hostaddr은 있으면 함께 본다.
+ * 여러 호스트·유닉스 소켓(경로)은 로컬로 보지 않는다(운영 프록시 소켓일 수 있다).
+ */
+export function isLocalDbUrl(databaseUrl: string): boolean {
+  let host: unknown;
+  let hostaddr: unknown;
   try {
-    host = new URL(databaseUrl).hostname.toLowerCase();
+    host = new ConnectionParameters({ connectionString: databaseUrl }).host;
+    hostaddr = parsePgUrl(databaseUrl).hostaddr;
   } catch {
-    throw new Error("DATABASE_URL 형식이 올바르지 않습니다");
+    return false;
   }
-  if (!DUMMY_DB_HOSTS.has(host)) throw new Error(`${what}는 compose db·loopback DB에서만 쓸 수 있습니다`);
+  const targets = [host, ...(hostaddr === undefined ? [] : [hostaddr])];
+  return targets.every((t) => typeof t === "string" && DUMMY_DB_HOSTS.has(t.toLowerCase()));
+}
+
+// 더미 핸들러·고정 파일 어댑터·스텁 요약·스텁 영상 분석기·스텁 메타데이터 공급자는 실제 처리가 아니므로 로컬 DB에서만 허용한다
+function assertLocalDb(databaseUrl: string, what: string) {
+  if (!isLocalDbUrl(databaseUrl)) throw new Error(`${what}는 compose db·loopback DB에서만 쓸 수 있습니다`);
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): WorkerConfig {
@@ -85,6 +109,15 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): WorkerConfig {
     // 헤더에 그대로 실리므로 출력 가능한 ASCII만 허용한다(값은 메시지에 넣지 않는다)
     if (!/^[\x21-\x7e]{1,256}$/.test(geminiApiKey)) throw new Error("YOUTUBE_ANALYZER=gemini에는 올바른 GEMINI_API_KEY가 필요합니다");
   }
+  const youtubeMetadataProvider = oneOf(env, "YOUTUBE_METADATA_PROVIDER", ["stub", "youtube"] as const);
+  let youtubeWorkerApiKey: string | null = null;
+  if (youtubeEnabled && youtubeMetadataProvider === "stub") assertLocalDb(databaseUrl, "스텁 메타데이터 공급자");
+  if (youtubeEnabled && youtubeMetadataProvider === "youtube") {
+    youtubeWorkerApiKey = env.YOUTUBE_WORKER_API_KEY ?? "";
+    if (!/^[\x21-\x7e]{1,256}$/.test(youtubeWorkerApiKey)) {
+      throw new Error("YOUTUBE_METADATA_PROVIDER=youtube에는 올바른 YOUTUBE_WORKER_API_KEY가 필요합니다");
+    }
+  }
   return {
     databaseUrl,
     dbRole,
@@ -102,5 +135,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): WorkerConfig {
     youtubeAnalyzer,
     geminiApiKey,
     geminiModel,
+    youtubeMetadataProvider,
+    youtubeWorkerApiKey,
   };
 }

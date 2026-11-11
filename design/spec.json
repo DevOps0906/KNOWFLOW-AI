@@ -1,12 +1,12 @@
 {
  "version": "1",
- "generated": "2026-11-11T18:03:11+00:00",
+ "generated": "2026-11-11T19:46:07+00:00",
  "docs": "docs",
  "tokens": ".\\apps\\web\\src\\styles\\tokens.css",
  "sources": {
-  "docs/03_SCREENS_UX.md": "1b1dd05560f2",
-  "docs/04_API.md": "2431cf4fbfe3",
-  "docs/05_DATA_MODEL.md": "a70159b74e2f",
+  "docs/03_SCREENS_UX.md": "16df05dafa74",
+  "docs/04_API.md": "2262ea9b16bd",
+  "docs/05_DATA_MODEL.md": "0137855addf1",
   "docs/blueprints/auth-rbac/api.md": "32da9e8c7094",
   "docs/blueprints/auth-rbac/data.md": "25c60991cbd5",
   "docs/blueprints/auth-rbac/screens.md": "c3605370cf92",
@@ -26,7 +26,9 @@
  "changed": [
   "S-06",
   "S-08",
-  "S-09"
+  "S-09",
+  "S-10",
+  "S-18"
  ],
  "removed": [],
  "screens": {
@@ -429,6 +431,14 @@
      "items": [
       "리포트"
      ]
+    },
+    {
+     "type": "card",
+     "label": "앱 설치(감지한 OS용 다운로드 버튼·\"웹으로 계속 사용\" 선택)",
+     "items": [
+      "앱 설치(감지한 OS용 다운로드 버튼",
+      "\"웹으로 계속 사용\" 선택)"
+     ]
     }
    ],
    "data": [
@@ -446,7 +456,8 @@
     "S-07",
     "S-08",
     "S-11",
-    "S-13"
+    "S-13",
+    "S-18"
    ],
    "states_combined": "",
    "source": "docs/03_SCREENS_UX.md",
@@ -458,7 +469,7 @@
     "저장된 보기·열 설정"
    ],
    "states_missing": [],
-   "hash": "b96f7db537e2",
+   "hash": "0c48d1214120",
    "wireframe": "design/wireframes/S-06.html"
   },
   "S-07": {
@@ -672,7 +683,7 @@
     "활동·변경 이력"
    ],
    "states_missing": [],
-   "hash": "777934840fbd",
+   "hash": "6ebfcd71d59f",
    "wireframe": "design/wireframes/S-08.html"
   },
   "S-09": {
@@ -753,7 +764,7 @@
     "임시 저장(긴 폼)"
    ],
    "states_missing": [],
-   "hash": "c80b8679924e",
+   "hash": "624bdf54af65",
    "wireframe": "design/wireframes/S-09.html"
   },
   "S-10": {
@@ -878,7 +889,7 @@
     "활동·변경 이력"
    ],
    "states_missing": [],
-   "hash": "a41c7f0da200",
+   "hash": "cf0c78844941",
    "wireframe": "design/wireframes/S-10.html"
   },
   "S-11": {
@@ -1336,6 +1347,82 @@
    "states_missing": [],
    "hash": "39a517626a37",
    "wireframe": "design/wireframes/S-17.html"
+  },
+  "S-18": {
+   "id": "S-18",
+   "name": "앱 설치",
+   "type_raw": "상세",
+   "route": "/download",
+   "purpose": "내 기기용 설치 파일 받기",
+   "blocks": [
+    {
+     "type": "header",
+     "label": "",
+     "items": []
+    },
+    {
+     "type": "breadcrumb",
+     "label": "",
+     "items": []
+    },
+    {
+     "type": "card",
+     "label": "추천(감지한 OS·버튼·버전·크기·SHA-256)",
+     "items": [
+      "추천(감지한 OS",
+      "버튼",
+      "버전",
+      "크기",
+      "SHA-256)"
+     ]
+    },
+    {
+     "type": "list",
+     "label": "전체 파일(Android·Windows·macOS)",
+     "items": [
+      "전체 파일(Android",
+      "Windows",
+      "macOS)"
+     ]
+    },
+    {
+     "type": "text",
+     "label": "설치 안내·인터넷 연결 필요",
+     "items": [
+      "설치 안내",
+      "인터넷 연결 필요"
+     ]
+    },
+    {
+     "type": "link",
+     "label": "웹으로 계속 사용",
+     "items": [
+      "웹으로 계속 사용"
+     ]
+    }
+   ],
+   "data": [
+    "배포 목록(정적 매니페스트)"
+   ],
+   "api": [],
+   "role": "로그인(제안, ADR-0007 #2)",
+   "next": [
+    "S-06",
+    "S-02"
+   ],
+   "states_combined": "",
+   "source": "docs/03_SCREENS_UX.md",
+   "type": "detail",
+   "must_missing": [
+    "주요 작업 버튼"
+   ],
+   "should_missing": [
+    "관련 항목 탭",
+    "활동·변경 이력"
+   ],
+   "states_missing": [],
+   "hash": "575d25ff80ec",
+   "wireframe": "design/wireframes/S-18.html"
   }
  },
  "states": {
@@ -1440,6 +1527,12 @@
    "로딩": "—",
    "오류": "—",
    "성공": "—"
+  },
+  "S-18": {
+   "빈": "배포된 파일 없음 안내 + 웹으로 계속 사용. 비로그인 접근은 S-02로 이동 후 복귀. 비서명 베타면 경고 문구(SmartScreen·Gatekeeper) 표시",
+   "로딩": "목록 스켈레톤",
+   "오류": "목록 불러오기 실패 + 다시 시도, 지원하지 않는 OS(iOS 등) 안내",
+   "성공": "다운로드 시작 + 설치 안내"
   }
  },
  "flows": {
@@ -1503,6 +1596,18 @@
     "S-12"
    ],
    "source": "docs/03_SCREENS_UX.md"
+  },
+  "F-06": {
+   "id": "F-06",
+   "name": "앱 설치 (비로그인 접근은 S-02 로그인 후 S-18 복귀)",
+   "steps": [
+    "S-06",
+    "S-18",
+    "파일 다운로드·설치",
+    "앱 첫 실행(S-02 로그인)",
+    "S-06"
+   ],
+   "source": "docs/03_SCREENS_UX.md"
   }
  },
  "apis": {
@@ -1545,9 +1650,9 @@
     "메서드": "GET · PATCH · DELETE",
     "경로": "/api/projects/[projectId]",
     "입력": "(PATCH) 이름·설명·보관 / (DELETE) —",
-    "출력": "프로젝트 + 자료 목록(유형·처리 상태·오류 코드·`unavailable_at`) + 요약·추천 질문 / 변경 결과 / 삭제 결과(소프트 삭제 `deleted_at`, 30일 뒤 자료·청크·대화·리포트 영구 삭제 — [05#5](05_DATA_MODEL.md)). 요약·추천 질문은 자료 completed 시 Worker가 생성해 `projects.summary`·`suggested_questions`에 저장",
+    "출력": "(GET, snake_case) `{project:{id·name·description·status(active·archived)·summary·suggested_questions·created_at·updated_at}, sources:[{id·project_id·source_type·title·status·error_code·error_message(화면 문구)·unavailable_at·original_url·video_id·channel_title·duration_seconds·created_at·updated_at·latest_job:{id·status·retryable}|null}]}`. 보관(archived) 프로젝트도 200. latest_job은 자료별 최신 `source_ingest` 작업(재확인 작업 제외), `retryable=false`면 재시도 버튼 숨김. 삭제된 자료는 목록에서 빠짐 / 변경 결과 / 삭제 결과(소프트 삭제 `deleted_at`, 30일 뒤 자료·청크·대화·리포트 영구 삭제 — [05#5](05_DATA_MODEL.md)). 요약·추천 질문은 자료 completed 시 Worker가 생성해 `projects.summary`·`suggested_questions`에 저장",
     "권한": "소유자",
-    "오류": "401 · 404 · 409 처리 중 작업 있음(삭제) · 422"
+    "오류": "401 · 404 · 409 처리 중 작업 있음(프로젝트 삭제만) · 422"
    },
    "source": "docs/04_API.md"
   },
@@ -1559,10 +1664,10 @@
     "ID": "A-04",
     "메서드": "POST · DELETE",
     "경로": "/api/projects/[projectId]/sources",
-    "입력": "(POST) source_type, (pdf) 서명 업로드 URL 발급 → 브라우저가 Storage로 직접 업로드 → 등록 요청(파일별 멱등 키) 또는 (url) URL 또는 (youtube) 영상 1건 URL(호스트 `youtube.com`·`www.youtube.com`·`m.youtube.com`·`youtu.be`만. 웹 서버가 `video_id`를 뽑아 `videos.list`로 동기 검사) / (DELETE) source id 목록",
-    "출력": "서명 업로드 URL / 자료 id·작업 id(202, status=queued) / 삭제 결과(소프트 삭제 `deleted_at`, 영구 삭제는 30일 뒤)",
+    "입력": "(POST) source_type, (pdf) 서명 업로드 URL 발급 → 브라우저가 Storage로 직접 업로드 → 등록 요청(파일별 멱등 키) 또는 (url) URL 또는 (youtube) 영상 1건 URL(호스트 `youtube.com`·`www.youtube.com`·`m.youtube.com`·`youtu.be`만. 웹 서버가 `video_id`를 뽑아 `videos.list`로 동기 검사) / (DELETE) JSON 본문 `{source_ids: uuid[]}`(1~100개)",
+    "출력": "서명 업로드 URL / 자료 id·작업 id(202, status=queued) / (DELETE) `{ok:true, deleted:n}`(n=이번에 새로 지운 수). 소프트 삭제 `deleted_at`, 영구 삭제는 30일 뒤. 하나라도 타인·없는 id면 전체 404(프로젝트·자료 원인 구분 없음), 본인이 이미 지운 id는 성공(멱등). 진행 중 작업이 있어도 삭제하고 Worker가 `source_deleted`로 닫는다(프로젝트 삭제의 409와 다름)",
     "권한": "소유자",
-    "오류": "401 · 404 · 409 같은 content_hash 또는 (project_id, video_id) 자료 있음·같은 멱등 키 다른 입력 · 413 크기 초과 · 415 PDF 아님 · 422 source_type 미지원(\"지원 예정\")·URL 형식/차단 주소(SSRF)·유튜브 거절(허용 외 호스트, 재생목록·채널 URL, 비공개·미등록, 임베드 불가, 연령·지역 제한, 라이브, 어린이용(`madeForKids`), 길이 초과) · 429 자료 수 한도·월 영상 시간 한도·분당 10회 · 502 `videos.list` 장애(판정 불가, 등록 안 함) · 503 유튜브 신규 수집 중단(Gemini Preview 종료·차단). 500쪽 초과·스캔 PDF는 등록 후 Worker가 job failed + error_code로 판정(A-05에서 확인)"
+    "오류": "400 (DELETE) 본문 형식·Origin · 401 · 404 · 409 (POST) 같은 content_hash 또는 (project_id, video_id) 자료 있음·같은 멱등 키 다른 입력 · 413 크기 초과 · 415 PDF 아님 · 422 source_type 미지원(\"지원 예정\")·URL 형식/차단 주소(SSRF)·유튜브 거절(허용 외 호스트, 재생목록·채널 URL, 비공개·미등록, 임베드 불가, 연령·지역 제한, 라이브, 어린이용(`madeForKids`), 길이 초과) · 429 자료 수 한도·월 영상 시간 한도·분당 10회 · 502 `videos.list` 장애(판정 불가, 등록 안 함) · 503 유튜브 신규 수집 중단(Gemini Preview 종료·차단). 500쪽 초과·스캔 PDF는 등록 후 Worker가 job failed + error_code로 판정(A-05에서 확인)"
    },
    "source": "docs/04_API.md"
   },
@@ -1604,10 +1709,10 @@
     "ID": "A-07",
     "메서드": "GET",
     "경로": "/api/sources/[sourceId] · /api/sources/[sourceId]/chunks · /api/sources/[sourceId]/moments",
-    "입력": "(선택) chunk_id, 커서",
-    "출력": "자료 메타(유튜브는 video_id·channel_title·original_url·`unavailable_at` 포함) + 원문 청크(chunk_index·content·locator) / 장면 카드(id·locator·title·description·리포트 인용 가능 여부). 비활성 자료는 메타만",
+    "입력": "(chunks) `cursor`(마지막 chunk_index) · `limit` 1~100(기본 50) · `chunk_id`(그 청크 앞뒤 창, cursor와 함께 쓰지 않음)",
+    "출력": "(메타) `{source:{…A-03 sources 항목과 같은 필드, latest_job 제외}}` — 처리 상태와 무관하게 200 / (chunks) `{items:[{id·chunk_index·content·locator}], next_cursor, has_before, around:\"found\"|\"not_found\"|null, unavailable}`. chunk_id를 못 찾으면(재처리로 바뀜·형식 오류) 처음부터 + `around=\"not_found\"`. 비활성 자료는 `items` 0건 + `unavailable=true` / 장면 카드(id·locator·title·description·리포트 인용 가능 여부)",
     "권한": "소유자(자료의 project 소유)",
-    "오류": "401 · 404 · 409 아직 completed 아님"
+    "오류": "400 (chunks) 질의 형식 · 401 · 404 타인·없는·삭제된 자료·프로젝트 · 409 `source_not_ready` 아직 completed 아님(/chunks만)"
    },
    "source": "docs/04_API.md"
   },
@@ -1908,6 +2013,21 @@
    "🟡",
    "S-17",
    "개인정보처리방침 권장: 관련 항목 탭, 활동·변경 이력"
+  ],
+  [
+   "🔴",
+   "S-18",
+   "앱 설치(상세) 필수 빠짐: 주요 작업 버튼"
+  ],
+  [
+   "🟡",
+   "S-18",
+   "앱 설치 권장: 관련 항목 탭, 활동·변경 이력"
+  ],
+  [
+   "🟡",
+   "S-18",
+   "데이터 '배포 목록(정적 매니페스트)' — 05_DATA_MODEL 표에 없음"
   ],
   [
    "ℹ️",

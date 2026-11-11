@@ -34,6 +34,23 @@ export const GEMINI_SETTINGS = {
   maxResponseBytes: 8 * 1024 * 1024,
 } as const;
 
+/**
+ * 메타데이터 재확인(task-027d, 05#8). 재확인·파기 기간(21일·29일)은 DB 함수 sweep_source_rechecks가 정한다.
+ * 키는 env YOUTUBE_WORKER_API_KEY로만 받는다(config.ts, 웹의 YOUTUBE_API_KEY와 별개).
+ */
+export const RECHECK_SETTINGS = {
+  /** 스윕 주기(기동 직후 1회 + 이후 하루마다). 같은 자료는 DB가 20시간 안에 다시 만들지 않는다 */
+  sweepIntervalMs: 24 * 60 * 60 * 1000,
+  /** 스윕 한 번에 만드는 재확인 작업 상한(sweep_source_rechecks 1~1000) */
+  sweepBatchLimit: 200,
+  apiUrl: "https://www.googleapis.com/youtube/v3/videos",
+  requestTimeoutMs: 10_000,
+  /** 응답 본문 상한(바이트). 영상 1개 조회라 작다. 넘으면 판정 불가(재시도) */
+  maxResponseBytes: 256 * 1024,
+  /** 제목·채널명 길이 상한(sources CHECK 300자) */
+  maxTextChars: 300,
+} as const;
+
 /** 유튜브 처리 실패 코드(고정) */
 export const YOUTUBE_ERROR_CODES = {
   /** 플래그(YOUTUBE_ENABLED)가 꺼진 Worker가 유튜브 작업을 받음 */
@@ -51,6 +68,10 @@ export const YOUTUBE_ERROR_CODES = {
   responseTooLarge: "analysis_response_too_large",
   /** replace_source_moments가 장면 형식을 거부(22023) */
   invalidMoments: "invalid_moments",
+  /** apply_source_recheck가 재확인 결과 형식을 거부(22023) */
+  invalidRecheckResult: "invalid_recheck_result",
+  /** videos.list가 요청을 거절(400·401·키 권한 403 등, 재시도 없음) */
+  recheckRequestRejected: "recheck_request_rejected",
 } as const;
 
 export const canonicalVideoUrl = (videoId: string) => `https://www.youtube.com/watch?v=${videoId}`;

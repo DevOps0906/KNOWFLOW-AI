@@ -1,7 +1,7 @@
 # NOW — 재진입 스냅샷 (30줄 이내, 매 작업 끝에 덮어쓴다)
 
 - 갱신: 2026-11-12
-- 현재 작업: 없음. 다음은 task-012 자료 목록·원문 뷰어 S-08·S-10·A-03·A-07(위험 높음 → 착수 전 challenger). S-10은 task-029 영상 플레이어·장면 카드의 바탕. 브랜치 `wip/task-004`(분리·푸시는 사용자 결정)
+- 현재 작업: 병렬 진행 — 027d(builder), 012a 완료(리뷰 중: reviewer·codex), 012b S-08·대시보드(builder), 012c S-10(builder), 설치형 앱 기획(planner: ADR-0007·task-033~035). 2026-11-12 사용자 결정: Android(Capacitor)·Windows/macOS(Tauri), 배포된 웹을 띄우는 원격 셸 먼저, 구현은 task-024 뒤. 브랜치 `wip/task-004`
 - 우선순위(2026-11-12 사용자 결정): 유튜브 구현 최우선 027 → 028 → 012 → 029 → 030. 기능 플래그 `YOUTUBE_ENABLED` 기본 꺼짐, 활성화는 task-025 통과·task-026 판정 뒤(ADR-0006 결정 2).
 - 마지막으로 한 일: task-027 027a~c + task-028 커밋 43d2f72. task-011 커밋 0cfb2c8. 결정·RPC 계약 정본은 `tasks/task-027.md` "구현 결정".
 - 검증: worker 157(+1), web 207, db 131, typecheck·lint, Docker verify-youtube·ingest·parser-sandbox·egress 통과(Node 26.13.0, 호스트는 24라 스크래치 Node 사용).

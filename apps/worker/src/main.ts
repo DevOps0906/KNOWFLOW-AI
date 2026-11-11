@@ -4,6 +4,9 @@ import { buildHandlers } from "./handlers.js";
 import { log } from "./log.js";
 import { createPgQueue } from "./queue.js";
 import { backoffMs, runOnce, type RunOutcome } from "./runner.js";
+import { runRecheckSweep } from "./youtube/recheck.js";
+import { RECHECK_SETTINGS } from "./youtube/settings.js";
+import { createPgRecheckStore } from "./youtube/store.js";
 
 function refuseStart(reason: string, e?: unknown): never {
   log({ event: "startup_refused", reason, errorName: e instanceof Error ? e.name : undefined });
@@ -55,6 +58,23 @@ const metrics = setInterval(() => {
   windowStart = Date.now();
 }, config.metricsIntervalMs);
 metrics.unref();
+
+// 유튜브 메타데이터 일일 스윕(027d): 플래그가 켜졌을 때만. 기동 직후 1회, 이후 하루마다. 겹쳐 돌지 않게 하나씩만.
+let sweep: NodeJS.Timeout | undefined;
+if (config.youtubeEnabled) {
+  const recheckStore = createPgRecheckStore(pool);
+  let sweeping = false;
+  const runSweep = () => {
+    if (sweeping || stopping) return;
+    sweeping = true;
+    void runRecheckSweep(recheckStore, log).finally(() => {
+      sweeping = false;
+    });
+  };
+  runSweep();
+  sweep = setInterval(runSweep, RECHECK_SETTINGS.sweepIntervalMs);
+  sweep.unref();
+}
 
 function sleep(ms: number) {
   // 처리 중에 종료 신호를 받았으면 wake가 이미 지나갔으므로 대기에 들어가지 않는다
@@ -110,5 +130,6 @@ process.on("SIGINT", () => shutdown("SIGINT"));
 
 await loop();
 clearInterval(metrics);
+clearInterval(sweep);
 await pool.end();
 log({ event: "worker_stopped", workerId: config.workerId });

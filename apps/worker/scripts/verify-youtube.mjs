@@ -1,6 +1,8 @@
 // task-027c·028 종단 검증: compose의 worker(실제 핸들러·스텁 영상 분석기·스텁 요약)가 유튜브 자료를 queued→completed로 처리하는지 확인한다.
 // 확인: 긴 영상 분할(3구간), 청크 locator t_start/t_end, source_moments, usage_events, 같은 영상 재처리 시 청크·장면 중복 없음,
-// 플래그 꺼짐이면 유튜브 작업이 재시도 없이 youtube_disabled로 실패, 로그에 전사 본문·비밀 없음. Gemini 실호출 없음.
+// 플래그 꺼짐이면 유튜브 작업이 재시도 없이 youtube_disabled로 실패(재확인 스윕도 없음), 로그에 전사 본문·비밀 없음. Gemini 실호출 없음.
+// 재확인(027d): 플래그 켜진 Worker가 기동 스윕으로 21일 지난 자료의 source_recheck 작업을 만들고 스텁 videos.list로 길이를 갱신
+// (자료 상태·쿼터 불변, 로그는 숫자만). YouTube Data API 실호출 없음.
 // 실행: node apps/worker/scripts/verify-youtube.mjs (docker 데몬 필요)
 import { spawn } from "node:child_process";
 import { bringUpDependencies, compose, composeCapture, createVerifyEnv, repoRoot, tearDown } from "./compose-env.mjs";
@@ -11,8 +13,10 @@ const base = {
   WORKER_SOURCE_READER: "fixture",
   WORKER_SUMMARY_PROVIDER: "stub",
   YOUTUBE_ANALYZER: "stub",
+  YOUTUBE_METADATA_PROVIDER: "stub",
   // 셸에 키가 있어도 이 검증에는 넘기지 않는다
   GEMINI_API_KEY: "",
+  YOUTUBE_WORKER_API_KEY: "",
 };
 const env = { ...base, YOUTUBE_ENABLED: "1" };
 const VIDEO_ID = "verifyYT_01";
@@ -120,6 +124,10 @@ try {
   await stopWorker(env, attached);
   collectLogs(env);
 
+  // 재확인 대상으로 만든다(마지막 확인 22일 전). 플래그 꺼짐 Worker는 스윕하지 않아야 한다
+  psql(`update public.sources set metadata_checked_at = now() - interval '22 days' where id = '${sourceId}'`);
+  const recheckCount = () => psql(`select count(*) from public.processing_jobs where source_id = '${sourceId}' and job_type = 'source_recheck'`);
+
   // 플래그 꺼짐: 유튜브 처리를 등록하지 않으므로 들어온 작업은 재시도 없이 영구 실패
   const offEnv = { ...base, YOUTUBE_ENABLED: "0" };
   attached = startWorker(offEnv);
@@ -128,11 +136,33 @@ try {
   const [code3, attempts3] = psql(`select coalesce(error_code, '') || '|' || attempt_count from public.processing_jobs where id = '${job3}'`).split("|");
   check(status3 === "failed" && code3 === "youtube_disabled" && attempts3 === "1", "[플래그 꺼짐] youtube_disabled로 재시도 없이 실패", `status=${status3}, error_code=${code3}, 시도 ${attempts3}`);
   check(chunkStats(sourceId)[0] === n && momentStats(sourceId)[0] === m, "[플래그 꺼짐] 기존 청크·장면은 그대로");
+  check(recheckCount() === "0", "[플래그 꺼짐] 재확인 스윕 없음");
   await stopWorker(offEnv, attached);
   collectLogs(offEnv);
 
-  console.log(allLogs.split("\n").filter((l) => /job_finished|youtube_analyzed|after_complete/.test(l)).join("\n"));
-  check(!/스텁 전사|스텁 장면|스텁 분석기가 만든/.test(allLogs), "[로그] 전사·장면 본문 없음");
+  // 재확인: 플래그 켜진 Worker의 기동 스윕 → source_recheck → 스텁 videos.list(600초)로 길이 갱신
+  const quotaOf = () => psql(`select s.status || '|' || q.used_source_jobs || '|' || q.used_video_seconds || '|' || coalesce(s.video_seconds_charged, -1)
+                                from public.sources s left join public.user_quotas q on q.user_id = s.user_id where s.id = '${sourceId}'`);
+  const beforeRecheck = quotaOf();
+  attached = startWorker(env);
+  let recheckJob = "";
+  for (let i = 0; i < 60 && !recheckJob; i++) {
+    recheckJob = psql(`select coalesce(max(id::text), '') from public.processing_jobs where source_id = '${sourceId}' and job_type = 'source_recheck'`);
+    if (!recheckJob) await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+  const status4 = recheckJob ? await waitForJob(recheckJob) : "missing";
+  check(status4 === "succeeded" && recheckCount() === "1", "[재확인] 기동 스윕이 source_recheck 1건을 만들고 성공", `status=${status4}`);
+  const [dur4, fresh4, unavailable4] = psql(`select duration_seconds || '|' || (metadata_checked_at > now() - interval '5 minutes') || '|' || (unavailable_at is null)
+                                               from public.sources where id = '${sourceId}'`).split("|");
+  check(dur4 === "600" && fresh4 === "true" && unavailable4 === "true", "[재확인] 실제 길이로 갱신·확인 시각 갱신·비활성 아님", `${DURATION}→${dur4}초`);
+  check(quotaOf() === beforeRecheck, "[재확인] 자료 상태·쿼터·차감 영상 시간 불변", `${beforeRecheck} → ${quotaOf()}`);
+  await stopWorker(env, attached);
+  collectLogs(env);
+  check(/"event":"recheck_duration_changed"[^\n]*"previousDurationSeconds":2500,"durationSeconds":600/.test(allLogs), "[재확인] 길이 변경 로그(숫자만)");
+  check(/"event":"recheck_sweep"[^\n]*"enqueued":1/.test(allLogs), "[재확인] 스윕 로그(작업 수)");
+
+  console.log(allLogs.split("\n").filter((l) => /job_finished|youtube_analyzed|after_complete|recheck_/.test(l)).join("\n"));
+  check(!/스텁 전사|스텁 장면|스텁 분석기가 만든|스텁 영상|스텁 채널/.test(allLogs), "[로그] 전사·장면 본문·영상 제목·채널명 없음");
   check(![env.KF_DB_SUPERUSER_PASSWORD, env.WORKER_DB_PASSWORD].some((s) => allLogs.includes(s)), "[로그] DB 비밀번호 없음");
 } finally {
   tearDown(env);

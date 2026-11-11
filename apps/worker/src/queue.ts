@@ -5,7 +5,7 @@ export interface Job {
   user_id: string;
   source_id: string | null;
   report_id: string | null;
-  job_type: "source_ingest" | "report_generate";
+  job_type: "source_ingest" | "report_generate" | "source_recheck";
   attempt_count: number;
   max_attempts: number;
 }
