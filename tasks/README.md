@@ -33,7 +33,7 @@
 | [task-026](task-026.md) | 법무 게이트(전사 저장·재제공, 프레임 저장) | WY | task-025 | 보통 | 사용자 · 팀장 | 대기 |
 | [task-027](task-027.md) | 유튜브 수집(URL 검증·Gemini 분석·시각 검증) | WY | task-010, task-032 (활성화: 025·026 뒤) | 높음 | builder (+tester) · 착수 전 challenger | 진행 |
 | [task-028](task-028.md) | 공용 청킹 연결(전사 구간 → task-011 파이프라인) | WY | task-027, task-011 | 높음 | builder (+tester) · 착수 전 challenger | 완료 |
-| [task-029](task-029.md) | 영상 요약·장면 카드(L0)·S-10 플레이어 | WY | task-028, task-012, task-032 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
+| [task-029](task-029.md) | 영상 요약·장면 카드(L0)·S-10 플레이어 | WY | task-028, task-012, task-032 | 높음 | builder (+tester) · 착수 전 challenger | 진행 |
 | [task-030](task-030.md) | 사용자 승인 탭 캡처(L1) | WY | task-029 (활성화: 026 뒤) | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
 | [task-031](task-031.md) | 랜딩 S-01 유튜브 문구 반영(예정 기능만) | WY | task-025 | 낮음 | builder | 대기 |
 | [task-032](task-032.md) | 유튜브 게이트 무관 기반(unavailable_at·packages/citations) | WY | task-010 | 높음 | builder (+tester) · 착수 전 challenger | 완료 |

@@ -1,7 +1,7 @@
 # NOW — 재진입 스냅샷 (30줄 이내, 매 작업 끝에 덮어쓴다)
 
 - 갱신: 2026-11-12
-- 현재 작업: task-029 영상 요약·장면 카드(L0)·S-10 플레이어 착수 전(challenger). 착수 전 결정: 영상 단위 요약 저장 위치(05 :64), 권리자 삭제 요청 창구(youtube-mvp-review #8-3). 브랜치 `wip/task-004`
+- 현재 작업: task-029 진행 중(세션 종료로 중단). 029a(요약 DB·Worker)·029c(약관·권리자 처리) 일부 구현이 **미검증이라 커밋하지 않고 로컬 stash에 보관**: `git stash list`의 "task-029 진행 중(미검증)" → 재개 시 `git stash pop` 후 각 완료 조건(tasks/task-029.md "구현 결정")을 처음부터 검증. 029b(플레이어·장면 카드)는 미착수. 권리자 이메일·약관 공개 여부는 MVP 완성 단계에서 결정(사용자). 브랜치 `wip/task-004`
 - 우선순위(사용자 결정): W2·WY 계속 → 029 → 030 → W3. 유튜브 플래그 `YOUTUBE_ENABLED` 기본 꺼짐, 활성화는 task-025 통과·task-026 판정 뒤. 설치형 앱(WA, task-033~035)은 task-024 뒤.
 - 최근 커밋: 4c3687e(task-012 완료·027d), 41e4893(설치형 앱 기획 ADR-0007), 43d2f72(027a~c·028), 0cfb2c8(011).
 - 검증: web 276, worker 183(+1), db 165, typecheck·lint, Docker verify-youtube·ingest·egress·parser-sandbox(Node 26.13.0, 스크래치 Node).
