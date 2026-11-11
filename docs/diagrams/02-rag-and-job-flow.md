@@ -23,7 +23,18 @@ flowchart LR
   emb -->|실패| fail
   fail --> retry["재시도<br/>attempt_count 관리"]
   retry --> job
+  yin["유튜브 URL<br/>공개 영상 1건"] --> ysync["A-04 동기 검사<br/>video_id 추출 · videos.list"]
+  ysync -->|거절 사유별 안내| rej
+  ysync -->|통과| ydup["중복 판정<br/>project_id, video_id"]
+  ydup --> job
+  job -->|youtube| ygem["analyze_video · Gemini<br/>공개 영상 URL 전달<br/>전사 구간 · 장면 후보만 수신"]
+  ygem --> yts["verify_timestamps · 시각 검증<br/>0 ≤ t < 영상 길이 · 구간 순서 · 중복<br/>위반 구간은 버리고 로그"]
+  yts --> ymom["save_moments<br/>장면 카드 source_moments"]
+  ymom --> norm
+  ygem -->|"실패 · 일시 오류만 재시도"| fail
 ```
+
+유튜브 자료는 원본 저장·해시 계산 없이 다른 선행 단계를 탄다: [05#4](../05_DATA_MODEL.md), [검토 5장](../youtube-mvp-review.md#5-처리-설계).
 
 ## 2. 자료 처리 상태 전이
 
@@ -45,6 +56,8 @@ stateDiagram-v2
 | processing | 처리 중 | 진행 표시 | 현재 단계를 보여준다 |
 | completed | 완료 | 완료 배지(success) | 질문과 리포트에 사용 가능 |
 | failed | 실패 | 오류 배지(error) + 원인 + 재시도 | 스캔 PDF(OCR 필요)는 MVP에서 미지원 안내 (제안) |
+
+유튜브 비활성은 상태값이 아니라 `sources.unavailable_at`이다([05#8](../05_DATA_MODEL.md)).
 
 ## 3. 질의응답 흐름 (인용 검증 포함)
 
@@ -97,6 +110,8 @@ sequenceDiagram
 | source_title | 자료 제목 | 저장된 값 사용 |
 | page_number | 페이지 | 실제 확보된 경우만. 없으면 비워 두고 임의 생성 금지 |
 | 인용 범위 | 인용 가능한 원문 텍스트 범위 | 원문 클릭 시 위치 표시 |
+| t_start · t_end | 유튜브 시각(초) | `locator` 값만. 클릭 시 그 시각부터 재생. 없으면 임의 생성 금지 |
+| AI 전사 표시 | 유튜브 청크는 모델 출력 | 코드 검증은 청크 실재만 확인하므로 화면에 "AI 전사"로 표시([검토 5장](../youtube-mvp-review.md#5-처리-설계)) |
 
 ## 5. 품질 기준 (v1.1 제안)
 

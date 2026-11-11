@@ -10,3 +10,4 @@
 - 주의: DB 테스트는 임베디드 Postgres 또는 loopback `TEST_DATABASE_URL`에서만(`DB_TESTS_ALLOW_RESET=1`). 원격 DB 변경 금지. 기존 마이그레이션 수정 금지. `apps/worker/`는 untracked(로그·캐시뿐)라 커밋하지 않는다.
 - SDLC 단계: 06 구현 (W2)
 - 다음 작업: task-010 작업 큐·Worker 골격
+- 기획 변경(2026-11-11, 미커밋): 유튜브 요약·중요 장면 캡처 최우선. `docs/adr/0006-*`(채택)·`docs/youtube-mvp-review.md`·task-025~032 신설, 03·04·05·다이어그램 반영. 권장 순서 010 → 032 → 025 Phase 0 → 026 법무 게이트 → 027 수집. 세부 미정은 검토 문서 8장. 전사·프레임 저장 법무 확인 전 유튜브 수집 구현 금지

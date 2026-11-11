@@ -2,14 +2,16 @@ flowchart LR
   subgraph mvp ["MVP"]
     pdf_v["pdf · validate"] --> pdf_e["extract_text"]
     url_v["url · validate (SSRF · 리디렉션 검사)"] --> url_f["fetch"] --> url_e["extract_text"]
+    yt_v["youtube · A-04 동기 검사 (videos.list)"] --> yt_a["analyze_video (Gemini)"] --> yt_t["verify_timestamps"] --> yt_m["save_moments"]
   end
   subgraph later ["추후 (점선)"]
     img_v["image · 스캔 PDF · validate"] -.-> img_o["ocr"]
-    av_v["audio · video · youtube · validate"] -.-> av_x["추출 (선택)"] -.-> av_t["transcribe"]
+    av_v["audio · video · validate"] -.-> av_x["추출 (선택)"] -.-> av_t["transcribe"]
     dtp_v["docx · pptx · text · validate"] -.-> dtp_e["extract_text"]
   end
   pdf_e --> norm["정규화"]
   url_e --> norm
+  yt_m --> norm
   img_o -.-> norm
   av_t -.-> norm
   dtp_e -.-> norm

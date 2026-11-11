@@ -3,7 +3,7 @@
 | 항목 | 내용 |
 |---|---|
 | 웨이브 | W2 |
-| 선행 | task-009, task-010 |
+| 선행 | task-010 (유튜브 전사는 task-028이 연결. task-009가 유튜브 뒤로 이동해 URL 본문 추출은 task-009 완료 뒤 연결) |
 | 위험도 | 높음 |
 | 보안 영향 | 민감 데이터 · 키·권한 (악성 PDF, AI 공급자 키, 비신뢰 텍스트) |
 | 담당 | builder (+ tester). 착수 전 challenger |
@@ -18,7 +18,7 @@
 - 벡터 컬럼은 task-013 마이그레이션 전에는 없음: 이 작업은 청크·content_tsv 색인까지 구현하고 벡터 저장은 인터페이스·목으로 검증(실제 저장 연결은 task-013)
 - 색인: content_tsv, pg_trgm 키워드 검색; 완료 시 sources.status=completed
 - 프로젝트 첫 자료 완료 시 `projects.summary`·`suggested_questions` 생성(자료 본문은 데이터로만 취급)
-- 단계(current_step)·progress 갱신, 사용 기록(usage_events), 월 자료 처리 100건은 `consume_quota`
+- 단계(current_step)·progress 갱신, 사용 기록(usage_events), 월 자료 처리 100건은 등록 시 `enqueue_job`이 차감(Worker 추가 차감 금지)
 
 ## 하지 않을 것
 - 질의응답·인용 생성, 골든셋 평가·모델 확정(task-013), 공급자 키를 코드에 직접 기재, 청크 본문 로그

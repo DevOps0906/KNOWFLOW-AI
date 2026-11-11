@@ -29,14 +29,21 @@ th{color:var(--color-text-muted,#5b6270)}.skel{display:inline-block;height:10px;
 .ok{color:var(--color-success,#1f9d55)}.no{color:var(--color-danger,#d64545);font-weight:600}.muted{color:var(--color-text-muted,#5b6270)}
 </style></head><body>
 <script>if(location.search.indexOf('dark')>=0)document.documentElement.classList.add('dark')</script>
-<div class="meta"><b>S-10</b><span>상세</span><span>/sources/[sourceId]</span><span>권한: 로그인(소유자)</span><span>인용된 원문 위치 확인(진입 규칙: ?chunk=&lt;chunk_id&gt;)</span><a href="index.html">전체 화면</a></div>
+<div class="meta"><b>S-10</b><span>상세</span><span>/sources/[sourceId]</span><span>권한: 로그인(소유자)</span><span>인용된 원문 위치 확인·영상 요약과 장면 재생(진입 규칙: ?chunk=&lt;chunk_id&gt;. 유튜브는 청크 locator.t_start부터 재생)</span><a href="index.html">전체 화면</a></div>
 <div class="shell"><div><header class="hd"><h1>문서 뷰어</h1><nav></nav><span class="burger" aria-label="메뉴"></span></header><main>
 
 <div class="lab">홈 › 현재 위치</div>
 <div class="box"><div class="lab">text</div>원문(인용 위치 강조)</div>
+<div class="grid wide"><div class="box"><b>임베드 플레이어(유튜브 자료만</b><p class="muted"><span class="skel"></span></p></div><div class="box"><b>공식 플레이어)</b><p class="muted"><span class="skel"></span></p></div></div>
+<div class="box"><div class="lab">text</div>채널명·원본 링크·AI 전사 표시</div>
+<div class="grid wide"><div class="box"><b>영상 요약(문장별 mm:ss 인용→그 시각 재생)</b><p class="muted"><span class="skel"></span></p></div></div>
+<div class="box"><div class="lab">전사 구간(mm:ss)</div><div class="card"><span class="skel"></span></div><div class="card"><span class="skel"></span></div><div class="card"><span class="skel"></span></div></div>
+<div class="box"><div class="lab">장면 카드(시각·제목·설명·AI가 본 장면 전사 근거 아님 표시·클릭→그 시각 재생·리포트 포함 체크)</div><div class="card"><span class="skel"></span></div><div class="card"><span class="skel"></span></div><div class="card"><span class="skel"></span></div></div>
+<div class="row"><span class="btn">화면 캡처(L1·법무 확인 후)</span></div>
+<div class="row"><span class="btn">선택 카드로 리포트 생성</span></div>
 <div class="box"><div class="lab">인용 패널</div><div class="card"><span class="skel"></span></div><div class="card"><span class="skel"></span></div><div class="card"><span class="skel"></span></div></div>
 <div class="row"><span class="btn">워크스페이스로</span></div>
 </main></div></div>
-<section class="wf"><h3>상태</h3><div class="st"><div class="box"><b>빈</b><p class="muted">원문 없음 안내 + 워크스페이스로</p></div><div class="box"><b>로딩</b><p class="muted">원문 스켈레톤</p></div><div class="box"><b>오류</b><p class="muted">다시 시도, 접근 불가 시 404</p></div><div class="box"><b>성공</b><p class="muted">—</p></div></div>
-<h3>필수 구조 검사</h3><div><div class="ok">✅ 필수 구조 충족</div><div class="muted">· 권장: 관련 항목 탭</div><div class="muted">· 권장: 활동·변경 이력</div></div><h3>다음 화면</h3><div><a href="S-08.html">S-08 워크스페이스</a></div></section>
+<section class="wf"><h3>상태</h3><div class="st"><div class="box"><b>빈</b><p class="muted">원문 없음 안내 + 워크스페이스로, 장면 카드 없음 안내</p></div><div class="box"><b>로딩</b><p class="muted">원문·플레이어 스켈레톤</p></div><div class="box"><b>오류</b><p class="muted">다시 시도, 접근 불가 시 404, 임베드 재생 불가 시 원본 링크, 비활성 영상 안내(전사·장면 카드 숨김)</p></div><div class="box"><b>성공</b><p class="muted">—</p></div></div>
+<h3>필수 구조 검사</h3><div><div class="ok">✅ 필수 구조 충족</div><div class="muted">· 권장: 관련 항목 탭</div><div class="muted">· 권장: 활동·변경 이력</div></div><h3>다음 화면</h3><div><a href="S-08.html">S-08 워크스페이스</a> · <a href="S-12.html">S-12 리포트</a></div></section>
 </body></html>

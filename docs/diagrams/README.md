@@ -17,8 +17,8 @@ KNOWFLOW AI 개발 기준 문서 v1.0(KF-DES-001, KF-ARC-001, KF-AGT-001)을 다
 | 단계 | 파일 | 종류 | 내용 |
 |---|---|---|---|
 | 02 기획 | [feature-map.mmd](feature-map.mmd) | mindmap | MVP 기능과 추후 매체 확장 1·2·3 |
-| 03 UX | [sitemap.mmd](sitemap.mmd) | flowchart | 화면 15개 이동(사양 생성기 자동) |
-| 03 UX | [flow-F-01.mmd](flow-F-01.mmd) ~ [flow-F-04.mmd](flow-F-04.mmd) | flowchart | 사용자 흐름 4개(자동) |
+| 03 UX | [sitemap.mmd](sitemap.mmd) | flowchart | 화면 17개 이동(사양 생성기 자동) |
+| 03 UX | [flow-F-01.mmd](flow-F-01.mmd) ~ [flow-F-05.mmd](flow-F-05.mmd) | flowchart | 사용자 흐름 5개(자동) |
 | 03 UX | [screen-data.mmd](screen-data.mmd) | flowchart | 화면 ↔ API ↔ 데이터 연결(자동) |
 | 04 UI | [ui-app-shell.mmd](ui-app-shell.mmd) | flowchart | 앱 셸과 shadcn/ui 컴포넌트 배치(S-07·S-08·S-12) |
 | 04 UI | [ui-responsive.mmd](ui-responsive.mmd) | flowchart | 데스크톱 3단 / 태블릿 2단 / 모바일 1단 + 시트 |

@@ -1,0 +1,12 @@
+# task-026 WY 법무 게이트(전사 저장·재제공, 프레임 저장)
+| 항목 | 내용 |
+|---|---|
+| 웨이브·선행 | WY · task-025(통과 판정) |
+| 위험도·보안 영향 | 보통 · 없음 (코드 변경 없음) |
+| 담당 | 사용자(변호사 또는 YouTube API 지원팀 문의) · 팀장(판정 기록) |
+| 근거 | `docs/adr/0006-youtube-summary-and-capture-mvp.md#결정`(2번), `docs/youtube-mvp-review.md#1`, `docs/youtube-mvp-review.md#2`, `docs/youtube-mvp-review.md#5`(비활성 행) |
+| 쓰기 허용 | `docs/youtube-legal-check.md`(신규), `docs/adr/0006-youtube-summary-and-capture-mvp.md`(결정 2번 상태만), `tasks/README.md`(분기 결과만) |
+| 할 것 | 항목별 허용·조건부·불가 확인: 전사 보유, 전사·요약의 상용 재제공, 프레임 저장(API 정책 III.E.1.a), 리포트에 복제된 문장 처리, 임베드 의무 원문 대조 |
+| 하지 않을 것 | 판정 전 유튜브 수집 구현, 모델 판단을 법률 판정으로 기록 |
+| 완료 조건 | [ ] 회신 출처·날짜와 항목별 판정 기록 [ ] ADR-0006 결정 2번 상태 갱신 [ ] 아래 분기 적용 결과를 작업 표에 반영 |
+| 게이트 | 완료 전 task-027 착수 금지. 전사 저장 불가: `#2`대로 전사 청크·임베딩 없이 요약·시각 링크만 남기는 안을 사용자가 재결정. 재결정까지 task-027~030을 보류하고 PDF 경로(task-011 → 012 → W3)로 복귀. 프레임 저장 불가: task-030 보류 |

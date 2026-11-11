@@ -27,6 +27,8 @@ flowchart TB
 
   subgraph worker["자료 처리 Worker (웹 요청과 분리)"]
     ext["PDF · 웹 텍스트 추출"]
+    yan["유튜브 분석 · 시각 검증<br/>장면 카드 저장"]
+    ysw["유튜브 일일 재확인"]
     chunk["정규화 · 청킹"]
     emb["임베딩 생성"]
     idx["벡터 · 전문검색 색인"]
@@ -34,6 +36,8 @@ flowchart TB
 
   llm["AI 공급자<br/>Claude API"]
   embp["임베딩 공급자"]
+  gem["Gemini<br/>유료 등급 · Preview 의존"]
+  yapi["YouTube Data API<br/>videos.list"]
 
   user --> pages
   user --> api
@@ -61,6 +65,15 @@ flowchart TB
   idx --> pg
   llm -.-> usage["usage_events 기록"]
   usage -.-> pg
+
+  svc -->|A-04 동기 검사| yapi
+  queue --> yan
+  yan -->|공개 영상 URL 전달| gem
+  gem -->|"전사 구간 · 장면 후보만"| yan
+  yan --> chunk
+  yan --> pg
+  ysw -->|videos.list| yapi
+  ysw -->|비활성 표시| pg
 ```
 
 ## 2. 구성 요소 책임

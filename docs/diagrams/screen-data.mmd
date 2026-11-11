@@ -15,6 +15,8 @@ flowchart LR
     n_S_13["S-13 설정·사용량"]
     n_S_14["S-14 없는 경로"]
     n_S_15["S-15 오류"]
+    n_S_16["S-16 이용약관"]
+    n_S_17["S-17 개인정보처리방침"]
   end
   subgraph AP["API"]
     n_api_A_01["A-01 POST /api/auth/signup · login · logout · reset-password · update-password"]
@@ -23,10 +25,11 @@ flowchart LR
     n_api_A_04["A-04 POST · DELETE /api/projects/[projectId]/sources"]
     n_api_A_05["A-05 GET · POST /api/projects/[projectId]/jobs · /api/sources/[sourceId]/retry"]
     n_api_A_06["A-06 GET · POST /api/projects/[projectId]/conversations · /api/conversations/[id]/messages"]
-    n_api_A_07["A-07 GET /api/sources/[sourceId] · /api/sources/[sourceId]/chunks"]
+    n_api_A_07["A-07 GET /api/sources/[sourceId] · /api/sources/[sourceId]/chunks · /api/sources/[sourceId]/moments"]
     n_api_A_08["A-08 GET · POST /api/reports · /api/projects/[projectId]/reports"]
     n_api_A_09["A-09 GET · DELETE /api/reports/[reportId] · /api/reports/[reportId]/export"]
     n_api_A_10["A-10 GET · PATCH · DELETE /api/me · /api/me/usage"]
+    n_api_A_11["A-11 GET · POST /api/sources/[sourceId]/captures"]
   end
   subgraph DB["데이터"]
     n_t_conversations[("conversations")]
@@ -38,6 +41,7 @@ flowchart LR
     n_t_report_citations[("report_citations")]
     n_t_reports[("reports")]
     n_t_source_chunks[("source_chunks")]
+    n_t_source_moments[("source_moments")]
     n_t_sources[("sources")]
     n_t_usage_events[("usage_events")]
     n_t_user_quotas[("user_quotas")]
@@ -73,8 +77,12 @@ flowchart LR
   n_S_09 -.-> n_t_sources
   n_S_09 -.-> n_t_processing_jobs
   n_S_10 --> n_api_A_07
+  n_S_10 --> n_api_A_08
+  n_S_10 --> n_api_A_11
   n_S_10 -.-> n_t_sources
   n_S_10 -.-> n_t_source_chunks
+  n_S_10 -.-> n_t_source_moments
+  n_S_10 -.-> n_t_reports
   n_S_11 --> n_api_A_08
   n_S_11 -.-> n_t_reports
   n_S_12 --> n_api_A_08

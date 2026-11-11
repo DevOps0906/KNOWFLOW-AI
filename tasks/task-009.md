@@ -3,7 +3,7 @@
 | 항목 | 내용 |
 |---|---|
 | 웨이브 | W2 |
-| 선행 | task-010 |
+| 선행 | task-010, task-029 (유튜브 뒤로, ADR-0006 결정 4. 완료 시 task-011의 URL 본문 추출을 연결) |
 | 위험도 | 높음 |
 | 보안 영향 | 노출 면 (외부 URL 요청, 내부망 접근 위험) |
 | 담당 | builder (+ tester). 착수 전 challenger. 완료 후 reviewer(security) |

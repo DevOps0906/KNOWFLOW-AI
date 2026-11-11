@@ -23,5 +23,5 @@
 | 리포트 템플릿·요약 깊이 | MVP 제외, 이후 |
 | 키·쓰기 경로 | 브라우저=anon+사용자 JWT(SELECT만), 웹 서버=사용자 세션으로 쓰기 RPC, Worker=service_role(유일). authenticated는 INSERT·UPDATE·DELETE 회수, 쓰기는 SECURITY DEFINER RPC만([02#2](../02_ARCHITECTURE.md)) |
 | 멱등·쿼터·큐 | `idempotency_keys` 테이블, `consume_quota` 원자 차감, `enqueue_job`(작업 행+pgmq 같은 트랜잭션), 만료 작업 회수([05](../05_DATA_MODEL.md)) |
-| 요청 한도·격리 | 한도 상태 Postgres 저장, Worker 외부 연결 허용 목록, PDF 파싱 하위 프로세스 격리, usage_events 익명화 1년([PRD 8-1](../01_PRD.md)) |
+| 요청 한도·격리 | 한도 상태 Postgres 저장, Worker 외부 연결 허용 목록(Gemini·YouTube Data API 추가는 [ADR-0006](0006-youtube-summary-and-capture-mvp.md), [02#5](../02_ARCHITECTURE.md)), PDF 파싱 하위 프로세스 격리, usage_events 익명화 1년([PRD 8-1](../01_PRD.md)) |
 | ADR 번호 예약 | 0003 호스팅·업로드 경로(task-002), 0004 임베딩·청킹(task-013) |

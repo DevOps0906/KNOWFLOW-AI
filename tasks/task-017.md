@@ -14,6 +14,7 @@
 - POST: 멱등 키(`idempotency_keys`), `consume_quota`로 리포트 쿼터 차감, completed 자료 없음 422, `enqueue_job`으로 작업 생성, 리포트 id·작업 id 202 반환
 - Worker: 대상 자료 검색(`match_chunks_for_job`) → 섹션별 생성 → 인용 검증 → `report_citations`(chunk_id·position) 저장
 - 인용 검증 실패 문장은 1회 재생성 후 제거 또는 표시, 작업 상태 갱신, 실패 시 쿼터 차감 취소
+- A-08 장면 카드 입력: POST의 장면 카드 id 목록 처리, 겹치는 청크 없는 카드 422(task-029의 겹침 판정 함수 사용)
 - GET 목록(프로젝트 필터·검색어·커서)
 
 ## 하지 않을 것
@@ -23,5 +24,6 @@
 ## 완료 조건 (실행 가능한 확인)
 - [ ] 멱등 재요청·409·422·429·502 테스트 통과
 - [ ] 저장된 모든 `report_citations`가 대상 프로젝트 chunk를 가리킴을 RLS 포함 테스트로 확인
+- [ ] 통합 테스트: 겹치는 청크 없는 장면 카드는 422로 거부되고 `report_citations`에 저장되지 않음
 - [ ] 골든셋 리포트 샘플의 인용 정확도 수치 출력(`pnpm eval`)
 - [ ] `pnpm typecheck` · `pnpm test` 통과

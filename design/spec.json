@@ -1,12 +1,12 @@
 {
  "version": "1",
- "generated": "2026-11-02T05:23:58+00:00",
+ "generated": "2026-11-11T06:13:42+00:00",
  "docs": "docs",
  "tokens": ".\\apps\\web\\src\\styles\\tokens.css",
  "sources": {
-  "docs/03_SCREENS_UX.md": "75f7aa4df0f1",
-  "docs/04_API.md": "23ca6df66d1c",
-  "docs/05_DATA_MODEL.md": "4157246bb8fc",
+  "docs/03_SCREENS_UX.md": "1b1dd05560f2",
+  "docs/04_API.md": "9ef819e5848f",
+  "docs/05_DATA_MODEL.md": "895368dddd49",
   "docs/blueprints/auth-rbac/api.md": "32da9e8c7094",
   "docs/blueprints/auth-rbac/data.md": "25c60991cbd5",
   "docs/blueprints/auth-rbac/screens.md": "c3605370cf92",
@@ -24,13 +24,18 @@
   "docs/blueprints/stt-voice/screens.md": "0cc876452a0f"
  },
  "changed": [
-  "S-05",
+  "S-01",
+  "S-02",
+  "S-03",
   "S-06",
-  "S-07",
   "S-08",
   "S-09",
   "S-10",
-  "S-13"
+  "S-11",
+  "S-12",
+  "S-13",
+  "S-16",
+  "S-17"
  ],
  "removed": [],
  "screens": {
@@ -71,8 +76,11 @@
     },
     {
      "type": "footer",
-     "label": "",
-     "items": []
+     "label": "이용약관·개인정보처리방침",
+     "items": [
+      "이용약관",
+      "개인정보처리방침"
+     ]
     }
    ],
    "data": [],
@@ -80,7 +88,9 @@
    "role": "누구나",
    "next": [
     "S-02",
-    "S-03"
+    "S-03",
+    "S-16",
+    "S-17"
    ],
    "states_combined": "",
    "source": "docs/03_SCREENS_UX.md",
@@ -92,7 +102,7 @@
     "자주 묻는 질문"
    ],
    "states_missing": [],
-   "hash": "ce5209425145",
+   "hash": "8ff4bac1047c",
    "wireframe": "design/wireframes/S-01.html"
   },
   "S-02": {
@@ -142,6 +152,13 @@
      "items": [
       "약관"
      ]
+    },
+    {
+     "type": "link",
+     "label": "개인정보처리방침",
+     "items": [
+      "개인정보처리방침"
+     ]
     }
    ],
    "data": [
@@ -154,7 +171,9 @@
    "next": [
     "S-06",
     "S-03",
-    "S-04"
+    "S-04",
+    "S-16",
+    "S-17"
    ],
    "states_combined": "",
    "source": "docs/03_SCREENS_UX.md",
@@ -162,7 +181,7 @@
    "must_missing": [],
    "should_missing": [],
    "states_missing": [],
-   "hash": "e78316d672b7",
+   "hash": "2a0506a58d43",
    "wireframe": "design/wireframes/S-02.html"
   },
   "S-03": {
@@ -205,6 +224,13 @@
      "items": [
       "약관"
      ]
+    },
+    {
+     "type": "link",
+     "label": "개인정보처리방침",
+     "items": [
+      "개인정보처리방침"
+     ]
     }
    ],
    "data": [
@@ -216,7 +242,9 @@
    "role": "비로그인",
    "next": [
     "S-05",
-    "S-02"
+    "S-02",
+    "S-16",
+    "S-17"
    ],
    "states_combined": "",
    "source": "docs/03_SCREENS_UX.md",
@@ -224,7 +252,7 @@
    "must_missing": [],
    "should_missing": [],
    "states_missing": [],
-   "hash": "95483e9392a7",
+   "hash": "5a3458f9f579",
    "wireframe": "design/wireframes/S-03.html"
   },
   "S-04": {
@@ -439,7 +467,7 @@
     "저장된 보기·열 설정"
    ],
    "states_missing": [],
-   "hash": "239d4a8d39fc",
+   "hash": "45b9b24b0d18",
    "wireframe": "design/wireframes/S-06.html"
   },
   "S-07": {
@@ -562,11 +590,12 @@
     },
     {
      "type": "list",
-     "label": "자료 선택 체크(질의 범위)·이름·처리 상태 배지·재시도",
+     "label": "자료 선택 체크(질의 범위)·이름·처리 상태 배지·비활성 표시·재시도",
      "items": [
       "자료 선택 체크(질의 범위)",
       "이름",
       "처리 상태 배지",
+      "비활성 표시",
       "재시도"
      ]
     },
@@ -593,10 +622,11 @@
     },
     {
      "type": "list",
-     "label": "질문·답변(인용 칩 hover 미리보기→원문 위치 이동)",
+     "label": "질문·답변(인용 칩 hover 미리보기→원문 위치 이동·유튜브 칩은 mm:ss→S-10 그 시각 재생)",
      "items": [
       "질문",
-      "답변(인용 칩 hover 미리보기→원문 위치 이동)"
+      "답변(인용 칩 hover 미리보기→원문 위치 이동",
+      "유튜브 칩은 mm:ss→S-10 그 시각 재생)"
      ]
     },
     {
@@ -651,7 +681,7 @@
     "활동·변경 이력"
    ],
    "states_missing": [],
-   "hash": "f5b2e231ba3d",
+   "hash": "94c873798532",
    "wireframe": "design/wireframes/S-08.html"
   },
   "S-09": {
@@ -659,7 +689,7 @@
    "name": "자료 추가",
    "type_raw": "폼",
    "route": "다이얼로그(/projects/[projectId])",
-   "purpose": "PDF·URL 등록",
+   "purpose": "PDF·유튜브·URL 등록",
    "blocks": [
     {
      "type": "modal",
@@ -670,25 +700,25 @@
     },
     {
      "type": "tabs",
-     "label": "PDF·URL",
+     "label": "PDF·유튜브·URL",
      "items": [
       "PDF",
+      "유튜브",
       "URL"
      ]
     },
     {
      "type": "form",
-     "label": "파일(여러 개) 또는 URL*",
+     "label": "파일(여러 개) 또는 URL*(유튜브는 공개 영상 1건)",
      "items": [
-      "파일(여러 개) 또는 URL*"
+      "파일(여러 개) 또는 URL*(유튜브는 공개 영상 1건)"
      ]
     },
     {
      "type": "text",
-     "label": "지원 예정 매체 안내(YouTube·오디오·Office·HWP 등",
+     "label": "지원 예정 매체 안내(오디오·Office·HWP 등",
      "items": [
-      "지원 예정 매체 안내(YouTube",
-      "오디오",
+      "지원 예정 매체 안내(오디오",
       "Office",
       "HWP 등"
      ]
@@ -732,7 +762,7 @@
     "임시 저장(긴 폼)"
    ],
    "states_missing": [],
-   "hash": "0baefc573799",
+   "hash": "e3a8484b2e7d",
    "wireframe": "design/wireframes/S-09.html"
   },
   "S-10": {
@@ -740,7 +770,7 @@
    "name": "문서 뷰어",
    "type_raw": "상세",
    "route": "/sources/[sourceId]",
-   "purpose": "인용된 원문 위치 확인(진입 규칙: ?chunk=<chunk_id>)",
+   "purpose": "인용된 원문 위치 확인·영상 요약과 장면 재생(진입 규칙: ?chunk=<chunk_id>. 유튜브는 청크 locator.t_start부터 재생)",
    "blocks": [
     {
      "type": "header",
@@ -760,6 +790,64 @@
      ]
     },
     {
+     "type": "card",
+     "label": "임베드 플레이어(유튜브 자료만·공식 플레이어)",
+     "items": [
+      "임베드 플레이어(유튜브 자료만",
+      "공식 플레이어)"
+     ]
+    },
+    {
+     "type": "text",
+     "label": "채널명·원본 링크·AI 전사 표시",
+     "items": [
+      "채널명",
+      "원본 링크",
+      "AI 전사 표시"
+     ]
+    },
+    {
+     "type": "card",
+     "label": "영상 요약(문장별 mm:ss 인용→그 시각 재생)",
+     "items": [
+      "영상 요약(문장별 mm:ss 인용→그 시각 재생)"
+     ]
+    },
+    {
+     "type": "list",
+     "label": "전사 구간(mm:ss)",
+     "items": [
+      "전사 구간(mm:ss)"
+     ]
+    },
+    {
+     "type": "list",
+     "label": "장면 카드(시각·제목·설명·AI가 본 장면 전사 근거 아님 표시·클릭→그 시각 재생·리포트 포함 체크)",
+     "items": [
+      "장면 카드(시각",
+      "제목",
+      "설명",
+      "AI가 본 장면 전사 근거 아님 표시",
+      "클릭→그 시각 재생",
+      "리포트 포함 체크)"
+     ]
+    },
+    {
+     "type": "button",
+     "label": "화면 캡처(L1·법무 확인 후)",
+     "items": [
+      "화면 캡처(L1",
+      "법무 확인 후)"
+     ]
+    },
+    {
+     "type": "button",
+     "label": "선택 카드로 리포트 생성",
+     "items": [
+      "선택 카드로 리포트 생성"
+     ]
+    },
+    {
      "type": "list",
      "label": "인용 패널",
      "items": [
@@ -776,14 +864,19 @@
    ],
    "data": [
     "sources",
-    "source_chunks"
+    "source_chunks",
+    "source_moments",
+    "reports"
    ],
    "api": [
-    "A-07"
+    "A-07",
+    "A-08",
+    "A-11"
    ],
    "role": "로그인(소유자)",
    "next": [
-    "S-08"
+    "S-08",
+    "S-12"
    ],
    "states_combined": "",
    "source": "docs/03_SCREENS_UX.md",
@@ -794,7 +887,7 @@
     "활동·변경 이력"
    ],
    "states_missing": [],
-   "hash": "a7fffacdd8c8",
+   "hash": "a41c7f0da200",
    "wireframe": "design/wireframes/S-10.html"
   },
   "S-11": {
@@ -856,7 +949,7 @@
     "저장된 보기·열 설정"
    ],
    "states_missing": [],
-   "hash": "352e91ba98fc",
+   "hash": "09c163ffabfd",
    "wireframe": "design/wireframes/S-11.html"
   },
   "S-12": {
@@ -892,9 +985,11 @@
     },
     {
      "type": "list",
-     "label": "출처 패널",
+     "label": "출처 패널(유튜브는 mm:ss·채널명·원본 링크)",
      "items": [
-      "출처 패널"
+      "출처 패널(유튜브는 mm:ss",
+      "채널명",
+      "원본 링크)"
      ]
     },
     {
@@ -935,7 +1030,7 @@
     "활동·변경 이력"
    ],
    "states_missing": [],
-   "hash": "8b018220a1c1",
+   "hash": "cc9795cb39fe",
    "wireframe": "design/wireframes/S-12.html"
   },
   "S-13": {
@@ -1008,7 +1103,7 @@
    "must_missing": [],
    "should_missing": [],
    "states_missing": [],
-   "hash": "c36284cf1202",
+   "hash": "0fdceccc18f7",
    "wireframe": "design/wireframes/S-13.html"
   },
   "S-14": {
@@ -1125,6 +1220,131 @@
    "states_missing": [],
    "hash": "fd1b22e7bb2a",
    "wireframe": "design/wireframes/S-15.html"
+  },
+  "S-16": {
+   "id": "S-16",
+   "name": "이용약관",
+   "type_raw": "상세",
+   "route": "/terms",
+   "purpose": "약관 확인·권리자 삭제 요청",
+   "blocks": [
+    {
+     "type": "header",
+     "label": "",
+     "items": []
+    },
+    {
+     "type": "breadcrumb",
+     "label": "",
+     "items": []
+    },
+    {
+     "type": "text",
+     "label": "이용약관 본문·YouTube 약관 고지",
+     "items": [
+      "이용약관 본문",
+      "YouTube 약관 고지"
+     ]
+    },
+    {
+     "type": "text",
+     "label": "권리자 삭제 요청 창구",
+     "items": [
+      "권리자 삭제 요청 창구"
+     ]
+    },
+    {
+     "type": "link",
+     "label": "개인정보처리방침",
+     "items": [
+      "개인정보처리방침"
+     ]
+    },
+    {
+     "type": "button",
+     "label": "이전으로",
+     "items": [
+      "이전으로"
+     ]
+    }
+   ],
+   "data": [],
+   "api": [],
+   "role": "누구나",
+   "next": [
+    "S-17",
+    "S-01"
+   ],
+   "states_combined": "",
+   "source": "docs/03_SCREENS_UX.md",
+   "type": "detail",
+   "must_missing": [],
+   "should_missing": [
+    "관련 항목 탭",
+    "활동·변경 이력"
+   ],
+   "states_missing": [],
+   "hash": "2d25065dc946",
+   "wireframe": "design/wireframes/S-16.html"
+  },
+  "S-17": {
+   "id": "S-17",
+   "name": "개인정보처리방침",
+   "type_raw": "상세",
+   "route": "/privacy",
+   "purpose": "개인정보 처리 내용 확인",
+   "blocks": [
+    {
+     "type": "header",
+     "label": "",
+     "items": []
+    },
+    {
+     "type": "breadcrumb",
+     "label": "",
+     "items": []
+    },
+    {
+     "type": "text",
+     "label": "처리방침 본문·Google 개인정보 정책 링크",
+     "items": [
+      "처리방침 본문",
+      "Google 개인정보 정책 링크"
+     ]
+    },
+    {
+     "type": "link",
+     "label": "이용약관",
+     "items": [
+      "이용약관"
+     ]
+    },
+    {
+     "type": "button",
+     "label": "이전으로",
+     "items": [
+      "이전으로"
+     ]
+    }
+   ],
+   "data": [],
+   "api": [],
+   "role": "누구나",
+   "next": [
+    "S-16",
+    "S-01"
+   ],
+   "states_combined": "",
+   "source": "docs/03_SCREENS_UX.md",
+   "type": "detail",
+   "must_missing": [],
+   "should_missing": [
+    "관련 항목 탭",
+    "활동·변경 이력"
+   ],
+   "states_missing": [],
+   "hash": "39a517626a37",
+   "wireframe": "design/wireframes/S-17.html"
   }
  },
  "states": {
@@ -1178,14 +1398,14 @@
   },
   "S-09": {
    "빈": "—",
-   "로딩": "업로드 진행 표시",
-   "오류": "형식·크기 오류, 스캔 PDF 미지원 안내(제안)",
+   "로딩": "업로드·영상 확인 진행 표시",
+   "오류": "형식·크기 오류, 스캔 PDF 미지원 안내(제안), 유튜브 거절 사유별 안내(A-04)",
    "성공": "등록됨(대기) 표시 후 닫힘 — 분석 완료와 별도"
   },
   "S-10": {
-   "빈": "원문 없음 안내 + 워크스페이스로",
-   "로딩": "원문 스켈레톤",
-   "오류": "다시 시도, 접근 불가 시 404",
+   "빈": "원문 없음 안내 + 워크스페이스로, 장면 카드 없음 안내",
+   "로딩": "원문·플레이어 스켈레톤",
+   "오류": "다시 시도, 접근 불가 시 404, 임베드 재생 불가 시 원본 링크, 비활성 영상 안내(전사·장면 카드 숨김)",
    "성공": "—"
   },
   "S-11": {
@@ -1213,6 +1433,18 @@
    "성공": "—"
   },
   "S-15": {
+   "빈": "—",
+   "로딩": "—",
+   "오류": "—",
+   "성공": "—"
+  },
+  "S-16": {
+   "빈": "—",
+   "로딩": "—",
+   "오류": "—",
+   "성공": "—"
+  },
+  "S-17": {
    "빈": "—",
    "로딩": "—",
    "오류": "—",
@@ -1267,6 +1499,19 @@
     "S-06"
    ],
    "source": "docs/03_SCREENS_UX.md"
+  },
+  "F-05": {
+   "id": "F-05",
+   "name": "유튜브 요약·장면 카드",
+   "steps": [
+    "S-06",
+    "S-08",
+    "S-09",
+    "S-08",
+    "S-10",
+    "S-12"
+   ],
+   "source": "docs/03_SCREENS_UX.md"
   }
  },
  "apis": {
@@ -1309,7 +1554,7 @@
     "메서드": "GET · PATCH · DELETE",
     "경로": "/api/projects/[projectId]",
     "입력": "(PATCH) 이름·설명·보관 / (DELETE) —",
-    "출력": "프로젝트 + 자료 목록(유형·처리 상태·오류 코드) + 요약·추천 질문 / 변경 결과 / 삭제 결과(소프트 삭제 `deleted_at`, 30일 뒤 자료·청크·대화·리포트 영구 삭제 — [05#5](05_DATA_MODEL.md)). 요약·추천 질문은 자료 completed 시 Worker가 생성해 `projects.summary`·`suggested_questions`에 저장",
+    "출력": "프로젝트 + 자료 목록(유형·처리 상태·오류 코드·`unavailable_at`) + 요약·추천 질문 / 변경 결과 / 삭제 결과(소프트 삭제 `deleted_at`, 30일 뒤 자료·청크·대화·리포트 영구 삭제 — [05#5](05_DATA_MODEL.md)). 요약·추천 질문은 자료 completed 시 Worker가 생성해 `projects.summary`·`suggested_questions`에 저장",
     "권한": "소유자",
     "오류": "401 · 404 · 409 처리 중 작업 있음(삭제) · 422"
    },
@@ -1323,10 +1568,10 @@
     "ID": "A-04",
     "메서드": "POST · DELETE",
     "경로": "/api/projects/[projectId]/sources",
-    "입력": "(POST) source_type, (pdf) 서명 업로드 URL 발급 → 브라우저가 Storage로 직접 업로드 → 등록 요청(파일별 멱등 키) 또는 (url) URL / (DELETE) source id 목록",
+    "입력": "(POST) source_type, (pdf) 서명 업로드 URL 발급 → 브라우저가 Storage로 직접 업로드 → 등록 요청(파일별 멱등 키) 또는 (url) URL 또는 (youtube) 영상 1건 URL(호스트 `youtube.com`·`www.youtube.com`·`m.youtube.com`·`youtu.be`만. 웹 서버가 `video_id`를 뽑아 `videos.list`로 동기 검사) / (DELETE) source id 목록",
     "출력": "서명 업로드 URL / 자료 id·작업 id(202, status=queued) / 삭제 결과(소프트 삭제 `deleted_at`, 영구 삭제는 30일 뒤)",
     "권한": "소유자",
-    "오류": "401 · 404 · 409 같은 content_hash 자료 있음·같은 멱등 키 다른 입력 · 413 크기 초과 · 415 PDF 아님 · 422 source_type 미지원(\"지원 예정\")·URL 형식/차단 주소(SSRF) · 429 자료 수 한도·분당 10회. 500쪽 초과·스캔 PDF는 등록 후 Worker가 job failed + error_code로 판정(A-05에서 확인)"
+    "오류": "401 · 404 · 409 같은 content_hash 또는 (project_id, video_id) 자료 있음·같은 멱등 키 다른 입력 · 413 크기 초과 · 415 PDF 아님 · 422 source_type 미지원(\"지원 예정\")·URL 형식/차단 주소(SSRF)·유튜브 거절(허용 외 호스트, 재생목록·채널 URL, 비공개·미등록, 임베드 불가, 연령·지역 제한, 라이브, 어린이용(`madeForKids`), 길이 초과) · 429 자료 수 한도·월 영상 시간 한도·분당 10회 · 502 `videos.list` 장애(판정 불가, 등록 안 함) · 503 유튜브 신규 수집 중단(Gemini Preview 종료·차단). 500쪽 초과·스캔 PDF는 등록 후 Worker가 job failed + error_code로 판정(A-05에서 확인)"
    },
    "source": "docs/04_API.md"
   },
@@ -1341,7 +1586,7 @@
     "입력": "(GET) 상태 필터, 커서 / (POST) 멱등 키",
     "출력": "작업 목록(source_id·source.status와 job.status 분리 표기(job: queued·running·succeeded·failed·cancelled, 매핑 05#6)·단계·attempt_count·error_code) / 새 작업 id(202, 재시도=새 작업 생성)",
     "권한": "소유자",
-    "오류": "401 · 404 · 409 진행 중 작업 있음(job queued·running) · 422 completed 자료는 재처리만 · 429 재시도 한도"
+    "오류": "401 · 404 · 409 진행 중 작업 있음(job queued·running) · 422 completed 자료는 재처리만·재시도 불가 실패(비공개·정책 거절·입력 초과) · 429 재시도 한도"
    },
    "source": "docs/04_API.md"
   },
@@ -1354,22 +1599,22 @@
     "메서드": "GET · POST",
     "경로": "/api/projects/[projectId]/conversations · /api/conversations/[id]/messages",
     "입력": "(GET) 커서 / (POST) 질문(길이 상한), 질의 범위 source id 목록(생략 시 completed 전체), 멱등 키",
-    "출력": "대화·메시지 목록 / 답변 + 출처 칩(source_id·chunk_id·source_title·locator(locator.page 등 확보된 경우만), 서버가 검색 결과로 생성·인용 검증 통과분), no_answer 여부",
+    "출력": "대화·메시지 목록 / 답변 + 출처 칩(source_id·chunk_id·source_title·source_type·locator(locator.page 또는 유튜브 `t_start`·`t_end` 등 확보된 경우만), 서버가 검색 결과로 생성·인용 검증 통과분), no_answer 여부",
     "권한": "소유자",
-    "오류": "401 · 404 · 409 같은 멱등 키 진행 중 · 422 질문 길이·범위에 미완료 자료 · 429 월 질문 쿼터 · 502 생성 실패(다시 시도, 쿼터 차감 취소)"
+    "오류": "401 · 404 · 409 같은 멱등 키 진행 중 · 422 질문 길이·범위에 미완료·비활성 자료 · 429 월 질문 쿼터 · 502 생성 실패(다시 시도, 쿼터 차감 취소)"
    },
    "source": "docs/04_API.md"
   },
   "A-07": {
    "id": "A-07",
    "method": "GET",
-   "path": "/api/sources/[sourceId] · /api/sources/[sourceId]/chunks",
+   "path": "/api/sources/[sourceId] · /api/sources/[sourceId]/chunks · /api/sources/[sourceId]/moments",
    "row": {
     "ID": "A-07",
     "메서드": "GET",
-    "경로": "/api/sources/[sourceId] · /api/sources/[sourceId]/chunks",
+    "경로": "/api/sources/[sourceId] · /api/sources/[sourceId]/chunks · /api/sources/[sourceId]/moments",
     "입력": "(선택) chunk_id, 커서",
-    "출력": "자료 메타 + 원문 청크(chunk_index·content·locator)",
+    "출력": "자료 메타(유튜브는 video_id·channel_title·original_url·`unavailable_at` 포함) + 원문 청크(chunk_index·content·locator) / 장면 카드(id·locator·title·description·리포트 인용 가능 여부). 비활성 자료는 메타만",
     "권한": "소유자(자료의 project 소유)",
     "오류": "401 · 404 · 409 아직 completed 아님"
    },
@@ -1383,10 +1628,10 @@
     "ID": "A-08",
     "메서드": "GET · POST",
     "경로": "/api/reports · /api/projects/[projectId]/reports",
-    "입력": "(GET) 프로젝트 필터, 검색어, 커서 / (POST) 제목(선택), 대상 source id 목록(선택), 멱등 키",
+    "입력": "(GET) 프로젝트 필터, 검색어, 커서 / (POST) 제목(선택), 대상 source id 목록(선택), 장면 카드 id 목록(선택), 멱등 키",
     "출력": "리포트 목록(제목·프로젝트·생성일)·다음 커서 / 리포트 id·작업 id(202)",
     "권한": "로그인(본인)",
-    "오류": "401 · 404 프로젝트 · 409 같은 멱등 키 진행 중 · 422 completed 자료 없음 · 429 쿼터 · 502 생성 실패"
+    "오류": "401 · 404 프로젝트 · 409 같은 멱등 키 진행 중 · 422 completed 자료 없음·겹치는 청크 없는 장면 카드 · 429 쿼터 · 502 생성 실패"
    },
    "source": "docs/04_API.md"
   },
@@ -1419,6 +1664,21 @@
     "오류": "401 · 422 이름 길이·확인 문구 불일치 · 409 처리 중 작업 있음(삭제)"
    },
    "source": "docs/04_API.md"
+  },
+  "A-11": {
+   "id": "A-11",
+   "method": "GET · POST",
+   "path": "/api/sources/[sourceId]/captures",
+   "row": {
+    "ID": "A-11",
+    "메서드": "GET · POST",
+    "경로": "/api/sources/[sourceId]/captures",
+    "입력": "(POST) 장면 카드 id, 캡처 이미지(형식·크기 상한 팀장 결정 필요)",
+    "출력": "(GET) 캡처 목록(장면 카드 id·서명 URL·시각·채널명·원본 링크) / (POST) 캡처 id",
+    "권한": "소유자",
+    "오류": "법무 게이트 조건부: task-026 프레임 저장 허용 전까지 모든 호출 422 \"지원 예정\". 401 · 404 · 413 크기 초과 · 415 이미지 아님 · 422 유튜브 외 자료 · 429 영상당 캡처 한도(제안 20장, [검토 4장](youtube-mvp-review.md#4-중요-장면-캡처))"
+   },
+   "source": "docs/04_API.md"
   }
  },
  "tables": {
@@ -1449,9 +1709,9 @@
    "row": {
     "테이블": "sources",
     "목적": "자료 1건(S-08·09·10)",
-    "주요 컬럼": "id, project_id, user_id, source_type, title★, original_url, storage_path, content_hash, status, error_code, error_message_safe, deleted_at",
+    "주요 컬럼": "id, project_id, user_id, source_type, title★, original_url, storage_path, content_hash, video_id, channel_title, duration_seconds, metadata_checked_at, unavailable_at, status, error_code, error_message_safe, deleted_at",
     "RLS 기준": "user_id = auth.uid()` AND 소속 프로젝트 소유 일치. 상태 쓰기는 서버만",
-    "비고": "source_type: MVP `pdf`·`url`, 예약 `youtube`·`audio`·`video`·`docx`·`pptx`·`image`·`text`(3장). status는 `queued`·`processing`·`completed`·`failed`. unique (project_id, content_hash)"
+    "비고": "source_type: MVP `pdf`·`youtube`·`url`, 예약 `audio`·`video`·`docx`·`pptx`·`image`·`text`(3장). status는 `queued`·`processing`·`completed`·`failed`. unique (project_id, content_hash), (project_id, video_id). 유튜브 컬럼 규칙은 8장"
    },
    "source": "docs/05_DATA_MODEL.md"
   },
@@ -1466,12 +1726,23 @@
    },
    "source": "docs/05_DATA_MODEL.md"
   },
+  "source_moments": {
+   "name": "source_moments",
+   "row": {
+    "테이블": "source_moments",
+    "목적": "유튜브 장면 카드 L0(S-10)",
+    "주요 컬럼": "id, source_id, project_id, user_id, moment_index, locator(jsonb: t_start·t_end), title★, description★",
+    "RLS 기준": "user_id = auth.uid()` AND 소속 자료 미삭제·미비활성. 쓰기는 서비스 키 Worker만",
+    "비고": "시각 검증을 통과한 구간만 저장. 청크 FK 없이 `locator` 구간 겹침으로 연결(8장). unique (source_id, moment_index)"
+   },
+   "source": "docs/05_DATA_MODEL.md"
+  },
   "processing_jobs": {
    "name": "processing_jobs",
    "row": {
     "테이블": "processing_jobs",
     "목적": "자료 처리 작업·이력(S-06·08·09)",
-    "주요 컬럼": "id, user_id, source_id(nullable), report_id(nullable)→reports, job_type(`report_generate` 포함), status, current_step, progress(0~100), attempt_count, max_attempts(기본 3), locked_until, heartbeat_at, error_code, started_at, finished_at",
+    "주요 컬럼": "id, user_id, source_id(nullable), report_id(nullable)→reports, job_type(`source_ingest`·`report_generate`·`source_recheck`), status, current_step, progress(0~100), attempt_count, max_attempts(기본 3), locked_until, heartbeat_at, error_code, started_at, finished_at",
     "RLS 기준": "소속 자료·리포트 소유자 읽기만. 쓰기는 서비스 키 서버·Worker만",
     "비고": "상태값은 JOBS.md(`queued`·`running`·`succeeded`·`failed`·`cancelled`). 사용자 재시도 = 새 작업(새 멱등 키), 종료 작업은 되살리지 않음. 같은 자료에 진행 중 작업 1개(부분 유니크). `source_id`·`report_id` 중 하나는 필수(CHECK). 멱등 키는 `idempotency_keys`에 둔다. Worker는 heartbeat_at을 갱신하고, locked_until이 지난 running 작업은 회수(재큐잉)한다. 작업 행 생성과 pgmq 전송은 한 트랜잭션 RPC `enqueue_job`. 사용자 화면 배지(`sources.status`)와의 매핑은 6장"
    },
@@ -1537,9 +1808,9 @@
    "row": {
     "테이블": "plans",
     "목적": "요금제별 한도 정의(S-13)",
-    "주요 컬럼": "code(PK `free`·`pro`), max_projects, max_sources_per_project, monthly_questions, monthly_reports, monthly_source_jobs",
+    "주요 컬럼": "code(PK, MVP는 `beta` 1종), max_projects, max_sources_per_project, monthly_questions, monthly_reports, monthly_source_jobs, max_video_seconds, monthly_video_seconds",
     "RLS 기준": "로그인 사용자 읽기 전용(시드 데이터)",
-    "비고": "한도 5종(프로젝트·자료·질문·리포트·자료 처리). 수치는 [PRD 8-1](01_PRD.md#8-1-베타-초기값-2026-11-02-확정-조정-가능) 시드. 결제 연동은 MVP 제외"
+    "비고": "한도 5종(프로젝트·자료·질문·리포트·자료 처리) + 영상 시간 2종(영상당·월, 제안값 [검토 5장](youtube-mvp-review.md#5-처리-설계)). 수치는 [PRD 8-1](01_PRD.md#8-1-베타-초기값-2026-11-02-확정-조정-가능) 시드. 결제 연동은 MVP 제외"
    },
    "source": "docs/05_DATA_MODEL.md"
   },
@@ -1547,8 +1818,8 @@
    "name": "user_quotas",
    "row": {
     "테이블": "user_quotas",
-    "목적": "사용자별 사용 한도·누적(S-13)",
-    "주요 컬럼": "user_id(PK), plan_code→plans, period_start, used_projects, used_sources, used_questions, used_reports, used_source_jobs",
+    "목적": "사용자별 월 사용 누적(S-13)",
+    "주요 컬럼": "user_id(PK), plan_code→plans, period_start(KST 월 시작), used_questions, used_reports, used_source_jobs, used_video_seconds(각 CHECK ≥ 0) — 프로젝트 수·프로젝트당 자료 수는 카운터 없이 생성 RPC가 부모 행을 잠그고 셈",
     "RLS 기준": "본인 행 조회만. 갱신은 RPC만",
     "비고": "원자 차감 RPC `consume_quota(kind, n)`: 조건부 UPDATE … RETURNING으로 한도 확인·증가를 한 문장에서 처리(경쟁 조건 방지). 기간 초기화는 5장"
    },
@@ -1636,6 +1907,16 @@
    "🟡",
    "S-15",
    "오류 권장: 관련 항목 탭, 활동·변경 이력"
+  ],
+  [
+   "🟡",
+   "S-16",
+   "이용약관 권장: 관련 항목 탭, 활동·변경 이력"
+  ],
+  [
+   "🟡",
+   "S-17",
+   "개인정보처리방침 권장: 관련 항목 탭, 활동·변경 이력"
   ],
   [
    "ℹ️",
