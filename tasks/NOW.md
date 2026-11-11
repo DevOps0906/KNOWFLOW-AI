@@ -1,11 +1,13 @@
 # NOW — 재진입 스냅샷 (30줄 이내, 매 작업 끝에 덮어쓴다)
 
 - 갱신: 2026-11-12
-- 현재 작업: task-027. 027a DB 완료(미커밋, test:db 123 통과) → 진행 중: 027a 보안·계약 리뷰(reviewer), 027b 웹(builder), 027c+028 Worker(builder) 병렬. 결정·RPC 계약은 `tasks/task-027.md` "구현 결정". Gemini 키는 루트 `.env.local`(읽지 않음, env `GEMINI_API_KEY`), 실호출 스모크는 사용자 확인 후. 브랜치 `wip/task-004`
-- 마지막으로 한 일: task-011 PDF 추출·청킹·색인. 파서 unpdf 2.1.0을 Node `--permission` 격리 하위 프로세스에서 실행(`apps/worker/src/pdf/`), ingest 핸들러(`apps/worker/src/ingest/`), 펜싱 RPC `replace_source_chunks`(20261111000400), compose 고정 파일 어댑터·스텁 요약.
-- 검증: worker 127(+1 Windows 건너뜀), db 105, typecheck·lint, Docker `verify-ingest`·`verify-parser-sandbox`·`verify-egress` 통과. 리뷰: codex-reviewer(security·code)·reviewer(security/contract) 🔴 없음, 🟡 9건 반영.
-- 미검증: 실제 Supabase(Storage 어댑터 미구현 → 운영 PDF는 재시도 후 실패), 운영 로캘의 한글 trigram, 운영(Fly) 격리 방식, `secscan license`(lockfile 라이선스 정보 없음, unpdf는 팀장 수동 MIT 확인).
-- 사용자 할 일: 호스트 Node 26.13.0 설치(24에서는 PDF 테스트 17건 fail-closed), 루트 `.env.example`에 `KF_DB_SUPERUSER_PASSWORD`·`WORKER_DB_PASSWORD`·`KF_DB_HOST_PORT` 이름 추가, Gemini 키·권리 있는 영상 10편·라벨(task-025), 법무 확인(task-026), 개발 Supabase 프로젝트, 사전예약 폼 서비스.
-- task-012로 넘길 것: 새 error_code(`INGEST_ERROR_CODES`·`PDF_ERROR_CODES`)를 화면 문구로 매핑. 로컬 모드 가드 강화는 task-024.
-- 주의: DB 테스트는 임베디드 Postgres 또는 loopback `TEST_DATABASE_URL`에서만(db-tests 로캘을 UTF-8로 변경함). 원격 DB 변경 금지. 적용된 마이그레이션 수정 금지. `sql2erd`는 `ADD COLUMN`을 읽지 않는다. 입력 상한 50MB가 `PARSER_LIMITS`·`SOURCE_MAX_BYTES` 두 곳에 있다.
+- 현재 작업: 없음. 다음은 task-012 자료 목록·원문 뷰어 S-08·S-10·A-03·A-07(위험 높음 → 착수 전 challenger). S-10은 task-029 영상 플레이어·장면 카드의 바탕. 브랜치 `wip/task-004`(분리·푸시는 사용자 결정)
+- 우선순위(2026-11-12 사용자 결정): 유튜브 구현 최우선 027 → 028 → 012 → 029 → 030. 기능 플래그 `YOUTUBE_ENABLED` 기본 꺼짐, 활성화는 task-025 통과·task-026 판정 뒤(ADR-0006 결정 2).
+- 마지막으로 한 일: task-027 027a~c + task-028 커밋 43d2f72. task-011 커밋 0cfb2c8. 결정·RPC 계약 정본은 `tasks/task-027.md` "구현 결정".
+- 검증: worker 157(+1), web 207, db 131, typecheck·lint, Docker verify-youtube·ingest·parser-sandbox·egress 통과(Node 26.13.0, 호스트는 24라 스크래치 Node 사용).
+- 활성화 전 필수(task-027 남음): 027d 재확인 스윕·파기·큐 함수 job_type 분기, 사용자별 videos.list 호출 제한, 서비스 일일 비용 상한, task-025 실측(clipTimeBase 확정), task-026 법무, Gemini 실호출 스모크(사용자 확인 후, 키는 셸 `GEMINI_API_KEY`로 compose에 넘김).
+- 키: Gemini 키는 루트 `.env.local`(읽지 않음). 웹 service_role은 `apps/web/src/server/youtube/service.ts` 한 곳만(사용자 결정).
+- 미검증: 실제 Supabase(Storage 어댑터 미구현), 운영 로캘 한글 trigram, `secscan license`(lockfile 정보 없음, unpdf·server-only 수동 MIT), `apps/web/.env.example` 내용(권한상 읽기 불가 — 사용자 확인 요청).
+- 사용자 할 일: 호스트 Node 26.13.0, 루트 `.env.example`에 `KF_DB_SUPERUSER_PASSWORD`·`WORKER_DB_PASSWORD`·`KF_DB_HOST_PORT` 이름 추가, 권리 있는 영상 10편·라벨(task-025), 법무 확인(task-026), 개발 Supabase 프로젝트, `*.pdf binary` .gitattributes 여부.
+- 주의: DB 테스트는 임베디드 Postgres 또는 loopback만. 원격 DB 변경 금지. 적용된 마이그레이션 수정 금지(20261112000100은 이제 커밋됨). `sql2erd`는 ALTER 컬럼을 못 읽는다. 웹 DB 타입 파일 재생성 불가(supabase CLI 없음).
 - SDLC 단계: 06 구현 (W2·WY)
