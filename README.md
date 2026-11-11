@@ -4,6 +4,16 @@ AI 기반 자료 분석·지식 관리 SaaS. 유튜브 영상 요약과 중요 �
 
 핵심 원칙: Source-grounded AI, Evidence-first, Modular Architecture, Contract-driven Multi-agent Development.
 
+## 화면 미리보기
+
+![KNOWFLOW 워크스페이스 메인 화면](design/screens/s08-workspace-1440.png)
+
+<sub>S-08 워크스페이스(1440px): 왼쪽 자료 목록, 가운데 원문과 근거 하이라이트, 오른쪽 인용 칩이 붙은 질문 답변. 고해상도 시안(`design/prototype`) 캡처이며 실제 앱 화면이 아니다. 유튜브 요약·장면 카드는 시안 이후 기획이라 아직 들어 있지 않다. 맨 위 알약 줄은 시안 화면 전환용이다.</sub>
+
+![KNOWFLOW 프로젝트 목록 화면](design/screens/s07-projects-1440.png)
+
+<sub>S-07 프로젝트 목록(1440px). 표시된 프로젝트와 사용자는 예시 데이터다.</sub>
+
 ## 진행 현황 (2026-11-11 기준)
 
 **기획 단계 완료, 구현 진행 중.** 검증 계획, PRD, 화면·API·데이터 명세, 아키텍처, 디자인 시안, 다이어그램, 작업 분해(32개)가 끝났고 결정 항목은 확정됐다([ADR-0002](docs/adr/0002-mvp-tech-decisions.md)). 2026-11-11 유튜브 요약·중요 장면 캡처를 최우선으로 올렸고([ADR-0006](docs/adr/0006-youtube-summary-and-capture-mvp.md)), 전사·프레임 저장의 법무 확인은 미완료다. 인증·프로젝트·PDF 업로드, 작업 큐·Worker 컨테이너·외부 연결 격리, 인용 검증 기반까지 구현했고 유튜브 품질 측정 도구를 만들었다. 린 검증은 사용자 결정으로 개발과 병행하며, 첫 작업 묶음에서 랜딩 사전예약으로 실행한다.
