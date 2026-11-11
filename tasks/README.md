@@ -1,6 +1,6 @@
 # 작업 표
 
-권장 순서(실제 제약은 표의 선행): **2026-11-12 사용자 결정: 유튜브 구현 최우선 027 → 028 → 012 → 029 → 030, 기능 플래그 기본 꺼짐·활성화는 025 통과·026 판정 뒤.** 이전 순서: task-002 → (001 · 003 · 006 병행) → 004 → 005 → 007 → 008 → 010 → 032 게이트 무관 기반 → 025 Phase 0(철회 가능) → 031 랜딩 문구(예정 기능만) → 026 법무 게이트 → 027 유튜브 수집 → 011 → 028 공용 청킹 → 012 → 029 요약·장면 카드 → 030 L1 → 009 → W3 → W4 → W5. PDF 경로(011)는 유튜브 게이트와 무관하게 010 뒤 진행할 수 있고, 유튜브 전사는 028에서 011에 연결한다. 유튜브 순서 근거: [ADR-0006](../docs/adr/0006-youtube-summary-and-capture-mvp.md). 유튜브를 철회·보류하면 다른 작업의 선행에서 유튜브 작업(027~031)을 빼고, 본문의 유튜브 항목도 제외한 채 진행한다.
+권장 순서(실제 제약은 표의 선행): **2026-11-12 사용자 결정: 유튜브 구현 최우선 027 → 028 → 012 → 029 → 030, 기능 플래그 기본 꺼짐·활성화는 025 통과·026 판정 뒤.** 이전 순서: task-002 → (001 · 003 · 006 병행) → 004 → 005 → 007 → 008 → 010 → 032 게이트 무관 기반 → 025 Phase 0(철회 가능) → 031 랜딩 문구(예정 기능만) → 026 법무 게이트 → 027 유튜브 수집 → 011 → 028 공용 청킹 → 012 → 029 요약·장면 카드 → 030 L1 → 009 → W3 → W4 → W5. PDF 경로(011)는 유튜브 게이트와 무관하게 010 뒤 진행할 수 있고, 유튜브 전사는 028에서 011에 연결한다. 유튜브 순서 근거: [ADR-0006](../docs/adr/0006-youtube-summary-and-capture-mvp.md). 설치형 앱(033~035, WA)은 W5의 024 뒤에 진행한다([ADR-0007](../docs/adr/0007-installable-apps.md)). 유튜브를 철회·보류하면 다른 작업의 선행에서 유튜브 작업(027~031)을 빼고, 본문의 유튜브 항목도 제외한 채 진행한다.
 마이그레이션: 기존 파일은 고치지 않고 새 번호만 추가한다. 병렬 작업이 동시에 마이그레이션을 쓰면 번호는 팀장이 배정한다. 위험도 높음은 착수 전 challenger, 완료 후 codex-reviewer(code) + reviewer(security/contract).
 
 | 번호 | 제목 | 웨이브 | 선행 | 위험도 | 담당 | 상태 |
@@ -16,7 +16,7 @@
 | [task-009](task-009.md) | URL 가져오기(SSRF 방어) | W2 | task-010, task-029 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
 | [task-010](task-010.md) | 작업 큐(테이블 폴링)·Worker 골격·A-05 재시도 | W2 | task-004, task-008 | 높음 | builder (+tester) · 착수 전 challenger | 완료 |
 | [task-011](task-011.md) | 추출·청킹·임베딩·색인 | W2 | task-010 | 높음 | builder (+tester) · 착수 전 challenger | 완료 |
-| [task-012](task-012.md) | 자료 목록·원문 뷰어 S-08 · S-10 · A-03 · A-07 | W2 | task-007, task-011, task-032 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
+| [task-012](task-012.md) | 자료 목록·원문 뷰어 S-08 · S-10 · A-03 · A-07 | W2 | task-007, task-011, task-032 | 높음 | builder (+tester) · 착수 전 challenger | 진행 |
 | [task-013](task-013.md) | 골든셋 30~50문항 + 평가(임베딩·청킹 확정, 벡터 컬럼·저장 연결) | W3 | task-011 | 보통 | builder (+tester) | 대기 |
 | [task-014](task-014.md) | 하이브리드 검색 함수(project_id 강제) | W3 | task-013, task-032 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
 | [task-015](task-015.md) | 질의응답 A-06(인용 검증) | W3 | task-014, task-032 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
@@ -37,6 +37,9 @@
 | [task-030](task-030.md) | 사용자 승인 탭 캡처(L1) | WY | task-029 (활성화: 026 뒤) | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
 | [task-031](task-031.md) | 랜딩 S-01 유튜브 문구 반영(예정 기능만) | WY | task-025 | 낮음 | builder | 대기 |
 | [task-032](task-032.md) | 유튜브 게이트 무관 기반(unavailable_at·packages/citations) | WY | task-010 | 높음 | builder (+tester) · 착수 전 challenger | 완료 |
+| [task-033](task-033.md) | Android 셸(Capacitor 원격 셸, APK) | WA | task-024 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
+| [task-034](task-034.md) | 데스크톱 셸(Tauri 원격 셸, Windows·macOS) | WA | task-024 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
+| [task-035](task-035.md) | 다운로드 화면 S-18·배포 파이프라인 | WA | task-024, task-033, task-034 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
 
 상태: 대기 / 진행 / 완료 / 보류
 

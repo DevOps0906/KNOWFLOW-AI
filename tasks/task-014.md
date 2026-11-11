@@ -27,3 +27,5 @@
 - [ ] project_id 누락 호출이 오류인 테스트, 사용자 롤이 `match_chunks_for_job` 호출 시 거부되는 테스트 통과
 - [ ] `pnpm eval` 검색 적중률이 task-013 기준선 이상
 - [ ] `pnpm typecheck` · `pnpm test` 통과
+
+- 주의(2026-11-12 task-012a 리뷰): 자료 소프트 삭제 뒤에도 청크가 남고, 삭제 직전 Worker 쓰기와 경합하면 고아 청크가 생길 수 있다. 검색 함수는 `sources.deleted_at is null`·프로젝트 미삭제·`unavailable_at is null`을 반드시 함께 거른다.

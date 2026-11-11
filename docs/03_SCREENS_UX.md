@@ -13,7 +13,7 @@
 | S-03 | 가입 | 로그인 | /signup | 새 계정 만들기 | header, form:이메일*·비밀번호*, button:가입, link:로그인, link:약관, link:개인정보처리방침 | profiles | A-01 | 비로그인 | S-05, S-02, S-16, S-17 |
 | S-04 | 비밀번호 재설정 | 폼 | /reset-password | 재설정 메일 요청·새 비밀번호 설정 | header, form:이메일*, button:메일 보내기, button:취소, link:로그인으로 | profiles | A-01 | 비로그인 | S-02 |
 | S-05 | 온보딩 | 마법사 | /onboarding | 빈 프로젝트 만들기 안내 | header, steps:환영·빈 프로젝트 만들기·첫 질문 안내, form:프로젝트 이름*, button:이전, button:다음, link:건너뛰기 | projects | A-02 | 로그인 | S-06 |
-| S-06 | 대시보드 | 목록 | /dashboard | 만들던 프로젝트 이어가기 | header, search, filter:상태, list:최근 프로젝트·처리 중 자료, pagination, button:새 프로젝트, link:리포트 | projects, sources, processing_jobs | A-02, A-05, A-10 | 로그인 | S-07, S-08, S-11, S-13 |
+| S-06 | 대시보드 | 목록 | /dashboard | 만들던 프로젝트 이어가기 | header, search, filter:상태, list:최근 프로젝트·처리 중 자료, pagination, button:새 프로젝트, link:리포트, card:앱 설치(감지한 OS용 다운로드 버튼·"웹으로 계속 사용" 선택) | projects, sources, processing_jobs | A-02, A-05, A-10 | 로그인 | S-07, S-08, S-11, S-13, S-18 |
 | S-07 | 프로젝트 목록 | 목록 | /projects | 프로젝트 찾기·만들기 | header, search, filter:상태, sort, table:이름·자료 수·수정일·상태, pagination, button:새 프로젝트 | projects | A-02 | 로그인 | S-08 |
 | S-08 | 워크스페이스 | 상세 | /projects/[projectId] | 자료 확인·질문·리포트 생성 | header, breadcrumb, sidebar:자료(3단 중 왼쪽, DESIGN.md#2), tabs:요약·원문, filter:자료 유형, list:자료 선택 체크(질의 범위)·이름·처리 상태 배지·비활성 표시·재시도, button:선택 자료 삭제, card:요약, list:추천 질문, list:질문·답변(인용 칩 hover 미리보기→원문 위치 이동·유튜브 칩은 mm:ss→S-10 그 시각 재생), form:질문 입력*, button:자료 추가, button:리포트 생성 | projects, sources, source_chunks, conversations, messages, processing_jobs | A-03, A-04, A-05, A-06, A-08 | 로그인(소유자) | S-09, S-10, S-12, S-07 |
 | S-09 | 자료 추가 | 폼 | 다이얼로그(/projects/[projectId]) | PDF·유튜브·URL 등록 | modal:자료 추가, tabs:PDF·유튜브·URL, form:파일(여러 개) 또는 URL*(유튜브는 공개 영상 1건), text:지원 예정 매체 안내(오디오·Office·HWP 등, PRD 3-1), button:추가, button:취소 | sources, processing_jobs | A-04 | 로그인(소유자) | S-08 |
@@ -25,6 +25,7 @@
 | S-15 | 오류 | 상세 | 오류 페이지 | 예상 못한 오류 안내·재시도 | header, breadcrumb, text:문제가 생겼습니다, button:다시 시도, link:대시보드로 | — | — | 누구나 | S-06 |
 | S-16 | 이용약관 | 상세 | /terms | 약관 확인·권리자 삭제 요청 | header, breadcrumb, text:이용약관 본문·YouTube 약관 고지, text:권리자 삭제 요청 창구, link:개인정보처리방침, button:이전으로 | — | — | 누구나 | S-17, S-01 |
 | S-17 | 개인정보처리방침 | 상세 | /privacy | 개인정보 처리 내용 확인 | header, breadcrumb, text:처리방침 본문·Google 개인정보 정책 링크, link:이용약관, button:이전으로 | — | — | 누구나 | S-16, S-01 |
+| S-18 | 앱 설치 | 상세 | /download | 내 기기용 설치 파일 받기 | header, breadcrumb, card:추천(감지한 OS·버튼·버전·크기·SHA-256), list:전체 파일(Android·Windows·macOS), text:설치 안내·인터넷 연결 필요, link:웹으로 계속 사용 | 배포 목록(정적 매니페스트) | — | 로그인(제안, ADR-0007 #2) | S-06, S-02 |
 
 유튜브 범위([ADR-0006](adr/0006-youtube-summary-and-capture-mvp.md)): MVP는 S-10의 L0 장면 카드(썸네일은 YouTube 주소로 표시만). L1 사용자 승인 탭 캡처는 법무 확인 후 S-10에 추가, L2 업로드 영상 키프레임은 이후([검토 4장](youtube-mvp-review.md#4-중요-장면-캡처)). S-16·S-17의 YouTube·Google 고지 의무와 문안은 미확인(공식 원문 대조·법무 확인 필요, [검토 1장](youtube-mvp-review.md#1-확인한-제약)). 권리자 삭제 요청 창구의 방식은 팀장 결정 필요.
 
@@ -50,6 +51,7 @@
 | S-15 | — | — | — | — |
 | S-16 | — | — | — | — |
 | S-17 | — | — | — | — |
+| S-18 | 배포된 파일 없음 안내 + 웹으로 계속 사용. 비로그인 접근은 S-02로 이동 후 복귀. 비서명 베타면 경고 문구(SmartScreen·Gatekeeper) 표시 | 목록 스켈레톤 | 목록 불러오기 실패 + 다시 시도, 지원하지 않는 OS(iOS 등) 안내 | 다운로드 시작 + 설치 안내 |
 
 ## 흐름
 | ID | 흐름 | 단계 |
@@ -59,3 +61,4 @@
 | F-03 | 리포트 다시 보기·내보내기 | S-06 → S-11 → S-12 |
 | F-04 | 비밀번호 재설정 | S-02 → S-04 → S-02 → S-06 |
 | F-05 | 유튜브 요약·장면 카드 | S-06 → S-08 → S-09 → S-08 → S-10 → S-12 |
+| F-06 | 앱 설치 (비로그인 접근은 S-02 로그인 후 S-18 복귀) | S-06 → S-18 → 파일 다운로드·설치 → 앱 첫 실행(S-02 로그인) → S-06 |
