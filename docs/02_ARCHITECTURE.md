@@ -43,9 +43,10 @@
 |---|---|---|
 | 브라우저 | anon 키 + 사용자 JWT | RLS가 허용한 SELECT만 |
 | 웹 서버 | 사용자 세션 | 쓰기 RPC 호출(`auth.uid()`·한도 검사 포함) |
-| Worker | service_role (유일) | 상태 갱신·청크 저장·작업 회수 |
+| Worker | DB 역할 `knowflow_worker`(비슈퍼유저 LOGIN, `noinherit`) 접속 후 `service_role`로 전환 (유일) | 상태 갱신·청크 저장·작업 회수. 유출 시 `service_role`로 전환할 수 있어 전 사용자 데이터 접근 가능. 비밀번호는 환경 변수로만 주입(마이그레이션에 없음). 회전: `alter role knowflow_worker password`로 새 값 설정 → Worker 환경 변수 교체 → 재시작 |
 | 웹 서버 | YouTube Data API 키(서버 환경 변수) | A-04 `videos.list` 조회 |
 | Worker | YouTube Data API 키, Gemini 키(서버 환경 변수) | 일일 재확인, 영상 분석 |
+- **미확인**: 실제 Supabase에서 `grant service_role to knowflow_worker` 실행 가능 여부(배포 전 확인 필요).
 - `authenticated` 롤은 모든 테이블의 INSERT·UPDATE·DELETE 권한을 회수한다. 쓰기는 SECURITY DEFINER RPC로만 한다.
 - 가져온 웹 텍스트는 신뢰하지 않는 데이터로 다룬다(프롬프트 인젝션 방어).
 - 상태 전이는 서버 함수만 수행한다. 사용자는 재시도·취소 요청만 보낸다([JOBS.md](blueprints/contracts/JOBS.md)).
@@ -75,6 +76,7 @@
 |---|---|
 | 작업 큐 | Supabase 기반 큐(pgmq 우선, 불가 시 테이블 폴링). 처리량은 착수 시 측정 |
 | Worker 실행 환경 | 상시 컨테이너, 외부 연결은 허용 목록(DB·임베딩 서버·AI 공급자·Gemini·YouTube Data API)만([PRD 8-1](01_PRD.md)) |
+| 외부 연결 격리 | 로컬(compose): Worker는 `internal` 망에만 붙고 외부 출구는 허용 목록 CONNECT 프록시뿐, 공개 인터넷 기본 거부. 운영(Fly) 격리 방식은 **배포 전 결정**([ADR-0003](adr/0003-hosting-and-upload-path.md)) |
 | 스케줄 실행 주체 | Worker 일일 스윕(유튜브 재확인, [05#8](05_DATA_MODEL.md)) |
 | ADR 예약 | 0003 호스팅·업로드 경로(task-002), 0004 임베딩·청킹(task-013) |
 | 임베딩 모델 | 잠정 bge-m3, 골든셋·라이선스 확인 후 확정 |

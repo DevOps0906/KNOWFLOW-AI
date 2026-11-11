@@ -5,6 +5,7 @@ export const AUTHENTICATED_EXECUTE = [
   "consume_auth_rate_limit",
   "create_project",
   "delete_project",
+  "list_project_jobs",
   "register_pdf_source",
   "retry_source",
   "update_profile",

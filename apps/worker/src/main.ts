@@ -1,12 +1,29 @@
-import { loadConfig } from "./config.js";
-import { createPool } from "./db.js";
+import { loadConfig, type WorkerConfig } from "./config.js";
+import { createPool, DbIdentityError, verifyDbIdentity } from "./db.js";
 import { buildHandlers } from "./handlers.js";
 import { log } from "./log.js";
 import { createPgQueue } from "./queue.js";
-import { runOnce, type RunOutcome } from "./runner.js";
+import { backoffMs, runOnce, type RunOutcome } from "./runner.js";
 
-const config = loadConfig();
-const pool = createPool(config);
+function refuseStart(reason: string, e?: unknown): never {
+  log({ event: "startup_refused", reason, errorName: e instanceof Error ? e.name : undefined });
+  process.exit(1);
+}
+
+let config: WorkerConfig;
+try {
+  config = loadConfig();
+} catch (e) {
+  // config의 오류 메시지는 변수 이름만 담는다(값을 넣지 않는다)
+  refuseStart(e instanceof Error ? e.message : "config_error", e);
+}
+
+const pool = createPool(config, (e) => refuseStart("db_set_role_failed", e));
+try {
+  await verifyDbIdentity(pool, config.dbRole);
+} catch (e) {
+  refuseStart(e instanceof DbIdentityError ? e.code : "db_identity_check_failed", e);
+}
 const queue = createPgQueue(pool);
 const handlers = buildHandlers({ dummy: config.dummyHandlers });
 
@@ -40,6 +57,8 @@ const metrics = setInterval(() => {
 metrics.unref();
 
 function sleep(ms: number) {
+  // 처리 중에 종료 신호를 받았으면 wake가 이미 지나갔으므로 대기에 들어가지 않는다
+  if (stopping) return Promise.resolve();
   return new Promise<void>((resolve) => {
     const t = setTimeout(resolve, ms);
     wake = () => {
@@ -51,6 +70,8 @@ function sleep(ms: number) {
 
 async function loop() {
   log({ event: "worker_started", workerId: config.workerId });
+  // 일시 오류(DB 끊김, 재시도 대기로 돌아간 작업)가 이어지면 폴링 간격을 늘린다
+  let transientFailures = 0;
   while (!stopping) {
     try {
       const outcome = await runOnce({
@@ -61,10 +82,17 @@ async function loop() {
         log,
       });
       record(outcome);
-      if (outcome === "idle") await sleep(config.pollIntervalMs);
+      if (outcome === "requeued") {
+        transientFailures++;
+        await sleep(backoffMs(transientFailures, config.pollIntervalMs));
+      } else {
+        transientFailures = 0;
+        if (outcome === "idle") await sleep(config.pollIntervalMs);
+      }
     } catch (e) {
       log({ event: "loop_error", errorName: e instanceof Error ? e.name : "unknown" });
-      await sleep(Math.min(config.pollIntervalMs * 5, 10_000));
+      transientFailures++;
+      await sleep(backoffMs(transientFailures, config.pollIntervalMs));
     }
   }
 }

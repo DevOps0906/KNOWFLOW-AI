@@ -1,0 +1,130 @@
+# 로컬 전용(운영 배포 아님). 값은 .env 또는 셸 환경 변수로 준다: .env.example 참고.
+# 격리: worker는 internal 망에만 붙는다. 외부로 나가는 길은 이중 소속 egress-proxy뿐이다(프록시를 안 타면 실패).
+name: knowflow
+
+x-hardening: &hardening
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+
+x-proxy-env: &proxy-env
+  HTTP_PROXY: http://egress-proxy:8888
+  HTTPS_PROXY: http://egress-proxy:8888
+  # http:// 요청을 fetch는 CONNECT가 아닌 전달 방식으로 보내 프록시가 405로 거부한다. 임베딩 스텁은 내부망 직접 연결한다.
+  NO_PROXY: embedding-stub
+  NODE_USE_ENV_PROXY: "1"
+
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${KF_DB_SUPERUSER_PASSWORD:?.env.example을 참고해 값을 지정하세요}
+      POSTGRES_DB: knowflow
+    # 로컬 검증용이라 디스크에 남기지 않는다
+    tmpfs: ["/var/lib/postgresql/data"]
+    ports:
+      - "127.0.0.1:${KF_DB_HOST_PORT:-54329}:5432"
+    networks: [worker_internal, db_host]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d knowflow"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  migrate:
+    image: postgres:17
+    depends_on:
+      db: { condition: service_healthy }
+    entrypoint: ["sh", "/migrate/migrate.sh"]
+    environment:
+      PGHOST: db
+      PGUSER: postgres
+      PGDATABASE: knowflow
+      PGPASSWORD: ${KF_DB_SUPERUSER_PASSWORD:?.env.example을 참고해 값을 지정하세요}
+      WORKER_DB_PASSWORD: ${WORKER_DB_PASSWORD:?.env.example을 참고해 값을 지정하세요}
+    volumes:
+      - ./packages/db-tests/bootstrap.sql:/migrate/bootstrap.sql:ro
+      - ./supabase/migrations:/migrate/migrations:ro
+      - ./apps/worker/docker/migrate.sh:/migrate/migrate.sh:ro
+    networks: [db_host]
+    restart: "no"
+
+  egress-proxy:
+    <<: *hardening
+    build: ./apps/worker/docker/egress-proxy
+    image: knowflow-egress-proxy:local
+    volumes:
+      - ./apps/worker/docker/egress-proxy/allowlist.txt:/etc/egress/allowlist.txt:ro
+    networks: [worker_internal, egress]
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('net').connect(8888,'127.0.0.1').on('connect',()=>process.exit(0)).on('error',()=>process.exit(1))"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+  embedding-stub:
+    <<: *hardening
+    image: node:26.13.0-bookworm-slim@sha256:add5c17c14752c54d2f3d519ec46a3815684d41c33f198bcb09fb998f7dcbf68
+    user: node
+    command: ["node", "/stub/server.mjs"]
+    volumes:
+      - ./apps/worker/docker/embedding-stub/server.mjs:/stub/server.mjs:ro
+    networks: [worker_internal]
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080/health').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+  worker:
+    <<: *hardening
+    build:
+      context: .
+      dockerfile: apps/worker/Dockerfile
+    image: knowflow-worker:local
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      egress-proxy: { condition: service_healthy }
+      embedding-stub: { condition: service_healthy }
+    environment:
+      <<: *proxy-env
+      # pg는 프록시를 탈 수 없어 내부망으로 직접 붙는다
+      DATABASE_URL: postgres://knowflow_worker:${WORKER_DB_PASSWORD:?.env.example을 참고해 값을 지정하세요}@db:5432/knowflow
+      WORKER_DB_ROLE: service_role
+      WORKER_DUMMY_HANDLERS: "1"
+    stop_grace_period: 30s
+    networks: [worker_internal]
+
+  # 검증 전용(apps/worker/scripts/verify-egress.mjs). worker와 같은 이미지·UID·권한으로 돈다.
+  probe-isolated:
+    <<: *hardening
+    profiles: [verify]
+    image: knowflow-worker:local
+    entrypoint: ["node", "/probe/egress-probe.mjs", "isolated"]
+    environment:
+      <<: *proxy-env
+      PROBE_GATEWAYS: ${PROBE_GATEWAYS:-}
+      PROBE_HOST_PORTS: ${PROBE_HOST_PORTS:-}
+    volumes:
+      - ./apps/worker/scripts/egress-probe.mjs:/probe/egress-probe.mjs:ro
+    networks: [worker_internal]
+
+  # 대조군: 격리되지 않은 망에서 같은 프로브가 외부에 닿는지 먼저 확인한다
+  probe-control:
+    <<: *hardening
+    profiles: [verify]
+    image: knowflow-worker:local
+    entrypoint: ["node", "/probe/egress-probe.mjs", "control"]
+    volumes:
+      - ./apps/worker/scripts/egress-probe.mjs:/probe/egress-probe.mjs:ro
+    networks: [control]
+
+networks:
+  worker_internal:
+    internal: true
+  # 프록시의 외부 출구
+  egress: {}
+  # db 포트 게시·migrate 전용(worker는 소속되지 않는다)
+  db_host: {}
+  control: {}

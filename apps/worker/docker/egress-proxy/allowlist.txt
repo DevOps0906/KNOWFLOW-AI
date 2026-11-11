@@ -1,0 +1,3 @@
+# Worker 외부 출구 허용 목록. 한 줄에 정확한 host:port 하나(와일드카드 금지).
+# Gemini·YouTube는 task-027에서 추가한다.
+api.anthropic.com:443

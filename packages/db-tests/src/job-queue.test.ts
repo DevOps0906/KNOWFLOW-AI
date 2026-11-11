@@ -277,6 +277,221 @@ describe("retry_source (A-05)", () => {
   });
 });
 
+describe("retry_source 자격·요청 한도 (A-05)", () => {
+  const retrySql = "select public.retry_source($1, $2, $3) as r";
+  const retry = (sub: string, sourceId: string, key: string = randomUUID()) =>
+    as(asUser(sub), (c) => c.query<{ r: { job_id: string; duplicate: boolean } }>(retrySql, [sourceId, key, "h"]), { commit: true }).then(
+      (r) => r.rows[0]!.r,
+    );
+  /** SQLSTATE·message·DETAIL을 함께 본다 */
+  const retryError = (sub: string, sourceId: string) =>
+    as(asUser(sub), (c) => c.query(retrySql, [sourceId, randomUUID(), "h"])).then(
+      () => null,
+      (e: { code?: string; message: string; detail?: string }) => e,
+    );
+
+  /** Worker 경로(claim → fail_job)로 최종 실패시킨 자료 */
+  async function failThroughWorker(retryable: boolean, errorCode = "bad_input") {
+    // 앞선 재시도가 만든 대기 작업이 claim을 가로채지 않도록 비운다
+    await admin("update public.processing_jobs set status = 'cancelled' where status in ('queued', 'running')");
+    const made = await makeJob({ maxAttempts: 1, usedQuota: 1 });
+    const c = await workerClient();
+    try {
+      const q = createPgQueue(c);
+      await q.claim(60);
+      expect(await q.fail(made.jobId, 1, errorCode, retryable)).toBe("failed");
+    } finally {
+      await c.end();
+    }
+    return made;
+  }
+
+  /** 윈도 경계에 걸려도 결과가 같도록 현재·다음 분 카운터를 모두 채운다 */
+  const seedRetryHits = (uid: string, hits: number) =>
+    admin(
+      `insert into public.auth_rate_limits (scope, key_hash, window_start, hits)
+       select 'source_retry', encode(sha256(convert_to($1::text, 'UTF8')), 'hex'), w, $2
+         from unnest(array[
+           to_timestamp(floor(extract(epoch from now()) / 60) * 60),
+           to_timestamp(floor(extract(epoch from now()) / 60) * 60 + 60)
+         ]) w
+       on conflict (scope, key_hash, window_start) do update set hits = excluded.hits`,
+      [uid, hits],
+    );
+
+  it("fail_job이 재시도 불가를 저장하고 retry_source는 KF422로 거부한다(작업·쿼터 변화 없음)", async () => {
+    const { uid, sourceId, jobId } = await failThroughWorker(false);
+    const stored = await admin<{ retryable: boolean }>("select retryable from public.processing_jobs where id = $1", [jobId]);
+    expect(stored.rows[0]!.retryable).toBe(false);
+
+    const quotaBefore = await usedJobs(uid);
+    expect((await retryError(uid, sourceId))?.code).toBe("KF422");
+    const n = await admin<{ n: number }>("select count(*)::int as n from public.processing_jobs where source_id = $1", [sourceId]);
+    expect(n.rows[0]!.n).toBe(1);
+    expect(await usedJobs(uid)).toBe(quotaBefore);
+    expect((await sourceRow(sourceId)).status).toBe("failed");
+  });
+
+  it("같은 error_code여도 저장된 retryable이 true면 재시도되어 새 작업을 만든다", async () => {
+    const { uid, sourceId, jobId } = await failThroughWorker(true);
+    const r = await retry(uid, sourceId);
+    expect(r.duplicate).toBe(false);
+    expect(r.job_id).not.toBe(jobId);
+    expect(await jobRow(r.job_id)).toMatchObject({ status: "queued", attempt_count: 0 });
+  });
+
+  it("no_handler는 재시도 불가로 닫혀도 retryable=true로 저장되어 재시도할 수 있다", async () => {
+    const { uid, sourceId, jobId } = await failThroughWorker(false, "no_handler");
+    expect(await jobRow(jobId)).toMatchObject({ status: "failed", error_code: "no_handler" });
+    const stored = await admin<{ retryable: boolean }>("select retryable from public.processing_jobs where id = $1", [jobId]);
+    expect(stored.rows[0]!.retryable).toBe(true);
+
+    const r = await retry(uid, sourceId);
+    expect(r.duplicate).toBe(false);
+    expect(await jobRow(r.job_id)).toMatchObject({ status: "queued", attempt_count: 0 });
+  });
+
+  it("타인의 자료는 재시도 불가 여부와 무관하게 P0002다", async () => {
+    const { sourceId } = await failThroughWorker(false);
+    expect((await retryError(await createUser(), sourceId))?.code).toBe("P0002");
+  });
+
+  it("한도 직전(9회)까지는 통과하고, 10회가 찼으면 retry_rate_limited(KF429)와 남은 초를 돌려준다", async () => {
+    const allowed = await failThroughWorker(true);
+    await seedRetryHits(allowed.uid, 9);
+    expect((await retry(allowed.uid, allowed.sourceId)).duplicate).toBe(false);
+
+    const { uid, sourceId } = await failThroughWorker(true);
+    await seedRetryHits(uid, 10);
+    const quotaBefore = await usedJobs(uid);
+    const e = await retryError(uid, sourceId);
+    expect(e).toMatchObject({ code: "KF429", message: "retry_rate_limited" });
+    expect(Number(e?.detail)).toBeGreaterThanOrEqual(1);
+    expect(Number(e?.detail)).toBeLessThanOrEqual(60);
+    expect(await usedJobs(uid)).toBe(quotaBefore);
+    expect((await sourceRow(sourceId)).status).toBe("failed");
+  });
+
+  it("같은 멱등 키 재요청은 요청 한도에 걸리지 않는다", async () => {
+    const { uid, sourceId } = await failThroughWorker(true);
+    const key = randomUUID();
+    const first = await retry(uid, sourceId, key);
+    await seedRetryHits(uid, 10);
+    expect(await retry(uid, sourceId, key)).toEqual({ job_id: first.job_id, duplicate: true });
+  });
+
+  it("월 쿼터 초과는 quota_exceeded와 다음 달까지 남은 초를 돌려준다", async () => {
+    const { uid, sourceId } = await failThroughWorker(true);
+    await admin("update public.user_quotas set used_source_jobs = 100 where user_id = $1", [uid]);
+    const e = await retryError(uid, sourceId);
+    expect(e).toMatchObject({ code: "KF429", message: "quota_exceeded" });
+    expect(Number(e?.detail)).toBeGreaterThanOrEqual(1);
+    expect(Number(e?.detail)).toBeLessThanOrEqual(31 * 86_400);
+  });
+
+  it("consume_auth_rate_limit으로는 재시도 카운터를 건드릴 수 없다", async () => {
+    const e = await failure(asUser(randomUUID()), "select * from public.consume_auth_rate_limit('source_retry', $1)", ["a".repeat(64)]);
+    expect(e?.code).toBe("22023");
+  });
+
+  // 상태 전이 한정: 작업 행·attempt 펜싱이 중복되지 않음을 본다. 청크·인용 같은 결과물 중복 방지는 task-011 입력이다.
+  it("임대 만료 재수령 시 상태 전이가 중복되지 않는다(작업 행 1개, 이전 시도 거부 — 상태 한정)", async () => {
+    const { jobId, sourceId } = await makeJob();
+    const c = await workerClient();
+    try {
+      const q = createPgQueue(c);
+      await q.claim(60);
+      await expireLease(jobId);
+      expect(await q.claim(60)).toMatchObject({ id: jobId, attempt_count: 2 });
+      expect(await q.complete(jobId, 1)).toBe(false);
+      expect(await q.complete(jobId, 2)).toBe(true);
+      const n = await admin<{ n: number }>("select count(*)::int as n from public.processing_jobs where source_id = $1", [sourceId]);
+      expect(n.rows[0]!.n).toBe(1);
+      expect(await jobRow(jobId)).toMatchObject({ status: "succeeded", attempt_count: 2 });
+    } finally {
+      await c.end();
+    }
+  });
+});
+
+describe("list_project_jobs (A-05)", () => {
+  type ListedJob = { id: string; job_type: string; status: string; source_id: string | null; source_status: string | null; report_id: string | null; created_at: string };
+  const listSql = "select to_jsonb(j) as j from public.list_project_jobs($1, $2, $3, $4, $5) j";
+  const list = (sub: string, projectId: string, opts: { status?: string; cursorAt?: string; cursorId?: string; limit?: number } = {}) =>
+    as(asUser(sub), (c) => c.query<{ j: ListedJob }>(listSql, [projectId, opts.status ?? null, opts.cursorAt ?? null, opts.cursorId ?? null, opts.limit ?? 21])).then((r) =>
+      r.rows.map((x) => x.j),
+    );
+
+  async function addReportJob(uid: string, projectId: string) {
+    const report = await admin<{ id: string }>("insert into public.reports (project_id, user_id, title) values ($1, $2, '리포트') returning id", [projectId, uid]);
+    const job = await admin<{ id: string }>(
+      "insert into public.processing_jobs (user_id, report_id, job_type) values ($1, $2, 'report_generate') returning id",
+      [uid, report.rows[0]!.id],
+    );
+    return { reportId: report.rows[0]!.id, jobId: job.rows[0]!.id };
+  }
+
+  it("자료 작업과 리포트 작업을 함께, 자료 상태를 분리해 돌려준다", async () => {
+    const { uid, projectId, jobId, sourceId } = await makeJob();
+    const report = await addReportJob(uid, projectId);
+    const rows = await list(uid, projectId);
+    expect(new Set(rows.map((r) => r.id))).toEqual(new Set([jobId, report.jobId]));
+    expect(rows.find((r) => r.id === jobId)).toMatchObject({ job_type: "source_ingest", status: "queued", source_id: sourceId, source_status: "queued" });
+    expect(rows.find((r) => r.id === report.jobId)).toMatchObject({ job_type: "report_generate", source_id: null, source_status: null, report_id: report.reportId });
+  });
+
+  it("상태로 거르고, 복합 커서로 빠짐·중복 없이 넘긴다", async () => {
+    const { uid, projectId, jobId } = await makeJob();
+    const r1 = await addReportJob(uid, projectId);
+    const r2 = await addReportJob(uid, projectId);
+    // 같은 created_at이어도 id로 이어져야 한다
+    await admin("update public.processing_jobs set created_at = '2026-11-01T00:00:00Z' where id = any($1::uuid[])", [[jobId, r1.jobId, r2.jobId]]);
+    await admin("update public.processing_jobs set status = 'failed' where id = $1", [r1.jobId]);
+
+    expect((await list(uid, projectId, { status: "failed" })).map((r) => r.id)).toEqual([r1.jobId]);
+
+    const seen: string[] = [];
+    let cursor: { cursorAt: string; cursorId: string } | undefined;
+    for (let i = 0; i < 3; i++) {
+      const page = await list(uid, projectId, { limit: 1, ...cursor });
+      expect(page).toHaveLength(1);
+      seen.push(page[0]!.id);
+      cursor = { cursorAt: page[0]!.created_at, cursorId: page[0]!.id };
+    }
+    expect(new Set(seen)).toEqual(new Set([jobId, r1.jobId, r2.jobId]));
+    expect(await list(uid, projectId, { limit: 1, ...cursor })).toEqual([]);
+  });
+
+  it("다른 프로젝트의 작업은 섞이지 않는다", async () => {
+    const { uid, projectId } = await makeJob();
+    const empty = await createProject(uid, "빈 프로젝트");
+    expect(await list(uid, empty)).toEqual([]);
+    expect((await list(uid, projectId)).length).toBe(1);
+  });
+
+  it("타인 프로젝트는 P0002, 삭제된 프로젝트도 P0002, 미인증 28000, anon 42501", async () => {
+    const { uid, projectId } = await makeJob();
+    const args = [projectId, null, null, null, 21];
+    expect((await failure(asUser(await createUser()), listSql, args))?.code).toBe("P0002");
+    expect((await failure({ role: "authenticated" }, listSql, args))?.code).toBe("28000");
+    expect((await failure({ role: "anon" }, listSql, args))?.code).toBe("42501");
+    await admin("update public.projects set deleted_at = now() where id = $1", [projectId]);
+    expect((await failure(asUser(uid), listSql, args))?.code).toBe("P0002");
+  });
+
+  it("잘못된 입력은 22023", async () => {
+    const { uid, projectId } = await makeJob();
+    for (const args of [
+      [projectId, "done", null, null, 21],
+      [projectId, null, null, null, 0],
+      [projectId, null, null, null, 102],
+      [projectId, null, "2026-11-01T00:00:00Z", null, 21],
+    ]) {
+      expect((await failure(asUser(uid), listSql, args))?.code).toBe("22023");
+    }
+  });
+});
+
 describe("Worker 러너 통합(실제 DB)", () => {
   const deps = (c: pg.Client, handlers: Parameters<typeof runOnce>[0]["handlers"]) => ({
     queue: createPgQueue(c),

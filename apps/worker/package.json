@@ -8,7 +8,10 @@
     "start": "node dist/main.js",
     "lint": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "verify:egress": "node scripts/verify-egress.mjs",
+    "verify:dummy-job": "node scripts/verify-dummy-job.mjs",
+    "verify:secrets": "node scripts/verify-secrets.mjs"
   },
   "dependencies": {
     "pg": "8.23.1"

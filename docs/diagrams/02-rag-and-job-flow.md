@@ -87,7 +87,7 @@ sequenceDiagram
       A->>L: 청크 ID가 붙은 근거 + 질문
       L-->>A: 답변 + 인용 청크 ID
       A->>V: 인용 ID 검증
-      V->>D: 청크 존재 · project_id 일치 확인
+      V->>V: 인용 ID가 match_chunks 결과(project_id 강제)에 있는지 확인
       alt 검증 실패
         V-->>A: 유효하지 않은 인용 있음
         A->>L: 1회 재생성 요청

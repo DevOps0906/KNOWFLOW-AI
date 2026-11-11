@@ -1,0 +1,30 @@
+# 비밀·로컬 환경은 빌드 컨텍스트에 넣지 않는다
+**/.env*
+**/*.pem
+**/*.key
+**/*.p12
+**/*.pfx
+**/id_rsa*
+**/id_ed25519*
+
+# 로컬 산출물·캐시
+.git
+**/.venv
+**/node_modules
+**/.next
+**/dist
+**/build
+**/coverage
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+**/*.tsbuildinfo
+.nomad
+
+# 이미지에 필요 없는 문서·도구 설정
+.claude
+.codex
+.gemini
+docs
+design
+tasks

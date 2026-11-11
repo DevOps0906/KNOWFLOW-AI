@@ -12,7 +12,7 @@
 
 ## 할 것
 - POST: 멱등 키(`idempotency_keys`), `consume_quota`로 리포트 쿼터 차감, completed 자료 없음 422, `enqueue_job`으로 작업 생성, 리포트 id·작업 id 202 반환
-- Worker: 대상 자료 검색(`match_chunks_for_job`) → 섹션별 생성 → 인용 검증 → `report_citations`(chunk_id·position) 저장
+- Worker: 대상 자료 검색(`match_chunks_for_job`) → 섹션별 생성 → 인용 검증(`packages/citations`) → 저장 직전 `unavailable_at` 재확인 → `report_citations`(chunk_id·position) 저장
 - 인용 검증 실패 문장은 1회 재생성 후 제거 또는 표시, 작업 상태 갱신, 실패 시 쿼터 차감 취소
 - A-08 장면 카드 입력: POST의 장면 카드 id 목록 처리, 겹치는 청크 없는 카드 422(task-029의 겹침 판정 함수 사용)
 - GET 목록(프로젝트 필터·검색어·커서)

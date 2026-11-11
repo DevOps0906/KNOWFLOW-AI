@@ -29,9 +29,17 @@ export interface RunnerDeps {
 
 export type RunOutcome = "idle" | "succeeded" | "requeued" | "failed" | "stale";
 
+/** 일시 오류가 연속 failures번째일 때 다음 폴링까지 기다릴 시간(지수 증가, 상한 있음). */
+export function backoffMs(failures: number, baseMs: number, maxMs = 30_000): number {
+  return Math.min(maxMs, baseMs * 2 ** Math.min(Math.max(failures, 1) - 1, 16));
+}
+
 /** 작업 하나를 가져와 처리한다. 가져올 작업이 없으면 idle. */
 export async function runOnce(deps: RunnerDeps): Promise<RunOutcome> {
   const { queue, log } = deps;
+  const leaseMs = deps.leaseSeconds * 1000;
+  // 임대는 DB가 요청을 처리한 시점부터 잰다. 보내기 전 시각을 기준으로 해 로컬 기한이 DB보다 늦지 않게 한다.
+  const claimSentAt = Date.now();
   const job = await queue.claim(deps.leaseSeconds);
   if (!job) return "idle";
   const attempt = job.attempt_count;
@@ -39,17 +47,43 @@ export async function runOnce(deps: RunnerDeps): Promise<RunOutcome> {
   log({ event: "job_claimed", ...base });
 
   const lost = new AbortController();
+  // 하트비트가 오류·지연으로 연장되지 못하면 임대는 이미 끝났을 수 있으므로, 마지막 성공 기준으로 임대 시간을 넘기면 중단한다
+  let deadlineAt = claimSentAt + leaseMs;
+  let deadlineTimer: NodeJS.Timeout | undefined;
+  const armDeadline = () => {
+    clearTimeout(deadlineTimer);
+    deadlineTimer = setTimeout(() => {
+      if (lost.signal.aborted) return;
+      log({ event: "lease_deadline_exceeded", ...base });
+      lost.abort();
+    }, Math.max(0, deadlineAt - Date.now()));
+  };
+  armDeadline();
+  // finally 뒤에 도착한 하트비트 응답은 끝난 시도의 것이므로 무시한다
+  let finished = false;
   const heartbeat = setInterval(() => {
+    const sentAt = Date.now();
     queue
       .heartbeat(job.id, attempt, deps.leaseSeconds)
       .then((ok) => {
-        if (!ok && !lost.signal.aborted) {
-          log({ event: "lease_lost", ...base });
-          lost.abort();
+        if (finished) return;
+        if (!ok) {
+          if (!lost.signal.aborted) {
+            log({ event: "lease_lost", ...base });
+            lost.abort();
+          }
+          return;
+        }
+        if (!lost.signal.aborted && sentAt + leaseMs > deadlineAt) {
+          deadlineAt = sentAt + leaseMs;
+          armDeadline();
         }
       })
-      .catch(() => log({ event: "heartbeat_error", ...base }));
+      .catch(() => {
+        if (!finished) log({ event: "heartbeat_error", ...base });
+      });
   }, deps.heartbeatSeconds * 1000);
+  lost.signal.addEventListener("abort", () => clearInterval(heartbeat), { once: true });
 
   try {
     const handler = deps.handlers[job.job_type];
@@ -88,6 +122,8 @@ export async function runOnce(deps: RunnerDeps): Promise<RunOutcome> {
     log({ event: "job_finished", ...base, outcome });
     return outcome;
   } finally {
+    finished = true;
     clearInterval(heartbeat);
+    clearTimeout(deadlineTimer);
   }
 }

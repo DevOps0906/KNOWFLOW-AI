@@ -20,6 +20,19 @@ function int(env: NodeJS.ProcessEnv, name: string, fallback: number, min: number
   return n;
 }
 
+const DUMMY_DB_HOSTS = new Set(["db", "localhost", "127.0.0.1", "[::1]"]);
+
+// 더미 핸들러는 작업을 실제로 처리하지 않고 succeeded로 닫으므로 로컬 DB에서만 허용한다
+function assertDummyAllowed(databaseUrl: string) {
+  let host: string;
+  try {
+    host = new URL(databaseUrl).hostname.toLowerCase();
+  } catch {
+    throw new Error("DATABASE_URL 형식이 올바르지 않습니다");
+  }
+  if (!DUMMY_DB_HOSTS.has(host)) throw new Error("더미 핸들러는 compose db·loopback DB에서만 쓸 수 있습니다");
+}
+
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): WorkerConfig {
   const databaseUrl = env.DATABASE_URL;
   if (!databaseUrl) throw new Error("DATABASE_URL이 필요합니다");
@@ -28,6 +41,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): WorkerConfig {
   const leaseSeconds = int(env, "WORKER_LEASE_SECONDS", 120, 10, 3600);
   const heartbeatSeconds = int(env, "WORKER_HEARTBEAT_SECONDS", 30, 1, 1800);
   if (heartbeatSeconds * 2 > leaseSeconds) throw new Error("heartbeat 주기는 임대 시간의 절반 이하여야 합니다");
+  const dummyHandlers = env.WORKER_DUMMY_HANDLERS === "1";
+  if (dummyHandlers) assertDummyAllowed(databaseUrl);
   return {
     databaseUrl,
     dbRole,
@@ -37,6 +52,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): WorkerConfig {
     heartbeatSeconds,
     shutdownGraceMs: int(env, "WORKER_SHUTDOWN_GRACE_MS", 25_000, 0, 600_000),
     metricsIntervalMs: int(env, "WORKER_METRICS_INTERVAL_MS", 30_000, 1000, 3_600_000),
-    dummyHandlers: env.WORKER_DUMMY_HANDLERS === "1",
+    dummyHandlers,
   };
 }

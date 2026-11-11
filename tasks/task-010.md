@@ -8,7 +8,7 @@
 | 보안 영향 | 키·권한 (Worker 전용 서비스 키, 네트워크 격리) |
 | 담당 | builder (+ tester). 착수 전 challenger |
 | 근거 | `docs/adr/0002-mvp-tech-decisions.md`, `docs/04_API.md#A-05`, `docs/05_DATA_MODEL.md#6`, `docs/01_PRD.md#8-1` |
-| 쓰기 허용 | `apps/worker/**`, `supabase/migrations/**`(새 번호만), `apps/web/src/app/api/projects/[projectId]/jobs/**`, `apps/web/src/app/api/sources/[sourceId]/retry/**` |
+| 쓰기 허용 | `apps/worker/**`, `supabase/migrations/**`(새 번호만), `apps/web/src/app/api/projects/[projectId]/jobs/**`, `apps/web/src/app/api/sources/[sourceId]/retry/**`, `apps/web/src/lib/jobs/**`, `packages/db-tests/**`, 루트 `compose.yaml`·`.dockerignore` |
 
 ## 할 것
 - processing_jobs 테이블 폴링(`FOR UPDATE SKIP LOCKED` + `locked_until` 임대, ADR-0005). 처리량 측정 기록
