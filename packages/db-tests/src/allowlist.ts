@@ -23,7 +23,9 @@ export const SERVICE_ROLE_EXECUTE = [
   "heartbeat_job",
   "progress_job",
   "refund_quota",
+  "register_youtube_source",
   "replace_source_chunks",
+  "replace_source_moments",
 ];
 
 /** authenticated가 SELECT 할 수 있는 public 테이블 (source_chunks·idempotency_keys는 없음) */
@@ -36,6 +38,7 @@ export const AUTHENTICATED_SELECT = [
   "projects",
   "report_citations",
   "reports",
+  "source_moments",
   "sources",
   "usage_events",
   "user_quotas",
@@ -53,6 +56,7 @@ export const ALL_TABLES = [
   "report_citations",
   "reports",
   "source_chunks",
+  "source_moments",
   "sources",
   "usage_events",
   "user_quotas",

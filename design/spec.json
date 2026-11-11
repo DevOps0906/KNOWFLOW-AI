@@ -1,12 +1,12 @@
 {
  "version": "1",
- "generated": "2026-11-11T06:13:42+00:00",
+ "generated": "2026-11-11T18:03:11+00:00",
  "docs": "docs",
  "tokens": ".\\apps\\web\\src\\styles\\tokens.css",
  "sources": {
   "docs/03_SCREENS_UX.md": "1b1dd05560f2",
-  "docs/04_API.md": "9ef819e5848f",
-  "docs/05_DATA_MODEL.md": "895368dddd49",
+  "docs/04_API.md": "2431cf4fbfe3",
+  "docs/05_DATA_MODEL.md": "a70159b74e2f",
   "docs/blueprints/auth-rbac/api.md": "32da9e8c7094",
   "docs/blueprints/auth-rbac/data.md": "25c60991cbd5",
   "docs/blueprints/auth-rbac/screens.md": "c3605370cf92",
@@ -24,18 +24,9 @@
   "docs/blueprints/stt-voice/screens.md": "0cc876452a0f"
  },
  "changed": [
-  "S-01",
-  "S-02",
-  "S-03",
   "S-06",
   "S-08",
-  "S-09",
-  "S-10",
-  "S-11",
-  "S-12",
-  "S-13",
-  "S-16",
-  "S-17"
+  "S-09"
  ],
  "removed": [],
  "screens": {
@@ -467,7 +458,7 @@
     "저장된 보기·열 설정"
    ],
    "states_missing": [],
-   "hash": "45b9b24b0d18",
+   "hash": "b96f7db537e2",
    "wireframe": "design/wireframes/S-06.html"
   },
   "S-07": {
@@ -681,7 +672,7 @@
     "활동·변경 이력"
    ],
    "states_missing": [],
-   "hash": "94c873798532",
+   "hash": "777934840fbd",
    "wireframe": "design/wireframes/S-08.html"
   },
   "S-09": {
@@ -762,7 +753,7 @@
     "임시 저장(긴 폼)"
    ],
    "states_missing": [],
-   "hash": "e3a8484b2e7d",
+   "hash": "c80b8679924e",
    "wireframe": "design/wireframes/S-09.html"
   },
   "S-10": {
@@ -1584,9 +1575,9 @@
     "메서드": "GET · POST",
     "경로": "/api/projects/[projectId]/jobs · /api/sources/[sourceId]/retry",
     "입력": "(GET) 상태 필터, 커서 / (POST) 멱등 키",
-    "출력": "작업 목록(source_id·source.status와 job.status 분리 표기(job: queued·running·succeeded·failed·cancelled, 매핑 05#6)·단계·attempt_count·error_code) / 새 작업 id(202, 재시도=새 작업 생성)",
+    "출력": "작업 목록(id·job_type·source_id·source.status와 status 분리 표기(job: queued·running·succeeded·failed·cancelled, 매핑 05#6)·step·progress·attempt_count·error_code·retryable·report_id·created_at·started_at·finished_at) / 새 작업 id(202, 재시도=새 작업 생성)",
     "권한": "소유자",
-    "오류": "401 · 404 · 409 진행 중 작업 있음(job queued·running) · 422 completed 자료는 재처리만·재시도 불가 실패(비공개·정책 거절·입력 초과) · 429 재시도 한도"
+    "오류": "400 멱등 키 없음·형식 오류 · 401 · 404 · 409 진행 중 작업 있음(job queued·running) · 422 completed 자료는 재처리만·재시도 불가 실패(`retryable=false`, [05#7](05_DATA_MODEL.md)) · 429 재시도 한도"
    },
    "source": "docs/04_API.md"
   },
@@ -1742,9 +1733,9 @@
    "row": {
     "테이블": "processing_jobs",
     "목적": "자료 처리 작업·이력(S-06·08·09)",
-    "주요 컬럼": "id, user_id, source_id(nullable), report_id(nullable)→reports, job_type(`source_ingest`·`report_generate`·`source_recheck`), status, current_step, progress(0~100), attempt_count, max_attempts(기본 3), locked_until, heartbeat_at, error_code, started_at, finished_at",
+    "주요 컬럼": "id, user_id, source_id(nullable), report_id(nullable)→reports, job_type(`source_ingest`·`report_generate`·`source_recheck`), status, current_step, progress(0~100), attempt_count, max_attempts(기본 3), locked_until, heartbeat_at, error_code, retryable(boolean, 기본 true), started_at, finished_at",
     "RLS 기준": "소속 자료·리포트 소유자 읽기만. 쓰기는 서비스 키 서버·Worker만",
-    "비고": "상태값은 JOBS.md(`queued`·`running`·`succeeded`·`failed`·`cancelled`). 사용자 재시도 = 새 작업(새 멱등 키), 종료 작업은 되살리지 않음. 같은 자료에 진행 중 작업 1개(부분 유니크). `source_id`·`report_id` 중 하나는 필수(CHECK). 멱등 키는 `idempotency_keys`에 둔다. Worker는 heartbeat_at을 갱신하고, locked_until이 지난 running 작업은 회수(재큐잉)한다. 작업 행 생성과 pgmq 전송은 한 트랜잭션 RPC `enqueue_job`. 사용자 화면 배지(`sources.status`)와의 매핑은 6장"
+    "비고": "상태값은 JOBS.md(`queued`·`running`·`succeeded`·`failed`·`cancelled`). `retryable`은 `fail_job`이 최종 실패 때 저장하고, 재시도 자격은 error_code 목록이 아니라 이 값으로 판단한다(7장). 사용자 재시도 = 새 작업(새 멱등 키), 종료 작업은 되살리지 않음. 같은 자료에 진행 중 작업 1개(부분 유니크). `source_id`·`report_id` 중 하나는 필수(CHECK). 멱등 키는 `idempotency_keys`에 둔다. Worker는 heartbeat_at을 갱신하고, locked_until이 지난 running 작업은 회수(재큐잉)한다. 작업 행 생성과 pgmq 전송은 한 트랜잭션 RPC `enqueue_job`. 사용자 화면 배지(`sources.status`)와의 매핑은 6장"
    },
    "source": "docs/05_DATA_MODEL.md"
   },

@@ -138,6 +138,17 @@ erDiagram
     timestamptz window_start PK
     integer hits
   }
+  source_moments {
+    uuid id PK
+    uuid source_id
+    uuid project_id
+    uuid user_id
+    integer moment_index
+    jsonb locator
+    text title
+    text description
+    timestamptz created_at
+  }
   profiles ||--o{ user_quotas : "user_id"
   plans ||--o{ user_quotas : "plan_code"
   profiles ||--o{ projects : "user_id"
@@ -154,3 +165,5 @@ erDiagram
   profiles ||--o{ usage_events : "user_id"
   projects ||--o{ usage_events : "project_id"
   profiles ||--o{ idempotency_keys : "user_id"
+  sources ||--o{ source_moments : "source_id"
+  projects ||--o{ source_moments : "project_id"

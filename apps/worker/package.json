@@ -13,7 +13,8 @@
     "verify:dummy-job": "node scripts/verify-dummy-job.mjs",
     "verify:secrets": "node scripts/verify-secrets.mjs",
     "verify:ingest": "node scripts/verify-ingest.mjs",
-    "verify:parser-sandbox": "node scripts/verify-parser-sandbox.mjs"
+    "verify:parser-sandbox": "node scripts/verify-parser-sandbox.mjs",
+    "verify:youtube": "node scripts/verify-youtube.mjs"
   },
   "dependencies": {
     "citations": "workspace:*",

@@ -1,7 +1,7 @@
 # task-030 WY 사용자 승인 탭 캡처(L1)
 | 항목 | 내용 |
 |---|---|
-| 웨이브·선행 | WY · task-029, task-026(프레임 저장 허용 판정) |
+| 웨이브·선행 | WY · task-029 (활성화는 task-026 프레임 저장 허용 판정 뒤) |
 | 위험도·보안 영향 | 높음 · 노출 면·민감 데이터 (화면 캡처 업로드·저장) |
 | 담당 | builder (+ tester). 착수 전 challenger. 완료 후 reviewer(security) |
 | 근거 | `docs/youtube-mvp-review.md#4`, `docs/adr/0006-youtube-summary-and-capture-mvp.md#결정`(1번), `docs/05_DATA_MODEL.md`(캡처 저장, `#7` 반영 후), `docs/04_API.md#A-11` |

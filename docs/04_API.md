@@ -12,7 +12,7 @@
 | 목록 | 커서 방식(`cursor`, `limit`) → `{items, next_cursor}` |
 | 오류 형식 | `{error:{code, message}}` 한국어 안전 메시지만(내부 오류·키·경로 미노출) |
 | 공통 오류 | 401 세션 없음 · 404 · 429 쿼터/요청 초과(`user_quotas`·rate limit, `Retry-After`) · 500 |
-| source_type | MVP는 `pdf`·`url`·`youtube`. `youtube`는 법무 확인 후 활성화하며 그 전까지 422 "지원 예정"([05#8](05_DATA_MODEL.md)). 05 예약 목록(`audio`·`video`·`docx`·`pptx`·`image`·`text`)과 그 외 값은 422 "지원 예정" |
+| source_type | MVP는 `pdf`·`url`·`youtube`. `youtube`는 기능 플래그(`YOUTUBE_ENABLED`)가 꺼져 있으면 키·`videos.list`보다 먼저 422 "지원 예정". 플래그는 법무 확인 뒤 켠다([05#8](05_DATA_MODEL.md)). 05 예약 목록(`audio`·`video`·`docx`·`pptx`·`image`·`text`)과 그 외 값은 422 "지원 예정" |
 
 ## 엔드포인트
 | ID | 메서드 | 경로 | 입력 | 출력 | 권한 | 오류 |

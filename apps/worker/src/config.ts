@@ -1,3 +1,5 @@
+import { GEMINI_SETTINGS } from "./youtube/settings.js";
+
 // 환경 변수 → 설정. DATABASE_URL 등 비밀 값은 로그에 남기지 않는다(log.ts는 허용 필드만 출력).
 export interface WorkerConfig {
   databaseUrl: string;
@@ -15,6 +17,13 @@ export interface WorkerConfig {
   fixtureDir: string | null;
   /** 후행 요약 공급자. stub은 로컬 검증 전용, none이면 요약하지 않는다 */
   summaryProvider: "stub" | "none";
+  /** 유튜브 처리 기능 플래그(YOUTUBE_ENABLED=1, 기본 꺼짐). 꺼지면 유튜브 처리를 등록하지 않는다 */
+  youtubeEnabled: boolean;
+  /** 영상 분석 공급자. stub은 로컬 검증 전용, gemini는 명시적으로 고를 때만 */
+  youtubeAnalyzer: "stub" | "gemini";
+  /** Worker 전용 Gemini 키. 로그에 남기지 않는다. 플래그 꺼짐·스텁이면 null */
+  geminiApiKey: string | null;
+  geminiModel: string;
 }
 
 function int(env: NodeJS.ProcessEnv, name: string, fallback: number, min: number, max: number): number {
@@ -35,7 +44,7 @@ function oneOf<const T extends readonly string[]>(env: NodeJS.ProcessEnv, name: 
 
 const DUMMY_DB_HOSTS = new Set(["db", "localhost", "127.0.0.1", "[::1]"]);
 
-// 더미 핸들러·고정 파일 어댑터·스텁 요약은 실제 처리가 아니므로 로컬 DB에서만 허용한다
+// 더미 핸들러·고정 파일 어댑터·스텁 요약·스텁 영상 분석기는 실제 처리가 아니므로 로컬 DB에서만 허용한다
 function assertLocalDb(databaseUrl: string, what: string) {
   let host: string;
   try {
@@ -64,6 +73,18 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): WorkerConfig {
   }
   const summaryProvider = oneOf(env, "WORKER_SUMMARY_PROVIDER", ["none", "stub"] as const);
   if (summaryProvider === "stub") assertLocalDb(databaseUrl, "스텁 요약 공급자");
+  const youtubeEnabled = env.YOUTUBE_ENABLED === "1";
+  const youtubeAnalyzer = oneOf(env, "YOUTUBE_ANALYZER", ["stub", "gemini"] as const);
+  const geminiModel = env.GEMINI_MODEL || GEMINI_SETTINGS.defaultModel;
+  if (!/^[a-z0-9][a-z0-9.-]{0,63}$/.test(geminiModel)) throw new Error("GEMINI_MODEL 형식이 올바르지 않습니다");
+  let geminiApiKey: string | null = null;
+  // 운영(로컬 DB가 아님)에서 플래그를 켰는데 스텁이 선택됐거나 키가 없으면 기동을 거부한다
+  if (youtubeEnabled && youtubeAnalyzer === "stub") assertLocalDb(databaseUrl, "스텁 영상 분석기");
+  if (youtubeEnabled && youtubeAnalyzer === "gemini") {
+    geminiApiKey = env.GEMINI_API_KEY ?? "";
+    // 헤더에 그대로 실리므로 출력 가능한 ASCII만 허용한다(값은 메시지에 넣지 않는다)
+    if (!/^[\x21-\x7e]{1,256}$/.test(geminiApiKey)) throw new Error("YOUTUBE_ANALYZER=gemini에는 올바른 GEMINI_API_KEY가 필요합니다");
+  }
   return {
     databaseUrl,
     dbRole,
@@ -77,5 +98,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): WorkerConfig {
     sourceReader,
     fixtureDir,
     summaryProvider,
+    youtubeEnabled,
+    youtubeAnalyzer,
+    geminiApiKey,
+    geminiModel,
   };
 }

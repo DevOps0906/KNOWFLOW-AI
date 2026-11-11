@@ -1,7 +1,7 @@
 # task-027 WY 유튜브 수집(URL 검증·Gemini 분석·시각 검증)
 | 항목 | 내용 |
 |---|---|
-| 웨이브·선행 | WY · task-010, task-026, task-032 |
+| 웨이브·선행 | WY · task-010, task-032 (활성화는 task-025 통과·task-026 판정 뒤) |
 | 위험도·보안 영향 | 높음 · 노출 면·키·권한·민감 데이터 (외부 AI·YouTube API, 비신뢰 전사) |
 | 담당 | builder (+ tester). 착수 전 challenger. 완료 후 reviewer(security) |
 | 근거 | `docs/youtube-mvp-review.md#5`, `docs/adr/0006-youtube-summary-and-capture-mvp.md`, `docs/04_API.md#A-04`, `spec S-09`, `docs/01_PRD.md#8` |
@@ -9,4 +9,24 @@
 | 할 것 | S-09 유튜브 탭, A-04 `video_id` 추출·`videos.list` 동기 거절, Worker Gemini 분석(전사 구간·장면 후보만, 공급자 인터페이스 뒤, 긴 영상 분할), 시각 검증, 일시 오류만 재시도, `(project_id, video_id)` 중복 판정, 한도 제안값 적용, `source_moments`(RLS) 마이그레이션, 일일 재확인 스윕(`retry_source`의 자료당 한도·최근 작업 조회에서 `source_recheck` 제외, 새 마이그레이션), Worker 외부 연결 허용 목록 추가 |
 | 하지 않을 것 | 서버에서 영상·음성·자막 다운로드(yt-dlp·프록시 포함), 청킹(task-028), 요약·장면 카드 화면(task-029), 기존 마이그레이션 수정 |
 | 완료 조건 | [ ] 테스트: `#5` 동기 거절 사유별 422 [ ] 테스트: 범위 밖 시각·잘린 출력 처리, 정책 거절 재시도 없음 [ ] 테스트: 프로젝트 내 같은 영상 중복 거절 [ ] DB 테스트: 새 테이블 RLS [ ] 테스트: 재확인이 비공개 전환과 삭제 영상(결과 없음)만 비활성, 장애는 판정 불가 재시도 [ ] `pnpm test` · `pnpm --filter worker test` · `pnpm test:db` · `secscan` 통과 |
-| 착수 조건 | task-026 통과, `docs/youtube-mvp-review.md#7`의 02·03·04·05 반영 완료. 착수 시 계정별 API 키 탭 여부 결정(2026-11-11 보류: 마스터키 회전, DB 접근 차단, 공유 키 폴백, 무료 등급 허용이 선결) |
+| 착수 조건 | (2026-11-12 사용자 결정: task-026 통과는 활성화 조건으로 이동. 플래그 기본 꺼짐, 로컬·테스트는 스텁 공급자) `docs/youtube-mvp-review.md#7`의 02·03·04·05 반영 완료. 착수 시 계정별 API 키 탭 여부 결정(2026-11-11 보류: 마스터키 회전, DB 접근 차단, 공유 키 폴백, 무료 등급 허용이 선결) |
+
+## 구현 결정 (2026-11-12 challenger 반영, 팀장 확정)
+전제: 기능 플래그 `YOUTUBE_ENABLED`(env, 웹·Worker 각각, 기본 꺼짐). 켜는 순서는 Worker → 웹. 운영에서 플래그가 켜졌는데 실키가 없거나 스텁이 선택되면 기동 거부. 로컬·테스트는 스텁 Gemini·스텁 videos.list(실호출 없음). 활성화 전에 서비스 전체 일일 비용 상한을 정한다(task-025 결과로).
+분할(순서대로):
+- **027a DB**(새 마이그레이션 1개): `sources` CHECK에 youtube·유튜브 컬럼 CHECK, (project_id, video_id) 부분 유니크, `source_moments`(RLS, 소유자 읽기만), 영상 시간 쿼터 자원(plans·user_quotas 컬럼과 `consume_quota` 자원 종류, 월 20시간 제안값), `register_youtube_source` **service_role 전용**(웹이 세션 소유자·플래그를 확인한 뒤 user_id를 넘김. 함수 안에서 프로젝트 소유·삭제 여부·쿼터·중복 재확인), 펜싱된 `replace_source_moments`(또는 `replace_source_chunks` 확장: 같은 job·attempt 잠금 트랜잭션에서 청크·장면 함께 교체). `source_recheck` job_type은 넣지 않는다(027d).
+- **027b 웹**: 서버 전용 코드는 `apps/web/src/server/youtube/**`(`.claude/rules/web.md`), A-04 분기 `apps/web/src/lib/storage/handlers.ts`. URL 허용 경로 `watch?v=`·`youtu.be/`·`shorts/`·`embed/`·`live/`(https·http, 호스트는 youtube.com·www.youtube.com·m.youtube.com·youtu.be만), userinfo·포트·`/redirect` 거부, `list` 등 다른 파라미터 무시. 11자 video_id 정규식으로 뽑고 `original_url`·Gemini 입력은 정규 URL `https://www.youtube.com/watch?v=<id>`. 멱등 request_hash는 (project_id, video_id) 기준. 중복 23505 → 409. 플래그 꺼짐 → 키·videos.list 전에 422. S-09 탭은 플래그 꺼지면 렌더 안 함.
+- **027c Worker + task-028 합침**: 유튜브 어댑터(Gemini 스텁, 공급자 인터페이스, 긴 영상 분할), 시각 검증(범위 밖·잘린 출력), 전사 구간 → task-011 청킹(locator `t_start/t_end`) → 펜싱된 청크·장면 교체와 complete_job 한 트랜잭션 → completed. 정책 거절은 재시도 없음. 플래그 꺼짐이면 유튜브 핸들러를 등록하지 않고, 들어온 작업은 retryable=false 영구 실패.
+- **027d 재확인·파기**(활성화 전 필수, 지금은 대기): `source_recheck` job_type과 큐 함수 5개(claim·complete·fail·reap·retry)의 job_type 분기(재확인은 자료 상태·쿼터를 건드리지 않음, 사용자 수집 작업보다 뒤에 회수), 스윕 배치 상한, 파기 기준은 마지막 조회 후 30일 이내 갱신(초과 전에 고름), 파기 시 title 고정 문구 + channel_title·duration_seconds null.
+결정: #8-4 Shorts·embed·live 허용(같은 video_id). #8-5 키는 프로세스별 env(웹 `YOUTUBE_API_KEY`, Worker는 027d에서 별도 키). 분리 실익은 유출 피해 축소뿐(쿼터는 GCP 프로젝트 단위). 계정별 API 키 탭은 범위 밖. 법무 거부 시 되돌림 마이그레이션은 미리 만들지 않는다(플래그로 막음).
+- 키(2026-11-12 사용자 제공): 루트 `.env.local`(git ignore 확인)에 Gemini 키가 있다. 에이전트는 파일을 열지 않고 env 이름 `GEMINI_API_KEY`로만 참조한다. 027c는 실제 Gemini 공급자 어댑터까지 구현하되 테스트는 fetch 목만 쓴다. 실호출은 명시적 선택(`YOUTUBE_ANALYZER=gemini`)일 때만, 권리 확인된 영상으로 1회 스모크(사용자 확인 후). 기본은 스텁. Worker 이그레스 허용 목록에 `generativelanguage.googleapis.com` 추가는 027c 범위.
+- 027a 결과(2026-11-12): 마이그레이션 `20261112000100_youtube_sources.sql`. `register_youtube_source(p_user_id, p_project_id, p_video_id, p_title, p_channel_title, p_duration_seconds, p_idempotency_key, p_request_hash) → {source_id, job_id, duplicate}`(service_role 전용, original_url은 함수가 정규 URL로 생성, 오류 22023·P0002·KF413·KF429·KF409·KF410·23505), `replace_source_moments(p_job_id, p_attempt, p_moments)`(펜싱, 장면 `{moment_index, locator:{t_start,t_end}, title≤200, description≤2000}` ≤500개). Worker 순서: 한 트랜잭션에서 청크 교체 → 장면 교체 → complete_job. 팀장 결정: KF413은 웹에서 422 `video_too_long`. (리뷰 🔴 반영으로 변경) 영구 실패 시 영상 시간도 환불(fail_job·reap), 재시도 시 재차감 없음·이중 환불 없음. KF429 detail에 kind(source_jobs|video_seconds). 중복 23505가 쿼터 검사보다 먼저. 웹이 준 duration_seconds는 027d 재확인에서 실제 길이와 대조. 타입 재생성(supabase CLI 없음)·ERD의 ALTER 컬럼 누락은 미해결.
+- 027a 리뷰 반영(2026-11-12, 위 결정 변경): 영구 실패 시 영상 시간도 환불(fail_job·reap), 재시도 시 재차감 없음·이중 환불 없음. KF429 detail에 kind(source_jobs|video_seconds). 중복 23505를 쿼터 검사보다 먼저. 웹이 준 duration_seconds는 027d 재확인에서 실제 길이와 대조.
+- 027a 2차(2026-11-12): 이중 환불 방지용 `sources.video_seconds_charged`(등록 시 길이, 환불 시 0) 추가 승인. 중복 23505 message `duplicate_video`가 모든 한도 검사보다 먼저. KF429 `quota_exceeded`의 HINT='source_jobs'|'video_seconds'. test:db 129.
+- 027b(2026-11-12 사용자 결정): service_role 키는 웹 서버 `apps/web/src/server/youtube/service.ts` 한 곳에서 등록 RPC에만(env `SUPABASE_SERVICE_ROLE_KEY`, `server-only`). 운영 설정 오류는 요청마다 503(기동 거부는 instrumentation 필요해 보류). A-04 분당 10회 제한은 task-020. 지역 제한은 KR 기준.
+- 027c: Gemini 기본 모델 gemini-3.5-flash, 20분 분할·30초 겹침, 장면 카드 구간 t~t+30초, 자른 구간 시각은 absolute 가정(task-025 `--offset-check`로 확정). 키는 compose 보간으로만(`.env.local` 전체를 worker에 싣지 않음).
+- Worker·DB 보안 리뷰(2026-11-12) ACCEPT, 🟡 반영: 환불 후 재시도는 영상 시간 재차감, 환불은 차감한 달과 같을 때만. compose가 플래그 꺼짐에도 셸의 `GEMINI_API_KEY`를 Worker env에 넣는 점은 compose가 로컬 전용이라 수용(운영 주입은 task-024 배포 설정에서만).
+- 웹 보안 리뷰(2026-11-12) ACCEPT, 🟡 반영: videos.list `maxResults` 제거, 스텁 허용은 `YOUTUBE_ALLOW_STUB=1` 명시 플래그로, 제목·채널명 양방향·zero-width 문자 제거. **활성화 전 필수(027d 묶음)**: 사용자별 videos.list 호출 제한(A-04 분당 10회, 한 사용자가 YouTube 일일 쿼터를 소진하는 것 방지).
+- 027a 3차(2026-11-12): `retry_source` 재정의(유튜브 charged=0이면 영상 시간 재차감, 한도 초과 KF429 HINT video_seconds), `sources.video_seconds_charged_period`(환불은 같은 달만). 메타데이터 파기로 duration 없는 유튜브 자료 재시도는 KF422 `source_not_retryable`(승인). test:db 131.
+- Worker 코드 리뷰 반영(2026-11-12): 항목은 t_start·t_end 모두 분석 구간·영상 길이 안일 때만, 인접 구간 겹침 중간점 기준 시간축 소유 규칙(경계에서 앞뒤 발화 시각이 조금 겹쳐 남을 수 있음, 수용), Gemini 응답 스트림 8MB 상한(`analysis_response_too_large`). worker 157.
+- 상태(2026-11-12): 027a·027b·027c(+028) 완료·커밋. 팀장 재실행: worker 157(+1), web 207, db 131, typecheck·lint, verify-youtube·ingest·parser-sandbox·egress 통과, 변경분 키 패턴 0건. **남은 것(활성화 전 필수)**: 027d 재확인 스윕·파기·큐 함수 job_type 분기, 사용자별 videos.list 호출 제한, 서비스 일일 비용 상한, task-025 실측(clipTimeBase 확정 포함), task-026 법무 판정, Gemini 실호출 스모크(사용자 확인 후).

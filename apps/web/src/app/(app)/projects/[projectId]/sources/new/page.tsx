@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { AddSourceForm } from "@/components/sources/add-source-form";
 import { serverSupabaseOrNull } from "@/lib/projects/server";
+import { isYoutubeEnabled } from "@/server/youtube/service";
 
 export const metadata: Metadata = { title: "자료 추가 · KNOWFLOW-AI" };
 export const dynamic = "force-dynamic";
@@ -33,7 +34,7 @@ export default async function NewSourcePage({ params }: { params: Promise<{ proj
         <h1 className="mt-1 text-h1 font-bold">자료 추가</h1>
       </header>
       <section className="rounded-panel border border-border bg-card p-4 md:p-6">
-        <AddSourceForm projectId={project.id} />
+        <AddSourceForm projectId={project.id} youtubeEnabled={isYoutubeEnabled()} />
       </section>
     </div>
   );

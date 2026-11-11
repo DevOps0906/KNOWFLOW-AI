@@ -65,4 +65,37 @@ describe("AddSourceForm(S-09)", () => {
     fireEvent.click(screen.getByRole("button", { name: "추가" }));
     await waitFor(() => expect(screen.getByText(/50MB까지/, { selector: "span" })).toBeTruthy());
   });
+  it("유튜브 탭은 기능 플래그가 꺼지면 그리지 않는다", () => {
+    render(<AddSourceForm projectId={PROJECT} />);
+    expect(screen.queryByRole("button", { name: "유튜브" })).toBeNull();
+  });
+
+  it("유튜브 탭: 영상 주소를 보내고 등록되면 완료 콜백을 부른다", async () => {
+    const fetchMock = vi.fn(async () => Response.json({ sourceId: "s1", jobId: "j1", duplicate: false, status: "queued" }, { status: 202 }));
+    const deps: UploadDeps = { fetch: fetchMock as unknown as typeof fetch, upload: async () => ({}), hash: async () => "", newKey: () => "k-1" };
+    const onDone = vi.fn();
+    render(<AddSourceForm projectId={PROJECT} deps={deps} onDone={onDone} youtubeEnabled />);
+    fireEvent.click(screen.getByRole("button", { name: "유튜브" }));
+    fireEvent.change(screen.getByLabelText(/유튜브 영상 주소/), { target: { value: "https://youtu.be/dQw4w9WgXcQ" } });
+    fireEvent.click(screen.getByRole("button", { name: "추가" }));
+    await waitFor(() => expect(onDone).toHaveBeenCalled());
+    const [, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    expect(JSON.parse(String(init.body))).toEqual({ source_type: "youtube", url: "https://youtu.be/dQw4w9WgXcQ" });
+    expect((init.headers as Record<string, string>)["Idempotency-Key"]).toBe("k-1");
+    expect(refresh).toHaveBeenCalled();
+  });
+
+  it("유튜브 탭: 서버 거절 사유를 그대로 보여 준다", async () => {
+    const deps: UploadDeps = {
+      fetch: (async () => Response.json({ error: { code: "video_made_for_kids", message: "어린이용으로 지정된 영상은 등록할 수 없습니다." } }, { status: 422 })) as unknown as typeof fetch,
+      upload: async () => ({}),
+      hash: async () => "",
+      newKey: () => "k",
+    };
+    render(<AddSourceForm projectId={PROJECT} deps={deps} youtubeEnabled />);
+    fireEvent.click(screen.getByRole("button", { name: "유튜브" }));
+    fireEvent.change(screen.getByLabelText(/유튜브 영상 주소/), { target: { value: "https://youtu.be/dQw4w9WgXcQ" } });
+    fireEvent.click(screen.getByRole("button", { name: "추가" }));
+    await waitFor(() => expect(screen.getByRole("alert").textContent).toContain("어린이용"));
+  });
 });

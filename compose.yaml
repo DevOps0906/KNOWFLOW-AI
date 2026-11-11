@@ -99,6 +99,12 @@ services:
       WORKER_SOURCE_READER: ${WORKER_SOURCE_READER:-fixture}
       WORKER_FIXTURE_DIR: /fixtures
       WORKER_SUMMARY_PROVIDER: ${WORKER_SUMMARY_PROVIDER:-stub}
+      # 유튜브(task-027c): 기본 꺼짐. 켜면 기본은 스텁 분석기(로컬 DB에서만 허용, 네트워크 없음).
+      # 실제 Gemini는 YOUTUBE_ANALYZER=gemini를 명시할 때만 쓰며, 키는 셸 환경 변수로만 넘긴다(파일에 쓰지 않는다)
+      YOUTUBE_ENABLED: ${YOUTUBE_ENABLED:-0}
+      YOUTUBE_ANALYZER: ${YOUTUBE_ANALYZER:-stub}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-}
     volumes:
       - ./apps/worker/fixtures:/fixtures:ro
     # 파서 하위 프로세스 힙 512MB(pdf/settings.ts) + Worker 본체

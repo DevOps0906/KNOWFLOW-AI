@@ -89,7 +89,7 @@
 처리·판정 규칙의 정본은 [검토 5장](youtube-mvp-review.md#5-처리-설계). 여기는 스키마 결정만 쓴다.
 | 항목 | 규칙 |
 |---|---|
-| 착수 게이트 | 법무 확인 전에는 `sources` CHECK·등록 RPC의 `youtube` 분기를 넣지 않는다. 넣을 때는 새 마이그레이션 파일로 한다 |
+| 활성화 게이트 | 스키마·RPC의 `youtube` 분기는 새 마이그레이션으로 먼저 넣는다(2026-11-12 사용자 결정). 등록 RPC는 service_role 전용이고, 기능 플래그가 꺼져 있으면 웹이 등록을 거부한다. 플래그는 task-025 통과·task-026 판정 뒤에만 켠다 |
 | 컬럼 | `source_type='youtube'`이면 `original_url`·`video_id` 필수, `storage_path`·`content_hash`는 null(CHECK). `title`·`channel_title`·`duration_seconds`는 `videos.list` 값. 다른 유형은 유튜브 컬럼 null |
 | 중복 | (project_id, video_id) 부분 유니크(`video_id` not null, `deleted_at` null) |
 | 재확인 | Worker 일일 스윕이 `metadata_checked_at`이 30일 지난 영상마다 `source_recheck` 작업 1건을 만든다(`source_id` 필수 CHECK 유지). 사용자 쿼터 미차감 |

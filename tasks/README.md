@@ -1,6 +1,6 @@
 # 작업 표
 
-권장 순서(실제 제약은 표의 선행): task-002 → (001 · 003 · 006 병행) → 004 → 005 → 007 → 008 → 010 → 032 게이트 무관 기반 → 025 Phase 0(철회 가능) → 031 랜딩 문구(예정 기능만) → 026 법무 게이트 → 027 유튜브 수집 → 011 → 028 공용 청킹 → 012 → 029 요약·장면 카드 → 030 L1 → 009 → W3 → W4 → W5. PDF 경로(011)는 유튜브 게이트와 무관하게 010 뒤 진행할 수 있고, 유튜브 전사는 028에서 011에 연결한다. 유튜브 순서 근거: [ADR-0006](../docs/adr/0006-youtube-summary-and-capture-mvp.md). 유튜브를 철회·보류하면 다른 작업의 선행에서 유튜브 작업(027~031)을 빼고, 본문의 유튜브 항목도 제외한 채 진행한다.
+권장 순서(실제 제약은 표의 선행): **2026-11-12 사용자 결정: 유튜브 구현 최우선 027 → 028 → 012 → 029 → 030, 기능 플래그 기본 꺼짐·활성화는 025 통과·026 판정 뒤.** 이전 순서: task-002 → (001 · 003 · 006 병행) → 004 → 005 → 007 → 008 → 010 → 032 게이트 무관 기반 → 025 Phase 0(철회 가능) → 031 랜딩 문구(예정 기능만) → 026 법무 게이트 → 027 유튜브 수집 → 011 → 028 공용 청킹 → 012 → 029 요약·장면 카드 → 030 L1 → 009 → W3 → W4 → W5. PDF 경로(011)는 유튜브 게이트와 무관하게 010 뒤 진행할 수 있고, 유튜브 전사는 028에서 011에 연결한다. 유튜브 순서 근거: [ADR-0006](../docs/adr/0006-youtube-summary-and-capture-mvp.md). 유튜브를 철회·보류하면 다른 작업의 선행에서 유튜브 작업(027~031)을 빼고, 본문의 유튜브 항목도 제외한 채 진행한다.
 마이그레이션: 기존 파일은 고치지 않고 새 번호만 추가한다. 병렬 작업이 동시에 마이그레이션을 쓰면 번호는 팀장이 배정한다. 위험도 높음은 착수 전 challenger, 완료 후 codex-reviewer(code) + reviewer(security/contract).
 
 | 번호 | 제목 | 웨이브 | 선행 | 위험도 | 담당 | 상태 |
@@ -31,10 +31,10 @@
 | [task-024](task-024.md) | 베타 배포(인프라 ADR·Worker 배포) | W5 | task-023 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
 | [task-025](task-025.md) | 유튜브 Phase 0 검증(미달 시 철회) | WY | task-010 | 높음 | builder (+사람 라벨) · 착수 전 challenger | 진행 |
 | [task-026](task-026.md) | 법무 게이트(전사 저장·재제공, 프레임 저장) | WY | task-025 | 보통 | 사용자 · 팀장 | 대기 |
-| [task-027](task-027.md) | 유튜브 수집(URL 검증·Gemini 분석·시각 검증) | WY | task-010, task-026, task-032 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
-| [task-028](task-028.md) | 공용 청킹 연결(전사 구간 → task-011 파이프라인) | WY | task-027, task-011 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
+| [task-027](task-027.md) | 유튜브 수집(URL 검증·Gemini 분석·시각 검증) | WY | task-010, task-032 (활성화: 025·026 뒤) | 높음 | builder (+tester) · 착수 전 challenger | 진행 |
+| [task-028](task-028.md) | 공용 청킹 연결(전사 구간 → task-011 파이프라인) | WY | task-027, task-011 | 높음 | builder (+tester) · 착수 전 challenger | 완료 |
 | [task-029](task-029.md) | 영상 요약·장면 카드(L0)·S-10 플레이어 | WY | task-028, task-012, task-032 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
-| [task-030](task-030.md) | 사용자 승인 탭 캡처(L1) | WY | task-029, task-026 | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
+| [task-030](task-030.md) | 사용자 승인 탭 캡처(L1) | WY | task-029 (활성화: 026 뒤) | 높음 | builder (+tester) · 착수 전 challenger | 대기 |
 | [task-031](task-031.md) | 랜딩 S-01 유튜브 문구 반영(예정 기능만) | WY | task-025 | 낮음 | builder | 대기 |
 | [task-032](task-032.md) | 유튜브 게이트 무관 기반(unavailable_at·packages/citations) | WY | task-010 | 높음 | builder (+tester) · 착수 전 challenger | 완료 |
 

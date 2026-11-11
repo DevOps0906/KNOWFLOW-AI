@@ -43,8 +43,28 @@ export interface SourceAuditEvent {
   count?: number;
 }
 
+/** A-04 유튜브 분기 입력. 구현은 서버 전용 `@/server/youtube`(task-027b). */
+export interface YoutubeRegisterInput {
+  userId: string;
+  projectId: string;
+  body: Record<string, unknown>;
+  /** A-04 공통 규칙: `Idempotency-Key` 헤더 */
+  idempotencyKey: string | null;
+  projectExists: (projectId: string) => Promise<boolean>;
+}
+
+export type YoutubeRegisterOutcome =
+  | { ok: true; sourceId: string; jobId: string | null; duplicate: boolean }
+  | { ok: false; status: number; code: string; message: string; reason: string };
+
+export interface YoutubeSources {
+  register(input: YoutubeRegisterInput): Promise<YoutubeRegisterOutcome>;
+}
+
 export interface SourcesDeps {
   backend: SourcesBackend;
+  /** 없으면 유튜브 등록은 422(기능 꺼짐). */
+  youtube?: YoutubeSources;
   siteUrl?: string | undefined;
   /** 감사 로그. 파일명·본문·URL은 넘기지 않는다. */
   log: (event: SourceAuditEvent) => void;
@@ -211,6 +231,18 @@ export function createSourceHandlers(deps: SourcesDeps) {
     return json(firstFailure!.status, { error: { code: firstFailure!.code, message: firstFailure!.message }, results });
   }
 
+  async function registerYoutube(userId: string, projectId: string, body: Record<string, unknown>, idempotencyKey: string | null) {
+    const result = deps.youtube
+      ? await deps.youtube.register({ userId, projectId, body, idempotencyKey, projectExists: (id) => backend.projectExists(id) })
+      : ({ ok: false, status: 422, code: "youtube_disabled", message: "유튜브 등록은 아직 사용할 수 없습니다.", reason: "youtube_disabled" } as const);
+    if (!result.ok) {
+      log({ event: "register", outcome: "failure", reason: `youtube:${result.reason}`, userId, projectId });
+      return fail(result.status, result.code, result.message);
+    }
+    log({ event: "register", outcome: "success", reason: result.duplicate ? "youtube:duplicate" : "youtube", userId, projectId, count: 1 });
+    return json(202, { sourceId: result.sourceId, jobId: result.jobId, duplicate: result.duplicate, status: "queued" });
+  }
+
   return {
     post: async (request: Request, projectId: string): Promise<Response> => {
       try {
@@ -222,6 +254,7 @@ export function createSourceHandlers(deps: SourcesDeps) {
         if (!userId) return fail(401, "unauthorized", SOURCE_MESSAGES.unauthorized);
         if (!UUID.test(projectId)) return fail(404, "not_found", SOURCE_MESSAGES.notFound);
         const body = await readJson(request);
+        if (body.source_type === "youtube") return await registerYoutube(userId, projectId, body, request.headers.get("idempotency-key"));
         if (body.step === "upload_url") return await uploadUrls(userId, projectId, body);
         if (body.step === "register") return await register(userId, projectId, body);
         return fail(400, "bad_request", SOURCE_MESSAGES.invalidRequest);

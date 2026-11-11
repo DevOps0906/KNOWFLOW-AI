@@ -5,6 +5,7 @@ import { createAuthHandlers, type AuthBackend, type AuthFailureKind } from "./ha
 import { logAuthEvent } from "./log";
 
 // 서버 전용. anon 키만 사용한다(service_role은 웹에서 쓰지 않는다).
+// 예외: server/youtube/service.ts의 등록 RPC 1곳(2026-11-12 사용자 결정)
 export function supabaseEnv() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
