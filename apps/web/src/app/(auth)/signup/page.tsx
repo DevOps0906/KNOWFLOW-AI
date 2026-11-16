@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { SignupForm } from "./signup-form";
 
 export const metadata: Metadata = { title: "가입 · KNOWFLOW-AI" };
@@ -13,6 +14,14 @@ export default function SignupPage() {
         <p className="mt-2 text-body text-muted-foreground break-keep">새 계정 만들기</p>
       </div>
       <SignupForm />
+      <nav aria-label="약관" className="flex flex-wrap gap-4 text-caption text-muted-foreground">
+        <Link href="/terms" className="underline underline-offset-4">
+          이용약관
+        </Link>
+        <Link href="/privacy" className="underline underline-offset-4">
+          개인정보처리방침
+        </Link>
+      </nav>
     </section>
   );
 }

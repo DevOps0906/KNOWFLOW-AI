@@ -1,11 +1,12 @@
 // source_ingest 핸들러(task-011): 원본 읽기 → parsePdf(격리) → 청킹 → 펜싱된 청크 교체+완료 → 후행 요약.
-// youtube 자료는 youtube/pipeline.ts로 넘긴다(task-027c). 플래그가 꺼져 youtube 의존성이 없으면 영구 실패.
+// youtube 자료는 youtube/pipeline.ts로 넘긴다(task-027c). 완료 뒤 프로젝트 요약과 영상 요약(task-029a)을 후행 단계로 돈다. 플래그가 꺼져 youtube 의존성이 없으면 영구 실패.
 // 청크 본문은 로그에 남기지 않는다. 월 처리 차감은 등록 때 enqueue_job이 했으므로 여기서 하지 않는다.
 import type { Logger } from "../log.js";
 import { parsePdf } from "../pdf/parser.js";
 import { PermanentError, StaleAttemptError, type Handler, type HandlerResult } from "../runner.js";
 import { processYoutubeSource, type YoutubeDeps } from "../youtube/pipeline.js";
 import { YOUTUBE_ERROR_CODES } from "../youtube/settings.js";
+import { runVideoSummaryStep } from "../youtube/summary.js";
 import { chunkPages, type ChunkDraft } from "./chunking.js";
 import { INGEST_ERROR_CODES } from "./settings.js";
 import type { SourceReader } from "./source-reader.js";
@@ -24,6 +25,16 @@ export interface IngestDeps {
 }
 
 const fail = (code: string) => new PermanentError(code);
+
+/** 후행 단계 하나를 돌리고 실패는 오류 이름만 로그에 남긴 뒤 "failed"로 바꾼다(다음 단계를 막지 않게) */
+async function settle(step: string, run: () => Promise<string>, jobId: string, log?: Logger): Promise<string> {
+  try {
+    return await run();
+  } catch (e) {
+    log?.({ event: "after_complete_step", jobId, reason: step, outcome: "failed", errorName: e instanceof Error ? e.name : "unknown" });
+    return "failed";
+  }
+}
 
 /** 첫 자료 요약. summary가 이미 있으면 건너뛰고, 경합으로 다른 자료가 먼저 저장했으면 버린다. */
 export async function runSummaryStep(
@@ -62,9 +73,26 @@ export function createIngestHandler(deps: IngestDeps): Handler {
     if (source.source_type === "youtube") {
       if (!deps.youtube) throw fail(YOUTUBE_ERROR_CODES.disabled);
       const chunks = await processYoutubeSource({ ...deps.youtube, recordUsage: (e) => deps.store.recordUsage(e), log: deps.log }, ctx, source);
+      const videoSummary = deps.youtube.summary;
+      if (!summarizer && !videoSummary) return { completed: true };
+      // 프로젝트 요약·영상 요약은 서로의 실패에 막히지 않는다(둘 다 실패해도 자료는 완료 상태)
       return {
         completed: true,
-        afterComplete: summarizer ? () => runSummaryStep({ store: deps.store, summarizer }, source, chunks) : undefined,
+        afterComplete: async () => {
+          const project = summarizer
+            ? await settle("project_summary", () => runSummaryStep({ store: deps.store, summarizer }, source, chunks), job.id, deps.log)
+            : "none";
+          const video = videoSummary
+            ? await settle(
+                "video_summary",
+                () => runVideoSummaryStep({ ...videoSummary, recordUsage: (e) => deps.store.recordUsage(e), log: deps.log }, job.id, source),
+                job.id,
+                deps.log,
+              )
+            : "none";
+          if (project === "failed" && video === "failed") throw new Error("after_complete_failed");
+          return `project:${project} video:${video}`;
+        },
       };
     }
     // url 본문 추출은 task-009 완료 뒤 연결한다

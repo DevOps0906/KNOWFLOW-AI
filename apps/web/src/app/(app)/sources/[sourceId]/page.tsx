@@ -8,6 +8,7 @@ import { SourceMetaHeader } from "@/components/workspace/viewer/source-meta";
 import { SourceViewer } from "@/components/workspace/viewer/source-viewer";
 import { supabaseEnv } from "@/lib/auth/supabase-server";
 import { sourceReadHandlersForRequest } from "@/lib/sources/server";
+import { isYoutubeEnabled } from "@/server/youtube/service";
 
 export const metadata: Metadata = { title: "원문 보기 · KNOWFLOW-AI" };
 export const dynamic = "force-dynamic";
@@ -49,7 +50,12 @@ export default async function SourceViewerPage({
   return (
     <div className="mx-auto flex max-w-4xl min-w-0 flex-col gap-6 p-4 md:p-6">
       <SourceMetaHeader source={source} />
-      <SourceViewer key={`${source.id}:${initialChunkId ?? ""}`} source={source} initialChunkId={initialChunkId} />
+      <SourceViewer
+        key={`${source.id}:${initialChunkId ?? ""}`}
+        source={source}
+        initialChunkId={initialChunkId}
+        youtubeEnabled={isYoutubeEnabled()}
+      />
     </div>
   );
 }
