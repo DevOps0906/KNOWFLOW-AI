@@ -21,3 +21,23 @@ export function verifyCitations({ cited, allowedChunks }) {
   const status = verified.length === 0 ? "none" : rejected.length === 0 ? "ok" : "partial";
   return { verified, rejected, status };
 }
+
+const isTime = (v) => typeof v === "number" && Number.isFinite(v);
+
+/**
+ * 장면 카드와 겹치는 청크(task-029). 구간은 반열린 [t_start, t_end)라 맞닿기만 하면 겹침이 아니다.
+ * 겹친 길이 내림차순(같으면 입력 순서)이며, 겹치는 청크가 없으면 빈 배열 = 그 카드는 인용 불가.
+ * 시각 locator(t_start·t_end 유한 수, 끝 > 시작)가 없는 청크(PDF 등)는 건너뛴다.
+ */
+export function overlappingChunks(moment, chunks) {
+  if (!moment || !isTime(moment.t_start) || !isTime(moment.t_end) || !(moment.t_end > moment.t_start)) return [];
+  const scored = [];
+  chunks.forEach((chunk, index) => {
+    const loc = chunk?.locator;
+    if (!loc || !isTime(loc.t_start) || !isTime(loc.t_end) || !(loc.t_end > loc.t_start)) return;
+    const overlap = Math.min(moment.t_end, loc.t_end) - Math.max(moment.t_start, loc.t_start);
+    if (overlap > 0) scored.push({ chunk, overlap, index });
+  });
+  scored.sort((a, b) => b.overlap - a.overlap || a.index - b.index);
+  return scored.map((s) => s.chunk);
+}

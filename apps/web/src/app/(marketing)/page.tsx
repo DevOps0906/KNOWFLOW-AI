@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 import { PreorderCta } from "./preorder-cta";
 
@@ -95,6 +96,14 @@ export default function LandingPage() {
         <div className="mx-auto max-w-5xl px-4 py-6 text-caption text-muted-foreground md:px-6">
           <p className="break-keep">
             AI 답변에는 오류가 있을 수 있습니다. 표시된 기능은 모두 개발 중이며 변경될 수 있습니다.
+          </p>
+          <p className="mt-2 flex flex-wrap gap-4">
+            <Link href="/terms" className="underline underline-offset-4">
+              이용약관
+            </Link>
+            <Link href="/privacy" className="underline underline-offset-4">
+              개인정보처리방침
+            </Link>
           </p>
           <p className="mt-2">&copy; KNOWFLOW-AI</p>
         </div>

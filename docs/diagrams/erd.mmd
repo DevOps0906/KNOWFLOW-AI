@@ -149,6 +149,25 @@ erDiagram
     text description
     timestamptz created_at
   }
+  source_summaries {
+    uuid source_id PK
+    uuid project_id
+    uuid user_id
+    uuid job_id
+    jsonb sentences
+    text model
+    timestamptz created_at
+  }
+  rights_takedowns {
+    uuid id PK
+    text video_id
+    text reason
+    uuid__ source_ids
+    integer deleted_chunks
+    integer deleted_moments
+    integer deleted_summaries
+    timestamptz created_at
+  }
   profiles ||--o{ user_quotas : "user_id"
   plans ||--o{ user_quotas : "plan_code"
   profiles ||--o{ projects : "user_id"
@@ -167,3 +186,5 @@ erDiagram
   profiles ||--o{ idempotency_keys : "user_id"
   sources ||--o{ source_moments : "source_id"
   projects ||--o{ source_moments : "project_id"
+  sources ||--o{ source_summaries : "source_id"
+  projects ||--o{ source_summaries : "project_id"

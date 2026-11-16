@@ -23,3 +23,17 @@ export interface VerifyCitationsResult<TChunk extends AllowedChunk> {
 export function verifyCitations<TChunk extends AllowedChunk>(
   input: VerifyCitationsInput<TChunk>,
 ): VerifyCitationsResult<TChunk>;
+
+/** 장면 카드(또는 시각 구간). 반열린 구간 [t_start, t_end). */
+export interface TimeSpan {
+  t_start: number;
+  t_end: number;
+}
+
+export interface TimedChunk {
+  chunk_id: string;
+  locator?: unknown;
+}
+
+/** 겹치는 청크 전부를 겹친 길이 내림차순(같으면 입력 순서)으로. 맞닿음은 겹침 아님. 없으면 빈 배열(인용 불가). */
+export function overlappingChunks<TChunk extends TimedChunk>(moment: TimeSpan, chunks: readonly TChunk[]): TChunk[];

@@ -50,3 +50,11 @@ describe("S-01 랜딩", () => {
     expect(text).not.toMatch(/무료로 시작|로그인|정확하다|환각 없음/);
   });
 });
+
+describe("S-01 약관 링크", () => {
+  it("이용약관·개인정보처리방침 링크가 있다", () => {
+    render(<LandingPage />);
+    expect(screen.getByRole("link", { name: "이용약관" }).getAttribute("href")).toBe("/terms");
+    expect(screen.getByRole("link", { name: "개인정보처리방침" }).getAttribute("href")).toBe("/privacy");
+  });
+});

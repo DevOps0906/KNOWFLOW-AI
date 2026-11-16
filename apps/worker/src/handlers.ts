@@ -4,6 +4,8 @@ import { createIngestHandler } from "./ingest/handler.js";
 import { createFixtureSourceReader, createStorageSourceReader } from "./ingest/source-reader.js";
 import { createPgIngestStore } from "./ingest/store.js";
 import { createStubSummaryProvider } from "./ingest/summary.js";
+import { createPgSummaryStore } from "./summary/store.js";
+import { createStubVideoSummaryProvider } from "./summary/video-summary.js";
 import type { Logger } from "./log.js";
 import type { Handler, Handlers } from "./runner.js";
 import { createStubVideoAnalyzer, type VideoAnalyzer } from "./youtube/analyzer.js";
@@ -52,6 +54,7 @@ export function buildHandlers(
       store: createPgIngestStore(db),
       reader,
       summarizer: config.summaryProvider === "stub" ? createStubSummaryProvider() : undefined,
+      videoSummary: config.summaryProvider === "stub" ? { store: createPgSummaryStore(db), provider: createStubVideoSummaryProvider() } : undefined,
       youtube: analyzer ? { analyzer, store: createPgYoutubeStore(db) } : undefined,
       log,
     }),

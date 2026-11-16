@@ -10,6 +10,7 @@ import { chunkPages, type ChunkDraft } from "./chunking.js";
 import { INGEST_ERROR_CODES } from "./settings.js";
 import type { SourceReader } from "./source-reader.js";
 import type { IngestSource, IngestStore } from "./store.js";
+import { runVideoSummaryStep, type SummaryStore, type VideoSummaryProvider } from "../summary/video-summary.js";
 import { buildSummaryPrompt, validateSummary, type SummaryProvider } from "./summary.js";
 
 export interface IngestDeps {
@@ -20,6 +21,8 @@ export interface IngestDeps {
   parse?: typeof parsePdf;
   /** 없으면(YOUTUBE_ENABLED 꺼짐) youtube 자료를 영구 실패시킨다 */
   youtube?: YoutubeDeps;
+  /** 영상 요약(task-029a). 없으면 건너뛴다 */
+  videoSummary?: { store: SummaryStore; provider: VideoSummaryProvider };
   log?: Logger;
 }
 
@@ -62,9 +65,32 @@ export function createIngestHandler(deps: IngestDeps): Handler {
     if (source.source_type === "youtube") {
       if (!deps.youtube) throw fail(YOUTUBE_ERROR_CODES.disabled);
       const chunks = await processYoutubeSource({ ...deps.youtube, recordUsage: (e) => deps.store.recordUsage(e), log: deps.log }, ctx, source);
+      const video = deps.videoSummary;
       return {
         completed: true,
-        afterComplete: summarizer ? () => runSummaryStep({ store: deps.store, summarizer }, source, chunks) : undefined,
+        afterComplete:
+          summarizer || video
+            ? async () => {
+                // afterComplete는 complete_job 커밋 뒤에 돈다. 두 후행 단계는 서로 독립이다: 앞이 실패해도 뒤를 돌리고, 첫 오류를 다시 던진다
+                let failure: unknown;
+                const outcomes: string[] = [];
+                try {
+                  if (summarizer) outcomes.push(`project_summary:${await runSummaryStep({ store: deps.store, summarizer }, source, chunks)}`);
+                } catch (e) {
+                  failure = e;
+                }
+                try {
+                  if (video) {
+                    const target = { jobId: job.id, sourceId: source.id, userId: source.user_id, projectId: source.project_id };
+                    outcomes.push(`video_summary:${await runVideoSummaryStep({ ...video, recordUsage: (e) => deps.store.recordUsage(e) }, target)}`);
+                  }
+                } catch (e) {
+                  failure ??= e;
+                }
+                if (failure !== undefined) throw failure;
+                return outcomes.join(" ");
+              }
+            : undefined,
       };
     }
     // url 본문 추출은 task-009 완료 뒤 연결한다
