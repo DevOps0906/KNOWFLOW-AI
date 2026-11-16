@@ -1,5 +1,5 @@
 # nomad-supabase-module install-db.sh 가 씁니다. 손으로 고치지 마세요.
-# source 8d2580f
+# source 854526e
 # flags --with-accounts --product knowflow:org
 20261112000100_nomad_core.sql  e79995f9fdc794022c9face3763c80c4ddd5893e5d0a9dda9bf2c68286d88841
 20261114000100_nomad_core_accounts.sql  44eeab63de9d11f7212484c78336ddf78d0f5cc227f30744bf0f7e5c8d0e44e6
@@ -23,4 +23,4 @@
 20261201001501_knowflow_0001_knowflow.sql  a562b6e221a993873ed2c8b7cd0ac6888f38e4e35f2431603329ca45dd04be5d
 20261201001502_knowflow_0002_storage.sql  803298c762b7c18f3740a9608ed3858fc3864061fa75555e5c963ceb2dcb15b9
 20261201001503_knowflow_0003_youtube_summary_takedown.sql  94e04c5c6e01f2c038e5e1a10f0d76edfba25799b61f0dd2d5d7e081e3892d2b
-20261201001504_knowflow_0004_youtube_captures.sql  eee68d5735178bb297e66783eceb9dbee00ddceee2edcdc02128667187662a35
+20261201001504_knowflow_0004_youtube_captures.sql  72c65214c0aed5e074dd3c3f492625b0272c7a59cbccd31c130e9c2711e33b87

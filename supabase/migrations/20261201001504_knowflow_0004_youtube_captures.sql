@@ -8,12 +8,15 @@
 --    지운 행의 객체 경로는 nomad_knowflow_private.capture_object_trash에 쌓인다. 정리 작업(service_role)은
 --    claim_capture_object_trash로 경로를 맡고(claimed_at·attempts, 15분 지난 claim은 다시 배정) Storage에서 지운 뒤
 --    ack_capture_object_trash로 대기열에서 뺀다. Storage 삭제가 실패하면 ack하지 않으므로 경로를 잃지 않는다.
+--    시도 상한: attempts가 10(capture_trash_max_attempts) 이상인 경로는 더 배정하지 않고 행을 남긴다.
+--    운영자는 list_stalled_capture_object_trash(service_role)로 상한에 걸린 경로 수·경로를 확인한다.
 --    행이 없는 객체는 select 정책상 아무도 읽지 못한다(정리 전에도 노출 없음).
 -- 4) Storage: 비공개 버킷 knowflow-captures(PNG·WebP, 2MB). 경로 = <organization_id>/<project_id>/<source_id>/<capture_id>.<png|webp>.
 --    읽기 = 캡처 행이 보이는 사람, 업로드 = 그 행 경로에만 쓰기 역할, 삭제 = 쓰기 역할이 행이 없는(고아) 객체만. UPDATE 정책 없음(덮어쓰기 불가).
 -- 전제: 0001_knowflow.sql · 0003(takedown_video가 unavailable_at을 설정 → 트리거로 캡처 제거).
 -- 되돌림: drop function nomad_knowflow.create_source_capture(uuid, uuid, text, integer), nomad_knowflow.discard_source_capture(uuid),
---   nomad_knowflow.claim_capture_object_trash(integer), nomad_knowflow.ack_capture_object_trash(text[]); drop trigger …(sources·projects·source_captures);
+--   nomad_knowflow.claim_capture_object_trash(integer), nomad_knowflow.ack_capture_object_trash(text[]),
+--   nomad_knowflow.list_stalled_capture_object_trash(integer), nomad_knowflow_private.capture_trash_max_attempts(); drop trigger …(sources·projects·source_captures);
 --   drop table nomad_knowflow.source_captures, nomad_knowflow_private.capture_object_trash; drop policy knowflow_captures_objects_*; 버킷 삭제는 객체를 비운 뒤.
 begin;
 
@@ -129,8 +132,14 @@ end;
 $$;
 comment on function nomad_knowflow.discard_source_capture(uuid) is '캡처 행 삭제(업로드 실패 정리, 쓰기 역할). task-030';
 
+-- 정리 시도 상한(상수). claim은 attempts가 이 값 이상인 경로를 배정하지 않는다(행은 남겨 운영자가 확인).
+-- 10회 = 15분 재배정 기준 약 2.5시간 연속 실패. 값을 바꾸려면 새 번호 파일에서 이 함수만 create or replace 한다
+create function nomad_knowflow_private.capture_trash_max_attempts() returns integer
+language sql immutable set search_path = ''
+as $$ select 10 $$;
+
 -- 정리 대기 경로를 맡는다(지우지 않고 claimed_at·attempts만 표시). 아직 안 맡은 경로와 15분 넘게 ack가 없는 경로를
--- 오래된 순으로 준다. 정리 작업이 Storage API로 객체를 지운 뒤 ack_capture_object_trash를 부른다. service_role 전용
+-- 오래된 순으로 준다(시도 상한에 걸린 경로 제외). 정리 작업이 Storage API로 객체를 지운 뒤 ack_capture_object_trash를 부른다. service_role 전용
 create function nomad_knowflow.claim_capture_object_trash(p_limit integer default 100) returns text[]
 language plpgsql security definer set search_path = ''
 as $$
@@ -139,7 +148,8 @@ begin
   if p_limit is null or p_limit not between 1 and 1000 then raise exception 'invalid_limit' using errcode = '22023'; end if;
   with picked as (
     select t.storage_path from nomad_knowflow_private.capture_object_trash t
-     where t.claimed_at is null or t.claimed_at < now() - interval '15 minutes'
+     where (t.claimed_at is null or t.claimed_at < now() - interval '15 minutes')
+       and t.attempts < nomad_knowflow_private.capture_trash_max_attempts()
      order by t.queued_at limit p_limit for update skip locked
   ), marked as (
     update nomad_knowflow_private.capture_object_trash t set claimed_at = now(), attempts = t.attempts + 1
@@ -150,7 +160,7 @@ begin
 end;
 $$;
 comment on function nomad_knowflow.claim_capture_object_trash(integer) is
-  '지운 캡처의 Storage 경로를 맡는다(15분 지난 claim 재배정, 행은 ack까지 남김). service_role 전용(task-030)';
+  '지운 캡처의 Storage 경로를 맡는다(15분 지난 claim 재배정, 시도 상한 이상 제외, 행은 ack까지 남김). service_role 전용(task-030)';
 
 -- Storage에서 지운 경로를 대기열에서 뺀다(맡은 경로만). 반환: 뺀 행 수. service_role 전용
 create function nomad_knowflow.ack_capture_object_trash(p_paths text[]) returns integer
@@ -167,6 +177,24 @@ end;
 $$;
 comment on function nomad_knowflow.ack_capture_object_trash(text[]) is
   'Storage 삭제를 마친 캡처 경로를 정리 대기열에서 뺀다. service_role 전용(task-030)';
+
+-- 운영자 확인용: 시도 상한에 걸려 더 배정되지 않는 경로(오래된 순 p_limit개)와 전체 수(stalled_total). service_role 전용.
+-- 원인(권한·경로 오류 등)을 고친 뒤 postgres 세션에서 attempts를 0으로 되돌리면 다시 배정된다
+create function nomad_knowflow.list_stalled_capture_object_trash(p_limit integer default 100)
+returns table (storage_path text, attempts integer, queued_at timestamptz, claimed_at timestamptz, stalled_total bigint)
+language plpgsql security definer set search_path = ''
+as $$
+begin
+  if p_limit is null or p_limit not between 1 and 1000 then raise exception 'invalid_limit' using errcode = '22023'; end if;
+  return query
+    select t.storage_path, t.attempts, t.queued_at, t.claimed_at, count(*) over ()
+      from nomad_knowflow_private.capture_object_trash t
+     where t.attempts >= nomad_knowflow_private.capture_trash_max_attempts()
+     order by t.queued_at limit p_limit;
+end;
+$$;
+comment on function nomad_knowflow.list_stalled_capture_object_trash(integer) is
+  '시도 상한에 걸린 캡처 정리 경로와 전체 수(운영자 확인용). service_role 전용(task-030)';
 
 -- ===== 3) 제거 트리거 =====
 -- 캡처 행이 지워지면(직접·자료/프로젝트 cascade·아래 트리거) 객체 경로를 정리 대기열에 넣는다
@@ -210,13 +238,15 @@ create trigger projects_purge_captures after update of deleted_at on nomad_knowf
 revoke execute on function
   nomad_knowflow.create_source_capture(uuid, uuid, text, integer), nomad_knowflow.discard_source_capture(uuid),
   nomad_knowflow.claim_capture_object_trash(integer), nomad_knowflow.ack_capture_object_trash(text[]),
+  nomad_knowflow.list_stalled_capture_object_trash(integer), nomad_knowflow_private.capture_trash_max_attempts(),
   nomad_knowflow_private.queue_capture_object(),
   nomad_knowflow_private.purge_source_captures(), nomad_knowflow_private.purge_project_captures()
 from public, anon, authenticated, service_role;
 grant execute on function
   nomad_knowflow.create_source_capture(uuid, uuid, text, integer), nomad_knowflow.discard_source_capture(uuid)
 to authenticated;
-grant execute on function nomad_knowflow.claim_capture_object_trash(integer), nomad_knowflow.ack_capture_object_trash(text[])
+grant execute on function nomad_knowflow.claim_capture_object_trash(integer), nomad_knowflow.ack_capture_object_trash(text[]),
+  nomad_knowflow.list_stalled_capture_object_trash(integer)
 to service_role;
 
 -- ===== 4) Storage =====
