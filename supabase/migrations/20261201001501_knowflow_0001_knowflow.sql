@@ -5,7 +5,13 @@
 -- 되돌림: drop schema nomad_knowflow cascade; drop schema nomad_knowflow_private cascade;
 begin;
 
-create extension if not exists pg_trgm with schema extensions;
+-- pg_trgm은 core 마이그레이션(*_nomad_core_pg_trgm.sql)이 extensions 스키마에 설치한다(2026-11-16 결정 5). 없으면 분명하게 중단
+do $$
+begin
+  if not exists (select 1 from pg_extension e join pg_namespace n on n.oid = e.extnamespace where e.extname = 'pg_trgm' and n.nspname = 'extensions') then
+    raise exception 'pg_trgm 확장이 extensions 스키마에 없다 — core 마이그레이션 *_nomad_core_pg_trgm.sql을 먼저 적용한다' using errcode = '55000';
+  end if;
+end $$;
 
 create schema nomad_knowflow;
 create schema nomad_knowflow_private;
@@ -157,13 +163,20 @@ create table nomad_knowflow.messages (
   content text not null,
   citation_metadata jsonb not null default '{}'::jsonb check (jsonb_typeof(citation_metadata) = 'object'),
   reply_to uuid,
+  -- 질문 쿼터 표식(2026-11-16 결정 2): 차감한 달. 환불하면 null + quota_refunded_at. 이관한 과거 질문은 둘 다 null(환불 안 함)
+  quota_charged_period date,
+  quota_refunded_at timestamptz,
   created_at timestamptz not null default now(),
   unique (id, conversation_id),
+  check (role = 'user' or (quota_charged_period is null and quota_refunded_at is null)),
+  check (quota_refunded_at is null or quota_charged_period is null),
   -- 답변은 같은 대화의 질문을 참조한다(task-017). 이관한 과거 답변은 null
   foreign key (reply_to, conversation_id) references nomad_knowflow.messages (id, conversation_id) on delete cascade,
   check (reply_to is null or role = 'assistant')
 );
 comment on table nomad_knowflow.messages is '대화 메시지(추가만, 대화를 통해 소유 확인). 쓰기는 ask_question·save_answer RPC만';
+comment on column nomad_knowflow.messages.quota_charged_period is 'monthly_questions 차감 표식(차감한 달). 환불 시 null(1회), 이관 행은 null';
+comment on column nomad_knowflow.messages.quota_refunded_at is '질문 쿼터 환불 시각. 환불된 질문에는 답변을 저장하지 않는다';
 create index messages_conversation_id_idx on nomad_knowflow.messages (conversation_id, created_at);
 create unique index messages_one_answer_per_question on nomad_knowflow.messages (reply_to) where reply_to is not null;
 
@@ -1398,24 +1411,28 @@ begin
     if not exists (select 1 from nomad_knowflow.messages where id = v_claim.resource_id and conversation_id = v_conv and role = 'user') then
       raise exception 'idempotency_resource_missing' using errcode = 'KF410';
     end if;
+    -- 환불된 질문은 같은 키로 다시 불러도 다시 차감하지 않고 refunded=true(답변 저장도 거부) → 새 질문은 새 멱등 키로
     return jsonb_build_object('message_id', v_claim.resource_id, 'duplicate', true,
-      'answer_id', (select id from nomad_knowflow.messages where reply_to = v_claim.resource_id));
+      'answer_id', (select id from nomad_knowflow.messages where reply_to = v_claim.resource_id),
+      'refunded', (select quota_refunded_at is not null from nomad_knowflow.messages where id = v_claim.resource_id));
   end if;
 
   perform nomad_knowflow_private.consume_quota_for(v_org, 'questions', 1);
-  insert into nomad_knowflow.messages (id, conversation_id, role, content) values (v_message_id, v_conv, 'user', p_content);
-  return jsonb_build_object('message_id', v_message_id, 'duplicate', false, 'answer_id', null);
+  insert into nomad_knowflow.messages (id, conversation_id, role, content, quota_charged_period)
+  values (v_message_id, v_conv, 'user', p_content, nomad_knowflow_private.current_period_start());
+  return jsonb_build_object('message_id', v_message_id, 'duplicate', false, 'answer_id', null, 'refunded', false);
 end;
 $$;
 
 -- 답변 저장(service_role 전용: 서버가 AI 답변을 질문에 붙인다). 질문 1개당 답변 1개, 재저장은 같은 답변(duplicate).
--- 잠김과 무관(잠기기 직전 질문의 답변). 질문이 아니거나 없거나 삭제된 대화면 P0002
+-- 잠김과 무관(잠기기 직전 질문의 답변). 질문이 아니거나 없거나 삭제된 대화면 P0002. 쿼터를 환불한 질문은 KF409(question_refunded)
 create function nomad_knowflow.save_answer(p_question_id uuid, p_content text, p_citation_metadata jsonb default '{}'::jsonb)
 returns jsonb
 language plpgsql security definer set search_path = ''
 as $$
 declare
   v_conv uuid;
+  v_refunded timestamptz;
   v_answer_id uuid;
 begin
   if p_content is null or char_length(p_content) = 0 or char_length(p_content) > 100000 then
@@ -1424,11 +1441,13 @@ begin
   if p_citation_metadata is null or jsonb_typeof(p_citation_metadata) <> 'object' then
     raise exception 'invalid_citation_metadata' using errcode = '22023';
   end if;
-  select m.conversation_id into v_conv
+  -- 질문 행을 잠가 refund_question_quota와 직렬화한다(잠근 뒤의 값이라 동시 환불도 본다)
+  select m.conversation_id, m.quota_refunded_at into v_conv, v_refunded
     from nomad_knowflow.messages m join nomad_knowflow.conversations c on c.id = m.conversation_id
    where m.id = p_question_id and m.role = 'user' and c.deleted_at is null
    for update of m;
   if not found then raise exception 'question_not_found' using errcode = 'P0002'; end if;
+  if v_refunded is not null then raise exception 'question_refunded' using errcode = 'KF409'; end if;
   insert into nomad_knowflow.messages (conversation_id, role, content, citation_metadata, reply_to)
   values (v_conv, 'assistant', p_content, p_citation_metadata, p_question_id)
   on conflict (reply_to) where reply_to is not null do nothing
@@ -1438,6 +1457,34 @@ begin
     return jsonb_build_object('answer_id', v_answer_id, 'duplicate', true);
   end if;
   return jsonb_build_object('answer_id', v_answer_id, 'duplicate', false);
+end;
+$$;
+
+-- 질문 쿼터 환불(2026-11-16 결정 2, service_role 전용): 서버가 답변 생성에 실패했을 때 부른다.
+-- 차감 표식을 지우는 update…returning 한 문장이 성공했을 때만 1회. 차감한 달이 이번 달일 때만 사용량에서 뺀다(지난달 차감분은 그대로).
+-- 표식이 없는 질문(이관 행·이미 환불)은 refunded=false. 답변이 이미 있으면 KF409(answer_exists) — 같은 멱등 키 재시도로 공짜 질문 방지
+create function nomad_knowflow.refund_question_quota(p_question_id uuid) returns jsonb
+language plpgsql security definer set search_path = ''
+as $$
+declare v_owner uuid; v_period date;
+begin
+  -- 질문 행 잠금(save_answer와 직렬화) 후 새 문장에서 답변 유무를 본다
+  perform 1 from nomad_knowflow.messages where id = p_question_id and role = 'user' for update;
+  if not found then raise exception 'question_not_found' using errcode = 'P0002'; end if;
+  if exists (select 1 from nomad_knowflow.messages where reply_to = p_question_id) then
+    raise exception 'answer_exists' using errcode = 'KF409';
+  end if;
+  update nomad_knowflow.messages m set quota_charged_period = null, quota_refunded_at = now()
+    from (select id, quota_charged_period from nomad_knowflow.messages
+           where id = p_question_id and quota_charged_period is not null for update) old
+   where m.id = old.id
+  returning (select c.organization_id from nomad_knowflow.conversations c where c.id = m.conversation_id), old.quota_charged_period
+    into v_owner, v_period;
+  if not found then return jsonb_build_object('refunded', false); end if;
+  if v_period = nomad_knowflow_private.current_period_start() then
+    perform nomad_knowflow_private.refund_quota(v_owner, 'questions', 1);
+  end if;
+  return jsonb_build_object('refunded', true);
 end;
 $$;
 
@@ -1504,7 +1551,8 @@ grant execute on function
   nomad_knowflow.progress_job(uuid, integer, text, integer), nomad_knowflow.complete_job(uuid, integer),
   nomad_knowflow.fail_job(uuid, integer, text, boolean), nomad_knowflow.replace_source_chunks(uuid, integer, jsonb),
   nomad_knowflow.replace_source_moments(uuid, integer, jsonb), nomad_knowflow.sweep_source_rechecks(integer),
-  nomad_knowflow.apply_source_recheck(uuid, integer, jsonb), nomad_knowflow.save_answer(uuid, text, jsonb)
+  nomad_knowflow.apply_source_recheck(uuid, integer, jsonb), nomad_knowflow.save_answer(uuid, text, jsonb),
+  nomad_knowflow.refund_question_quota(uuid)
 to service_role;
 
 commit;

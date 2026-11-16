@@ -3,10 +3,12 @@
 -- 1) source_summaries: 유튜브 자료 1:1 요약. 읽기 = 조직 멤버, 자료가 보이고(미삭제) unavailable_at is null일 때만. 쓰기는 RPC만.
 -- 2) save_source_summary(job, 문장, 모델): service_role(Worker) 전용. 그 자료의 최신 완료 source_ingest 작업이고 인용 청크가 모두 지금 그 자료의 청크일 때만 저장.
 -- 3) replace_source_chunks 재정의: 자료 행을 잠그고 같은 트랜잭션에서 그 자료의 요약을 지운다(재처리 시 낡은 인용 차단).
+--    replace_source_chunks·replace_source_moments는 자료가 비활성(unavailable_at)이면 false(아무것도 바꾸지 않음):
+--    takedown 뒤 진행 중이던 작업이 청크·장면·요약을 되살리지 못하게 한다(takedown의 update와 자료 행 잠금으로 직렬화).
 -- 4) takedown_video(video_id, 사유): service_role(운영자) 전용. 모든 조직의 해당 video_id 자료 비활성 + 청크·장면·요약 삭제 + nomad_core.write_audit 기록.
 -- 전제: 0001_knowflow.sql · nomad_core.write_audit(코어 감사 로그).
 -- 되돌림: drop function nomad_knowflow.takedown_video(text, text), nomad_knowflow.save_source_summary(uuid, jsonb, text);
---   drop table nomad_knowflow.source_summaries; replace_source_chunks는 0001 정의로 다시 만든다.
+--   drop table nomad_knowflow.source_summaries; replace_source_chunks·replace_source_moments는 0001 정의로 다시 만든다.
 begin;
 
 -- ===== 1) source_summaries =====
@@ -103,7 +105,8 @@ comment on function nomad_knowflow.save_source_summary(uuid, jsonb, text) is
   '영상 요약을 최신 완료 작업·현재 청크 기준으로 저장한다. Worker(service_role) 전용(task-029)';
 
 -- ===== 3) replace_source_chunks 재정의 =====
--- 0001 정의와 같고, 자료 행을 잠근 뒤(save_source_summary와 직렬화) 청크와 함께 그 자료의 요약을 지운다.
+-- 0001 정의와 같고, 자료 행을 잠근 뒤(save_source_summary·takedown_video와 직렬화) 청크와 함께 그 자료의 요약을 지운다.
+-- 자료가 삭제됐거나 비활성(unavailable_at, 권리자 삭제 등)이면 false.
 -- create or replace라 기존 EXECUTE 권한(service_role)은 그대로다.
 create or replace function nomad_knowflow.replace_source_chunks(p_job_id uuid, p_attempt integer, p_chunks jsonb) returns boolean
 language plpgsql security definer set search_path = ''
@@ -130,8 +133,9 @@ begin
   select * into v_job from nomad_knowflow.processing_jobs
    where id = p_job_id and attempt_count = p_attempt and status = 'running' and job_type = 'source_ingest' for update;
   if not found then return false; end if;
-  -- 작업 → 자료 순서로 잠근다(save_source_summary와 직렬화)
-  select project_id into v_project_id from nomad_knowflow.sources where id = v_job.source_id and deleted_at is null for no key update;
+  -- 작업 → 자료 순서로 잠근다(save_source_summary·takedown_video와 직렬화). 비활성 자료는 거부
+  select project_id into v_project_id from nomad_knowflow.sources
+   where id = v_job.source_id and deleted_at is null and unavailable_at is null for no key update;
   if not found then return false; end if;
   delete from nomad_knowflow.source_summaries where source_id = v_job.source_id;
   delete from nomad_knowflow.source_chunks where source_id = v_job.source_id;
@@ -143,6 +147,60 @@ end;
 $$;
 comment on function nomad_knowflow.replace_source_chunks(uuid, integer, jsonb) is
   '자료 청크를 (job_id, attempt) 펜싱 아래 통째로 교체하고 그 자료의 영상 요약을 지운다. Worker 전용(task-011·029)';
+
+-- ===== 3b) replace_source_moments 재정의 =====
+-- 0001 정의와 같고, 자료 행을 잠그며 비활성(unavailable_at) 자료면 false(takedown 뒤 장면 재생성 차단).
+-- create or replace라 기존 EXECUTE 권한(service_role)은 그대로다.
+create or replace function nomad_knowflow.replace_source_moments(p_job_id uuid, p_attempt integer, p_moments jsonb) returns boolean
+language plpgsql security definer set search_path = ''
+as $$
+declare v_job nomad_knowflow.processing_jobs; v_source nomad_knowflow.sources;
+begin
+  if p_moments is null or jsonb_typeof(p_moments) <> 'array' or jsonb_array_length(p_moments) > 500 then
+    raise exception 'invalid_moments' using errcode = '22023';
+  end if;
+  if exists (
+    select 1 from jsonb_array_elements(p_moments) e
+     where jsonb_typeof(e) <> 'object'
+        or case when jsonb_typeof(e -> 'moment_index') = 'number'
+                then (e ->> 'moment_index')::numeric <> trunc((e ->> 'moment_index')::numeric)
+                  or (e ->> 'moment_index')::numeric not between 0 and 2147483647
+                else true end
+        or jsonb_typeof(e -> 'locator') <> 'object'
+        or case when jsonb_typeof(e -> 'locator' -> 't_start') = 'number' and jsonb_typeof(e -> 'locator' -> 't_end') = 'number'
+                then (e -> 'locator' ->> 't_start')::numeric < 0
+                  or (e -> 'locator' ->> 't_end')::numeric <= (e -> 'locator' ->> 't_start')::numeric
+                else true end
+        or jsonb_typeof(e -> 'title') <> 'string'
+        or char_length(btrim(e ->> 'title')) not between 1 and 200
+        or jsonb_typeof(e -> 'description') <> 'string'
+        or char_length(btrim(e ->> 'description')) not between 1 and 2000
+  ) then raise exception 'invalid_moments' using errcode = '22023'; end if;
+  if (select count(distinct (e ->> 'moment_index')::numeric) <> count(*) from jsonb_array_elements(p_moments) e) then
+    raise exception 'invalid_moments' using errcode = '22023';
+  end if;
+  select * into v_job from nomad_knowflow.processing_jobs
+   where id = p_job_id and attempt_count = p_attempt and status = 'running' and job_type = 'source_ingest' for update;
+  if not found then return false; end if;
+  -- 작업 → 자료 순서로 잠근다(takedown_video와 직렬화). 비활성 자료는 거부
+  select * into v_source from nomad_knowflow.sources
+   where id = v_job.source_id and deleted_at is null and unavailable_at is null for no key update;
+  if not found then return false; end if;
+  if v_source.source_type <> 'youtube' then raise exception 'not_youtube_source' using errcode = '22023'; end if;
+  if v_source.duration_seconds is not null and exists (
+    select 1 from jsonb_array_elements(p_moments) e where (e -> 'locator' ->> 't_end')::numeric > v_source.duration_seconds
+  ) then raise exception 'invalid_moments' using errcode = '22023'; end if;
+  delete from nomad_knowflow.source_moments where source_id = v_source.id;
+  insert into nomad_knowflow.source_moments (source_id, project_id, organization_id, moment_index, locator, title, description)
+  select v_source.id, v_source.project_id, v_source.organization_id, (e ->> 'moment_index')::integer,
+         jsonb_build_object('t_start', e -> 'locator' -> 't_start', 't_end', e -> 'locator' -> 't_end'),
+         btrim(e ->> 'title'), btrim(e ->> 'description')
+    from jsonb_array_elements(p_moments) e;
+  return true;
+end;
+$$;
+comment on function nomad_knowflow.replace_source_moments(uuid, integer, jsonb) is
+  '유튜브 장면 카드를 (job_id, attempt) 펜싱 아래 통째로 교체한다. 비활성 자료는 거부. Worker 전용(task-011·029)';
 
 -- ===== 4) takedown_video =====
 -- 권리자 삭제 요청 처리(운영 절차: KNOWFLOW-AI docs/runbooks/rights-takedown.md). 소프트 삭제된 자료도 포함한다.
