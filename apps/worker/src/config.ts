@@ -29,6 +29,8 @@ export interface WorkerConfig {
   youtubeMetadataProvider: "stub" | "youtube";
   /** Worker 전용 YouTube Data API 키(YOUTUBE_WORKER_API_KEY, 웹 키와 별개). 로그에 남기지 않는다. 플래그 꺼짐·스텁이면 null */
   youtubeWorkerApiKey: string | null;
+  /** L1 캡처 객체 정리용 Storage 접근(SUPABASE_URL·SUPABASE_SERVICE_ROLE_KEY, 둘 다 있을 때만). 키는 로그에 남기지 않는다. 없으면 정리 꺼짐 */
+  captureStorage: { url: string; serviceRoleKey: string } | null;
 }
 
 function int(env: NodeJS.ProcessEnv, name: string, fallback: number, min: number, max: number): number {
@@ -118,6 +120,26 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): WorkerConfig {
       throw new Error("YOUTUBE_METADATA_PROVIDER=youtube에는 올바른 YOUTUBE_WORKER_API_KEY가 필요합니다");
     }
   }
+  // 캡처 객체 정리(task-030): 둘 다 있어야 켠다. 하나만 있으면 설정 실수로 보고 기동을 거부한다
+  const supabaseUrl = env.SUPABASE_URL ?? "";
+  const serviceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+  let captureStorage: WorkerConfig["captureStorage"] = null;
+  if (supabaseUrl || serviceRoleKey) {
+    if (!supabaseUrl || !serviceRoleKey) throw new Error("SUPABASE_URL과 SUPABASE_SERVICE_ROLE_KEY는 함께 지정해야 합니다");
+    let u: URL;
+    try {
+      u = new URL(supabaseUrl);
+    } catch {
+      throw new Error("SUPABASE_URL 형식이 올바르지 않습니다");
+    }
+    // http는 로컬 DB를 쓸 때의 로컬 Supabase만 허용한다. 경로·사용자 정보·쿼리 없이 origin만
+    const httpOk = u.protocol === "http:" && isLocalDbUrl(databaseUrl);
+    if ((u.protocol !== "https:" && !httpOk) || u.username || u.password || u.search || u.hash || (u.pathname !== "/" && u.pathname !== "")) {
+      throw new Error("SUPABASE_URL은 https origin이어야 합니다");
+    }
+    if (!/^[\x21-\x7e]{1,4096}$/.test(serviceRoleKey)) throw new Error("SUPABASE_SERVICE_ROLE_KEY 형식이 올바르지 않습니다");
+    captureStorage = { url: u.origin, serviceRoleKey };
+  }
   return {
     databaseUrl,
     dbRole,
@@ -137,5 +159,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): WorkerConfig {
     geminiModel,
     youtubeMetadataProvider,
     youtubeWorkerApiKey,
+    captureStorage,
   };
 }
