@@ -90,6 +90,26 @@ describe("save_source_summary", () => {
     expect(r.rows[0]!.user_id).toBe(s.uid);
   });
 
+  it("문장마다 citations(chunk_id·t_start)를 함께 저장하고 t_start는 청크 locator와 같다", async () => {
+    const s = await ready();
+    expect(await save(s.jobId, [{ text: "하나", chunk_ids: [s.ids[1], s.ids[0]], citations: [{ chunk_id: "위조", t_start: 999 }] }])).toBe(true);
+    const r = await admin<{ sentences: { chunk_ids: string[]; citations: { chunk_id: string; t_start: number }[] }[] }>(
+      "select sentences from public.source_summaries where source_id = $1",
+      [s.sourceId],
+    );
+    const sentence = r.rows[0]!.sentences[0]!;
+    expect(sentence.chunk_ids).toEqual([s.ids[1], s.ids[0]]);
+    // ready()의 청크 i는 locator.t_start = i
+    expect(sentence.citations).toEqual([
+      { chunk_id: s.ids[1], t_start: 1 },
+      { chunk_id: s.ids[0], t_start: 0 },
+    ]);
+    for (const c of sentence.citations) {
+      const k = await admin<{ t: string }>("select locator ->> 't_start' as t from public.source_chunks where id = $1", [c.chunk_id]);
+      expect(Number(k.rows[0]!.t)).toBe(c.t_start);
+    }
+  });
+
   it("현재 청크가 아닌 ID(다른 자료 청크 포함)는 거부한다", async () => {
     const s = await ready();
     const o = await ready();

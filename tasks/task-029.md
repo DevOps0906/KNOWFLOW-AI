@@ -8,7 +8,7 @@
 | 쓰기 허용 | `apps/worker/src/summary/**`, `apps/web/src/app/(app)/sources/[sourceId]/**`(S-10은 task-012 소유, 플레이어·장면 카드 연결만), `apps/web/src/app/api/sources/[sourceId]/moments/**`(A-07), `apps/web/src/components/youtube/**`, `apps/web/src/app/(marketing)/terms/**`, `apps/web/src/app/(marketing)/privacy/**`, S-16·S-17 링크만: `apps/web/src/app/(marketing)/page.tsx`(S-01)·`apps/web/src/app/(auth)/login/page.tsx`(S-02)·`apps/web/src/app/(auth)/signup/page.tsx`(S-03), `supabase/migrations/**`(새 번호만). `packages/citations/**`는 task-032 소유(import만) |
 | 할 것 | 저장된 청크만 입력한 별도 LLM 요약, 실제 `chunk_id` 인용과 코드 검증, S-10 임베드 플레이어·L0 장면 카드(해당 시각 재생), "AI 전사"·"AI가 본 장면, 전사 근거 아님" 표시, 채널명·원본 링크, 권리자 삭제 요청 창구, 약관·개인정보처리방침 화면, A-07 `/moments` 라우트, S-01·S-02·S-03에 S-16·S-17 링크, 장면 카드 겹침 판정 함수 |
 | 하지 않을 것 | 썸네일 서버 프록시·`next/image`, 긴 원문 인용, 겹치는 청크 없는 카드의 리포트 인용, L1 캡처(task-030) |
-| 완료 조건 | [ ] 테스트: 검색되지 않은 `chunk_id` 인용 거부 [ ] 테스트: 카드 클릭 시 해당 시각 재생 인자 전달 [ ] 단위 테스트: 겹침 판정 함수(겹치는 청크 없으면 인용 불가, 리포트 통합 테스트는 task-017) [ ] `unavailable_at` 자료 제외 [ ] 3구간 화면 캡처 [ ] `pnpm test` · `pnpm --filter worker test` 통과 |
+| 완료 조건 | [x] 테스트: 검색되지 않은 `chunk_id` 인용 거부 [x] 테스트: 카드 클릭 시 해당 시각 재생 인자 전달 [x] 단위 테스트: 겹침 판정 함수(겹치는 청크 없으면 인용 불가, 리포트 통합 테스트는 task-017) [x] `unavailable_at` 자료 제외 [x] 3구간 화면 캡처(S-16·S-17 실제 서버 520·820·1440, S-10은 로그인 세션 필요 → task-022) [x] `pnpm test` · `pnpm --filter worker test` 통과 |
 | 공유 | 인용 검증은 task-032의 `packages/citations` 순수 함수를 재사용한다(task-015와 공용, 이 작업에서 새로 만들지 않음) |
 
 ## 구현 결정 (2026-11-12 challenger 반영, 팀장 확정)
@@ -24,3 +24,4 @@
 8. 약관·개인정보처리방침: 문구 초안, 화면 상단 "초안" 표시. 국외 이전(Google·Gemini) 고지 항목 포함. 공개 배포 여부는 사용자 결정.
 9. 범위 밖: S-10의 리포트 포함 체크·선택 카드 리포트 생성(task-017), L1 캡처(task-030), 실제 요약 공급자.
 - 보류(2026-11-12 사용자 결정): 권리자 신고 이메일 주소와 약관·개인정보 초안 공개 여부는 MVP 완성 단계에서 다시 결정. 그때까지 이메일은 "준비 중" 표시, 화면은 "초안" 표시 유지.
+- 완료(2026-11-16): 이전 stash는 저장소 재클론으로 유실되어 029a·029c를 결정대로 다시 구현(f5dc95c), 이어 029b. 재실행 web 299 · worker 197(+1 skip, Node 26.13.0) · citations 27 · db 181, `pnpm -r typecheck`·`lint`. 리뷰는 Codex 인증 불가(401)로 reviewer(code·security) 대체, 🔴 4건 반영: 진행 중 작업의 청크·장면 재기록(replace_* 비활성 거부·행 잠금), save_source_summary 잠금, /moments 청크 순회(→ 000600에서 저장 시 citations{chunk_id,t_start} 보관), 인용 0건 문장 노출. save_source_summary는 p_model 3번째 인자. 재등록 차단은 유튜브 활성화 전 별도 처리. 3구간 캡처 도구는 500px 미만을 iframe으로 찍어 CSP frame-ancestors에 막힘 → 모바일은 520px로 확인.
