@@ -57,7 +57,16 @@ function initialPhase(source: SourceMeta): Phase {
   return "loading";
 }
 
-export function SourceViewer({ source, initialChunkId }: { source: SourceMeta; initialChunkId: string | null }) {
+export function SourceViewer({
+  source,
+  initialChunkId,
+  youtubeEnabled = false,
+}: {
+  source: SourceMeta;
+  initialChunkId: string | null;
+  /** 서버가 기능 플래그(YOUTUBE_ENABLED)를 읽어 넘긴다. 꺼지면 플레이어·요약·장면 카드를 숨긴다 */
+  youtubeEnabled?: boolean;
+}) {
   const [phase, setPhase] = useState<Phase>(() => initialPhase(source));
   const [items, setItems] = useState<ViewerChunk[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -259,7 +268,7 @@ export function SourceViewer({ source, initialChunkId }: { source: SourceMeta; i
 
   return (
     <div className="flex min-w-0 flex-col gap-4">
-      {isYoutube ? <YoutubeSlot source={source} startSeconds={chunkStartSeconds(highlighted)} /> : null}
+      {isYoutube ? <YoutubeSlot source={source} startSeconds={chunkStartSeconds(highlighted)} enabled={youtubeEnabled} /> : null}
 
       {aroundNotice}
 

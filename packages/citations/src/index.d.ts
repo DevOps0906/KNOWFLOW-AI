@@ -23,3 +23,19 @@ export interface VerifyCitationsResult<TChunk extends AllowedChunk> {
 export function verifyCitations<TChunk extends AllowedChunk>(
   input: VerifyCitationsInput<TChunk>,
 ): VerifyCitationsResult<TChunk>;
+
+/** 영상 시각 구간(초). 반열린 구간 [t_start, t_end) */
+export interface TimeRange {
+  t_start: number;
+  t_end: number;
+}
+
+/**
+ * 장면(moment)과 겹치는 청크 전부를 겹친 길이 내림차순(같으면 t_start 오름차순, 그다음 입력 순서)으로 돌려준다.
+ * 반열린 구간이라 맞닿기만 하면 겹침이 아니다. locator가 올바른 시각 구간이 아닌 청크·잘못된 moment는 무시한다.
+ * 빈 배열이면 그 장면은 인용할 수 없다.
+ */
+export function overlappingChunks<TChunk extends { locator?: unknown }>(
+  moment: TimeRange,
+  chunks: readonly TChunk[],
+): TChunk[];

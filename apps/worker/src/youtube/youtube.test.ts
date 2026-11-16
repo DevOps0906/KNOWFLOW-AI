@@ -15,6 +15,7 @@ import { createGeminiVideoAnalyzer, GEMINI_PROMPT, readCapped } from "./gemini.j
 import { mergeWindows, ownedRange, parseWindowOutput, planWindows, type WindowOutput } from "./pipeline.js";
 import { YOUTUBE_ERROR_CODES, YOUTUBE_SETTINGS } from "./settings.js";
 import { createPgYoutubeStore, type MomentDraft, type YoutubeStore, type YoutubeVideo } from "./store.js";
+import { createStubVideoSummaryProvider, type SummarySentence, type VideoSummaryStore } from "./summary.js";
 
 const VIDEO_ID = "dQw4w9WgXcQ";
 const LOCAL = "postgres://u:p@db:5432/k";
@@ -618,5 +619,89 @@ describe("config · 유튜브 플래그", () => {
       geminiApiKey: "AIza-ok",
     });
     expect(() => loadConfig({ DATABASE_URL: REMOTE, GEMINI_MODEL: "x/y" })).toThrow(/GEMINI_MODEL/);
+  });
+});
+
+// ── 영상 요약 후행 단계(task-029a): 메모리 저장소의 청크에 실제 chunk_id를 붙여 흉내 낸다 ──
+describe("source_ingest 핸들러 · 영상 요약", () => {
+  const idOf = (i: number) => `00000000-0000-4000-8000-${String(i).padStart(12, "0")}`;
+
+  function summaryStore(state: { chunks: ChunkDraft<TimeLocator>[] }, opts: { failLoad?: boolean } = {}) {
+    const saved: { jobId: string; sentences: SummarySentence[] }[] = [];
+    const store: VideoSummaryStore = {
+      loadChunks: async () => {
+        if (opts.failLoad) throw new TypeError("db down");
+        return state.chunks.map((c, i) => ({ chunk_id: idOf(i), content: c.content, locator: c.locator }));
+      },
+      async save(jobId, sentences) {
+        saved.push({ jobId, sentences });
+        return true;
+      },
+    };
+    return { store, saved };
+  }
+
+  it("완료 뒤 스텁 요약을 실제 chunk_id 인용으로 저장하고 프로젝트 요약도 저장한다", async () => {
+    const job = { attempt: 1, status: "running" };
+    const { ingest, youtube, state } = stores({ video_id: VIDEO_ID, duration_seconds: 600 }, job);
+    const sum = summaryStore(state);
+    const logs: LogFields[] = [];
+    const r = await run(
+      handlerWith({
+        store: ingest,
+        summarizer: createStubSummaryProvider(),
+        youtube: { analyzer: createStubVideoAnalyzer(), store: youtube, summary: { provider: createStubVideoSummaryProvider(), store: sum.store } },
+        log: (f) => void logs.push(f),
+      }),
+      jobFor(1),
+      logs,
+    );
+    expect(r.outcome).toBe("succeeded");
+    expect(sum.saved.length).toBe(1);
+    expect(sum.saved[0]!.jobId).toBe("j1");
+    const ids = new Set(state.chunks.map((_, i) => idOf(i)));
+    for (const s of sum.saved[0]!.sentences) for (const id of s.chunk_ids) expect(ids.has(id)).toBe(true);
+    expect(state.summary).toBeTruthy();
+    expect(state.usage.map((u) => u.eventType)).toEqual(["youtube_analysis", "project_summary", "video_summary"]);
+    expect(logs).toContainEqual(expect.objectContaining({ event: "after_complete", outcome: "project:saved video:saved" }));
+  });
+
+  it("영상 요약 실패는 자료를 실패시키지 않고 프로젝트 요약을 막지 않는다(오류 이름만 로그)", async () => {
+    const job = { attempt: 1, status: "running" };
+    const { ingest, youtube, state } = stores({ video_id: VIDEO_ID, duration_seconds: 600 }, job);
+    const sum = summaryStore(state, { failLoad: true });
+    const logs: LogFields[] = [];
+    const r = await run(
+      handlerWith({
+        store: ingest,
+        summarizer: createStubSummaryProvider(),
+        youtube: { analyzer: createStubVideoAnalyzer(), store: youtube, summary: { provider: createStubVideoSummaryProvider(), store: sum.store } },
+        log: (f) => void logs.push(f),
+      }),
+      jobFor(1),
+      logs,
+    );
+    expect(r.outcome).toBe("succeeded");
+    expect(r.calls).not.toContainEqual(expect.stringMatching(/^fail:/));
+    expect(job.status).toBe("succeeded");
+    expect(state.summary).toBeTruthy();
+    expect(logs).toContainEqual(expect.objectContaining({ event: "after_complete_step", reason: "video_summary", outcome: "failed", errorName: "TypeError" }));
+    expect(logs).toContainEqual(expect.objectContaining({ event: "after_complete", outcome: "project:saved video:failed" }));
+    expect(JSON.stringify(logs)).not.toContain("db down");
+  });
+
+  it("buildHandlers: 요약 공급자가 stub이면 완료 뒤 청크를 읽어 save_source_summary를 부른다", async () => {
+    const { pool, sql } = fakePool();
+    const handlers = buildHandlers(
+      {
+        dummyHandlers: false, sourceReader: "storage", fixtureDir: null, summaryProvider: "stub", youtubeAnalyzer: "stub", geminiApiKey: null,
+        geminiModel: "gemini-test", youtubeMetadataProvider: "stub", youtubeWorkerApiKey: null, youtubeEnabled: true,
+      },
+      pool,
+    );
+    expect((await run(handlers, jobFor(1))).outcome).toBe("succeeded");
+    // 가짜 pool은 청크를 돌려주지 않으므로 공급자·저장은 부르지 않는다(no_chunks)
+    expect(sql.some((s) => s.includes("from public.source_chunks"))).toBe(true);
+    expect(sql.some((s) => s.includes("save_source_summary"))).toBe(false);
   });
 });

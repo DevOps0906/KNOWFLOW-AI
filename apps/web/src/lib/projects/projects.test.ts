@@ -99,6 +99,29 @@ describe("수정·삭제(A-03 PATCH·DELETE)", () => {
     expect((await handlers.update(send("PATCH", { name: "" }), ID)).status).toBe(422);
   });
 
+  it("삭제 성공 뒤 캡처 대기열을 처리한다. 처리 실패해도 200, 오류 코드만 로그. 삭제 실패면 부르지 않는다", async () => {
+    const backend = setup().backend;
+    const purge = vi.fn(async () => {});
+    const ok = await createProjectHandlers({ backend, siteUrl: SITE, purgeCaptures: purge }).remove(send("DELETE"), ID);
+    expect(ok.status).toBe(200);
+    expect(purge).toHaveBeenCalledTimes(1);
+
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    const failing = vi.fn(async () => {
+      throw new Error("purge_remove_failed");
+    });
+    const res = await createProjectHandlers({ backend, siteUrl: SITE, purgeCaptures: failing }).remove(send("DELETE"), ID);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true, deletedAt: "2026-11-03T00:00:00Z" });
+    expect(log).toHaveBeenCalledWith("capture_purge_failed", "purge_remove_failed");
+    log.mockRestore();
+
+    const notDeleted = vi.fn(async () => {});
+    const conflict = setup({ remove: async () => ({ ok: false, kind: "conflict" }) }).backend;
+    await createProjectHandlers({ backend: conflict, siteUrl: SITE, purgeCaptures: notDeleted }).remove(send("DELETE"), ID);
+    expect(notDeleted).not.toHaveBeenCalled();
+  });
+
   it("처리 중 작업이 있으면 삭제는 409", async () => {
     const { handlers } = setup({ remove: async () => ({ ok: false, kind: "conflict" }) });
     const res = await handlers.remove(send("DELETE"), ID);

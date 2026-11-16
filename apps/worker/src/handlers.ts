@@ -11,6 +11,7 @@ import { createGeminiVideoAnalyzer } from "./youtube/gemini.js";
 import { createStubMetadataProvider, createYoutubeDataApiProvider } from "./youtube/metadata.js";
 import { createRecheckHandler } from "./youtube/recheck.js";
 import { createPgRecheckStore, createPgYoutubeStore } from "./youtube/store.js";
+import { createPgVideoSummaryStore, createStubVideoSummaryProvider } from "./youtube/summary.js";
 
 // 더미 핸들러는 기동·전이 검증용이다(WORKER_DUMMY_HANDLERS=1, 로컬 DB 전용).
 export const dummyHandler: Handler = async ({ progress, signal }) => {
@@ -52,7 +53,15 @@ export function buildHandlers(
       store: createPgIngestStore(db),
       reader,
       summarizer: config.summaryProvider === "stub" ? createStubSummaryProvider() : undefined,
-      youtube: analyzer ? { analyzer, store: createPgYoutubeStore(db) } : undefined,
+      youtube: analyzer
+        ? {
+            analyzer,
+            store: createPgYoutubeStore(db),
+            // 영상 요약은 프로젝트 요약과 같은 공급자 설정을 따른다(지금은 스텁만, 실호출은 task-015)
+            summary:
+              config.summaryProvider === "stub" ? { provider: createStubVideoSummaryProvider(), store: createPgVideoSummaryStore(db) } : undefined,
+          }
+        : undefined,
       log,
     }),
   };

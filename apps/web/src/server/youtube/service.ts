@@ -1,5 +1,5 @@
 import "server-only";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { readYoutubeConfig, youtubeUsable, type YoutubeConfig } from "./config";
 import { createStubMetadataProvider, createYoutubeDataApiProvider } from "./metadata";
 import { createYoutubeSources, type RegisterRpcInput, type RegisterRpcResult } from "./register";
@@ -17,6 +17,15 @@ function serviceRoleEnv() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   return url && serviceKey ? { url, serviceKey } : null;
+}
+
+/**
+ * service_role 클라이언트(task-030 캡처 업로드·서명·삭제용). 설정이 없으면 null.
+ * 키는 위 serviceRoleEnv 한 곳에서만 읽는다(키 문자열은 이 모듈 밖으로 내보내지 않는다).
+ */
+export function createServiceRoleClient(): SupabaseClient | null {
+  const env = serviceRoleEnv();
+  return env ? createClient(env.url, env.serviceKey, { auth: { persistSession: false, autoRefreshToken: false } }) : null;
 }
 
 function currentConfig() {

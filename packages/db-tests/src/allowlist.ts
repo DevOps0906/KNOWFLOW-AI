@@ -22,6 +22,9 @@ export const SERVICE_ROLE_EXECUTE = [
   "apply_source_recheck",
   "claim_job",
   "complete_job",
+  "confirm_capture",
+  "discard_capture",
+  "enqueue_capture_purge",
   "fail_job",
   "heartbeat_job",
   "progress_job",
@@ -29,7 +32,10 @@ export const SERVICE_ROLE_EXECUTE = [
   "register_youtube_source",
   "replace_source_chunks",
   "replace_source_moments",
+  "reserve_capture",
+  "save_source_summary",
   "sweep_source_rechecks",
+  "takedown_video",
 ];
 
 /** authenticated가 SELECT 할 수 있는 public 테이블 (source_chunks·idempotency_keys는 없음) */
@@ -42,7 +48,9 @@ export const AUTHENTICATED_SELECT = [
   "projects",
   "report_citations",
   "reports",
+  "source_captures",
   "source_moments",
+  "source_summaries",
   "sources",
   "usage_events",
   "user_quotas",
@@ -50,6 +58,7 @@ export const AUTHENTICATED_SELECT = [
 
 export const ALL_TABLES = [
   "auth_rate_limits",
+  "capture_purge_queue",
   "conversations",
   "idempotency_keys",
   "messages",
@@ -59,8 +68,11 @@ export const ALL_TABLES = [
   "projects",
   "report_citations",
   "reports",
+  "rights_takedowns",
+  "source_captures",
   "source_chunks",
   "source_moments",
+  "source_summaries",
   "sources",
   "usage_events",
   "user_quotas",

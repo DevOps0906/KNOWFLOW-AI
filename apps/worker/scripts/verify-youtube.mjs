@@ -1,5 +1,6 @@
 // task-027c·028 종단 검증: compose의 worker(실제 핸들러·스텁 영상 분석기·스텁 요약)가 유튜브 자료를 queued→completed로 처리하는지 확인한다.
 // 확인: 긴 영상 분할(3구간), 청크 locator t_start/t_end, source_moments, usage_events, 같은 영상 재처리 시 청크·장면 중복 없음,
+// 영상 요약(029a) 저장·재처리 후 새 청크 기준 재저장,
 // 플래그 꺼짐이면 유튜브 작업이 재시도 없이 youtube_disabled로 실패(재확인 스윕도 없음), 로그에 전사 본문·비밀 없음. Gemini 실호출 없음.
 // 재확인(027d): 플래그 켜진 Worker가 기동 스윕으로 21일 지난 자료의 source_recheck 작업을 만들고 스텁 videos.list로 길이를 갱신
 // (자료 상태·쿼터 불변, 로그는 숫자만). YouTube Data API 실호출 없음.
@@ -113,6 +114,21 @@ try {
   }
   check(summary.length > 0, "[요약] 첫 자료 요약 저장(스텁)");
 
+  // 영상 요약(029a): 후행 단계라 완료 뒤 조금 늦게 저장된다. 인용은 지금 그 자료의 청크만
+  const videoSummary = async (job) => {
+    let row = "";
+    for (let i = 0; i < 20 && !row; i++) {
+      row = psql(`select jsonb_array_length(sentences) || '|' ||
+                         (select count(*) from jsonb_array_elements(sentences) e, jsonb_array_elements_text(e -> 'chunk_ids') c
+                           where not exists (select 1 from public.source_chunks sc where sc.id = c::uuid and sc.source_id = '${sourceId}'))
+                    from public.source_summaries where source_id = '${sourceId}' and job_id = '${job}'`);
+      if (!row) await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+    return row.split("|");
+  };
+  const [sCount, sForeign] = await videoSummary(jobId);
+  check(Number(sCount) > 0 && sForeign === "0", "[영상 요약] 스텁 요약 저장, 인용이 모두 그 자료의 청크", `문장 ${sCount}개, 다른 청크 인용 ${sForeign}건`);
+
   // 재처리: 같은 영상에 새 작업 → 청크·장면 수가 같고 중복 없음
   const job2 = enqueue(sourceId);
   const status2 = await waitForJob(job2);
@@ -120,6 +136,8 @@ try {
   const [m2, mDistinct2] = momentStats(sourceId);
   check(status2 === "succeeded" && n2 === n && distinct2 === n, "[재처리] 청크 중복 없음", `처음 ${n}개 → 재처리 ${n2}개`);
   check(m2 === m && mDistinct2 === m, "[재처리] 장면 중복 없음", `처음 ${m}개 → 재처리 ${m2}개`);
+  const [sCount2, sForeign2] = await videoSummary(job2);
+  check(Number(sCount2) > 0 && sForeign2 === "0", "[재처리] 영상 요약이 새 작업·새 청크 기준으로 다시 저장", `문장 ${sCount2}개, 낡은 청크 인용 ${sForeign2}건`);
 
   await stopWorker(env, attached);
   collectLogs(env);

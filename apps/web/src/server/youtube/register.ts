@@ -43,6 +43,7 @@ export const YOUTUBE_MESSAGES = {
   video_made_for_kids: "어린이용으로 지정된 영상은 등록할 수 없습니다.",
   video_too_long: "허용된 길이를 넘는 영상입니다.",
   duplicateVideo: "이 프로젝트에 이미 같은 영상이 있습니다.",
+  takenDown: "권리자 요청으로 삭제된 영상이라 등록할 수 없습니다.",
   conflict: "같은 요청이 다른 입력으로 들어왔습니다. 새로 시도해 주세요.",
   sourceLimit: "자료 수 또는 이번 달 처리 한도에 도달했습니다.",
   videoLimit: "이번 달 영상 처리 시간 한도에 도달했습니다.",
@@ -69,6 +70,8 @@ export function classifyRegisterError(error: { code?: string; message?: string; 
       return failure(409, "conflict", YOUTUBE_MESSAGES.conflict);
     case "KF413":
       return failure(422, "video_too_long", YOUTUBE_MESSAGES.video_too_long);
+    case "KF451": // message video_taken_down: 권리자 삭제(takedown_video)된 영상
+      return failure(422, "video_taken_down", YOUTUBE_MESSAGES.takenDown);
     case "KF429": {
       return error.hint === "video_seconds"
         ? failure(429, "limit_exceeded", YOUTUBE_MESSAGES.videoLimit, "video_seconds")

@@ -247,6 +247,7 @@ describe("A-04 유튜브 등록", () => {
     [{ code: "KF409" }, 409, "conflict"],
     [{ code: "KF410" }, 409, "conflict"],
     [{ code: "KF413" }, 422, "video_too_long"],
+    [{ code: "KF451", message: "video_taken_down" }, 422, "video_taken_down"],
     [{ code: "KF429", message: "quota_exceeded", hint: "video_seconds" }, 429, "limit_exceeded"],
     [{ code: "KF429", message: "quota_exceeded", hint: "source_jobs" }, 429, "limit_exceeded"],
     [{ code: "KF429", message: "source_limit_exceeded" }, 429, "limit_exceeded"],

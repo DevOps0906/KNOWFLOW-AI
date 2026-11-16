@@ -194,13 +194,25 @@ describe("S-10 원문 뷰어", () => {
     expect(await screen.findByText("원본 영상을 더 이상 볼 수 없습니다")).toBeTruthy();
   });
 
-  it("유튜브는 mm:ss를 표시하고 슬롯에 강조 청크의 t_start를 넘긴다", async () => {
-    stubFetch(Response.json(page({ items: [chunk(CHUNK_A, 3, "전사", { t_start: 125, t_end: 190 })], around: "found" })));
-    render(<SourceViewer source={youtube} initialChunkId={CHUNK_A} />);
+  it("유튜브는 mm:ss를 표시하고 플레이어를 강조 청크의 t_start에서 연다", async () => {
+    const fetchMock = vi.fn(async (url: string) =>
+      url.includes("/moments")
+        ? Response.json({ enabled: true, unavailable: false, items: [], summary: null })
+        : Response.json(page({ items: [chunk(CHUNK_A, 3, "전사", { t_start: 125, t_end: 190 })], around: "found" })),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    render(<SourceViewer source={{ ...youtube, video_id: "dQw4w9WgXcQ" }} initialChunkId={CHUNK_A} youtubeEnabled />);
     expect(await screen.findByText("02:05 ~ 03:10")).toBeTruthy();
-    const slot = document.querySelector('[data-slot="youtube-viewer"]');
-    expect(slot?.getAttribute("data-start-seconds")).toBe("125");
-    expect(slot?.getAttribute("data-video-id")).toBe("abc");
+    const iframe = document.querySelector("iframe");
+    expect(iframe?.getAttribute("src")).toBe("https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?start=125");
+  });
+
+  it("유튜브 플래그가 꺼지면 플레이어·장면 카드 대신 '유튜브 기능 준비 중'만 보이고 /moments를 부르지 않는다", async () => {
+    const fetchMock = stubFetch(Response.json(page({ items: [chunk(CHUNK_A, 0, "전사", { t_start: 5, t_end: 9 })] })));
+    render(<SourceViewer source={{ ...youtube, video_id: "dQw4w9WgXcQ" }} initialChunkId={null} />);
+    expect(await screen.findByText(/유튜브 기능 준비 중/)).toBeTruthy();
+    expect(document.querySelector("iframe")).toBeNull();
+    expect(fetchMock.mock.calls.some((c) => String((c as unknown[])[0]).includes("/moments"))).toBe(false);
   });
 
   it("원문의 <script>는 실행되지 않고 글자로 보인다", async () => {
@@ -244,7 +256,12 @@ describe("S-10 원문 뷰어", () => {
 describe("S-10 HTML 주입 금지", () => {
   it("뷰어·페이지 소스에 dangerouslySetInnerHTML이 없다", () => {
     // vitest 루트는 apps/web
-    const dirs = [join(process.cwd(), "src/components/workspace/viewer"), join(process.cwd(), "src/app/(app)/sources/[sourceId]")];
+    const dirs = [
+      join(process.cwd(), "src/components/workspace/viewer"),
+      join(process.cwd(), "src/app/(app)/sources/[sourceId]"),
+      join(process.cwd(), "src/components/youtube"),
+      join(process.cwd(), "src/app/api/sources/[sourceId]/moments"),
+    ];
     const files: string[] = [];
     for (const dir of dirs) {
       for (const name of readdirSync(dir)) {
@@ -252,7 +269,7 @@ describe("S-10 HTML 주입 금지", () => {
         if (statSync(full).isFile() && /\.tsx?$/.test(name) && !name.includes(".test.")) files.push(full);
       }
     }
-    expect(files.length).toBeGreaterThanOrEqual(6);
+    expect(files.length).toBeGreaterThanOrEqual(13);
     for (const file of files) expect(readFileSync(file, "utf8")).not.toContain("dangerouslySetInnerHTML");
   });
 });

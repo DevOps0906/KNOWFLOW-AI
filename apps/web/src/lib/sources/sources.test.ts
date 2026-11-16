@@ -188,6 +188,29 @@ describe("A-04 DELETE 자료 소프트 삭제", () => {
     expect(backend.deleteSources).toHaveBeenCalledWith(PROJECT, [SOURCE, JOB]);
   });
 
+  it("삭제 성공 뒤 캡처 대기열을 처리한다. 처리 실패해도 200, 오류 코드만 로그. 삭제 실패면 부르지 않는다", async () => {
+    const { backend } = setup();
+    const purge = vi.fn(async () => {});
+    const ok = await createSourceReadHandlers({ backend, siteUrl: SITE, purgeCaptures: purge }).deleteSources(del({ source_ids: [SOURCE] }), PROJECT);
+    expect(ok.status).toBe(200);
+    expect(purge).toHaveBeenCalledTimes(1);
+
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    const failing = vi.fn(async () => {
+      throw new Error("purge_queue_read_failed");
+    });
+    const res = await createSourceReadHandlers({ backend, siteUrl: SITE, purgeCaptures: failing }).deleteSources(del({ source_ids: [SOURCE] }), PROJECT);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true, deleted: 2 });
+    expect(log).toHaveBeenCalledWith("capture_purge_failed", "purge_queue_read_failed");
+    log.mockRestore();
+
+    const notDeleted = vi.fn(async () => {});
+    const missing = setup({ deleteSources: vi.fn(async () => ({ ok: false as const, kind: "not_found" as const })) }).backend;
+    await createSourceReadHandlers({ backend: missing, siteUrl: SITE, purgeCaptures: notDeleted }).deleteSources(del({ source_ids: [SOURCE] }), PROJECT);
+    expect(notDeleted).not.toHaveBeenCalled();
+  });
+
   it("하나라도 없거나 타인 것이면 404", async () => {
     const { handlers } = setup({ deleteSources: vi.fn(async () => ({ ok: false as const, kind: "not_found" as const })) });
     const res = await handlers.deleteSources(del({ source_ids: [SOURCE] }), PROJECT);

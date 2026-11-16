@@ -149,6 +149,43 @@ erDiagram
     text description
     timestamptz created_at
   }
+  source_summaries {
+    uuid source_id PK
+    uuid project_id
+    uuid user_id
+    uuid job_id
+    jsonb sentences
+    text model
+    timestamptz created_at
+  }
+  rights_takedowns {
+    uuid id PK
+    text video_id
+    text reason
+    integer sources_count
+    integer chunks_deleted
+    integer moments_deleted
+    integer summaries_deleted
+    integer active_jobs
+    timestamptz created_at
+  }
+  source_captures {
+    uuid id PK
+    uuid source_id FK
+    uuid moment_id FK
+    uuid user_id
+    numeric t_seconds
+    text storage_path
+    text status
+    text idempotency_key
+    integer bytes
+    timestamptz created_at
+  }
+  capture_purge_queue {
+    text storage_path PK
+    text reason
+    timestamptz queued_at
+  }
   profiles ||--o{ user_quotas : "user_id"
   plans ||--o{ user_quotas : "plan_code"
   profiles ||--o{ projects : "user_id"
@@ -167,3 +204,7 @@ erDiagram
   profiles ||--o{ idempotency_keys : "user_id"
   sources ||--o{ source_moments : "source_id"
   projects ||--o{ source_moments : "project_id"
+  sources ||--o{ source_summaries : "source_id"
+  projects ||--o{ source_summaries : "project_id"
+  sources ||--o{ source_captures : "source_id"
+  source_moments ||--o{ source_captures : "moment_id"

@@ -13,6 +13,8 @@ export interface ProjectsDeps {
   backend: ProjectsBackend;
   /** Origin 검사 기준(쓰기 요청). 없으면 검사를 건너뛴다(proxy가 로그인은 이미 확인). */
   siteUrl?: string | undefined;
+  /** 삭제 성공 직후 캡처 삭제 대기열 처리(task-030). 실패해도 삭제 응답은 성공, 오류 코드만 로그 */
+  purgeCaptures?: () => Promise<void>;
 }
 
 export const PROJECT_MESSAGES = {
@@ -165,7 +167,11 @@ export function createProjectHandlers(deps: ProjectsDeps) {
         await requireUser();
         if (!UUID.test(projectId)) return fail(404, "not_found", PROJECT_MESSAGES.notFound);
         const result = await backend.remove(projectId);
-        return result.ok ? json(200, { ok: true, deletedAt: result.data.deletedAt }) : outcomeError(result.kind);
+        if (!result.ok) return outcomeError(result.kind);
+        await deps.purgeCaptures?.().catch((e: unknown) => {
+          console.error("capture_purge_failed", e instanceof Error ? e.message : "unknown");
+        });
+        return json(200, { ok: true, deletedAt: result.data.deletedAt });
       }),
   };
 }

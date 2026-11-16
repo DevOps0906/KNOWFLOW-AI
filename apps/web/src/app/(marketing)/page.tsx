@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { PreorderCta } from "./preorder-cta";
 
 export const metadata: Metadata = {
@@ -96,6 +97,14 @@ export default function LandingPage() {
           <p className="break-keep">
             AI 답변에는 오류가 있을 수 있습니다. 표시된 기능은 모두 개발 중이며 변경될 수 있습니다.
           </p>
+          <nav aria-label="약관" className="mt-2 flex flex-wrap gap-4">
+            <Link href="/terms" className="underline underline-offset-4">
+              이용약관
+            </Link>
+            <Link href="/privacy" className="underline underline-offset-4">
+              개인정보처리방침
+            </Link>
+          </nav>
           <p className="mt-2">&copy; KNOWFLOW-AI</p>
         </div>
       </footer>

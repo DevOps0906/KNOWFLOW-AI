@@ -1,4 +1,5 @@
 import { createSupabaseServerClient, supabaseEnv } from "@/lib/auth/supabase-server";
+import { purgeCapturesFromEnv } from "@/server/captures/service";
 import { createProjectHandlers, type ProjectsBackend } from "./handlers";
 import { createProject, deleteProject, listProjects, updateProject } from "./queries";
 
@@ -15,7 +16,7 @@ export async function projectHandlersForRequest() {
     update: (id, patch) => updateProject(supabase, id, patch),
     remove: (id) => deleteProject(supabase, id),
   };
-  return createProjectHandlers({ backend, siteUrl: process.env.NEXT_PUBLIC_SITE_URL });
+  return createProjectHandlers({ backend, siteUrl: process.env.NEXT_PUBLIC_SITE_URL, purgeCaptures: purgeCapturesFromEnv });
 }
 
 /** 서버 컴포넌트용: 로그인한 사용자 확인 + 클라이언트. 환경 변수가 없으면 null. */

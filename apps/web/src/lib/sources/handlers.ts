@@ -65,6 +65,8 @@ export interface SourceReadDeps {
   backend: SourceReadBackend;
   /** Origin 검사 기준(쓰기 요청). 없으면 검사를 건너뛴다. */
   siteUrl?: string | undefined;
+  /** 삭제 성공 직후 캡처 삭제 대기열 처리(task-030). 실패해도 삭제 응답은 성공, 오류 코드만 로그 */
+  purgeCaptures?: () => Promise<void>;
 }
 
 export const SOURCE_READ_MESSAGES = {
@@ -224,7 +226,12 @@ export function createSourceReadHandlers(deps: SourceReadDeps) {
           return badRequest();
         }
         const result = await backend.deleteSources(projectId, ids);
-        if (result.ok) return json(200, { ok: true, deleted: result.deleted });
+        if (result.ok) {
+          await deps.purgeCaptures?.().catch((e: unknown) => {
+            console.error("capture_purge_failed", e instanceof Error ? e.message : "unknown");
+          });
+          return json(200, { ok: true, deleted: result.deleted });
+        }
         if (result.kind === "unauthorized") return unauthorized();
         // 프로젝트·자료 중 무엇이 없는지 알리지 않는다
         if (result.kind === "not_found") return sourceNotFound();
