@@ -1,8 +1,9 @@
 # NOW — 재진입 스냅샷 (30줄 이내, 매 작업 끝에 덮어쓴다)
 
 - 갱신: 2026-11-16
-- 다음 작업: **task-030** 사용자 승인 탭 캡처(L1). 높음 → 착수 전 challenger. 활성화는 026 법무 뒤(플래그 꺼짐 유지). 브랜치 master.
-- 우선순위(사용자 결정): 029(완료) → 030 → W3(013 → 014 → 015 …) · 009. 유튜브 플래그 `YOUTUBE_ENABLED` 기본 꺼짐, 활성화는 task-025 통과·task-026 판정 뒤. 설치형 앱(WA, task-033~035)은 task-024 뒤.
+- 다음 작업: **task-013** 골든셋 30~50문항 + 평가(임베딩·청킹 확정, 벡터 컬럼·저장 연결). W3, 보통. 브랜치 master.
+- task-030 보류(2026-11-16 사용자 결정): 재착수 조건·challenger 검토 결과는 tasks/task-030.md "보류". IFrame API 허용 여부도 그때 결정.
+- 우선순위(사용자 결정): 029(완료) → 030(보류) → W3(013 → 014 → 015 …) · 009. 유튜브 플래그 `YOUTUBE_ENABLED` 기본 꺼짐, 활성화는 task-025 통과·task-026 판정 뒤. 설치형 앱(WA, task-033~035)은 task-024 뒤.
 - 최근 커밋: task-029 완료(029b·000600), f5dc95c(029a·029c), 03344ad(README), 4c3687e(task-012).
 - 검증(2026-11-16): web 299, worker 197(+1 skip), citations 27, db 181, `pnpm -r typecheck`·`lint`.
 - 환경(이 PC): pnpm은 PATH에 없음 → `COREPACK_ENABLE_DOWNLOAD_PROMPT=0 corepack pnpm …`. 설치는 `--config.strict-dep-builds=false`(embedded-postgres 윈도 빌드 스크립트 미실행, 저장소 설정 무변경). 호스트 Node 24.16 → worker PDF 파서 테스트 실패, 스크래치 Node 26.13.0을 PATH 앞에 두고 실행(세션 스크래치라 사라질 수 있음).
