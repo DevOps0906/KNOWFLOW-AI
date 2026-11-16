@@ -1,9 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { defaultWritableOrganization } from "@/lib/organizations/queries";
 import type { ListParams } from "./params";
 import type { Outcome, ProjectItem, ProjectPatch } from "./types";
 
 // 읽기는 로그인 사용자의 세션으로 RLS를 통해서만 한다(본인·삭제되지 않은 행만 보인다).
-// 쓰기는 DB RPC(create_project·update_project·delete_project)만 쓴다. user_id는 어디에서도 넘기지 않는다.
+// 쓰기는 DB RPC(create_project·update_project·delete_project)만 쓴다. 소유는 조직(organization_id)이고 DB가 쓰기 역할을 판정한다.
 
 interface ProjectRow {
   id: string;
@@ -77,7 +78,13 @@ export async function createProject(
   supabase: SupabaseClient,
   input: { name: string; description: string | null },
 ): Promise<Outcome<ProjectItem>> {
-  const { data, error } = await supabase.rpc("create_project", { p_name: input.name, p_description: input.description });
+  const organizationId = await defaultWritableOrganization(supabase);
+  if (!organizationId) return { ok: false, kind: "unauthorized" };
+  const { data, error } = await supabase.rpc("create_project", {
+    p_organization_id: organizationId,
+    p_name: input.name,
+    p_description: input.description,
+  });
   if (error) return classify(error);
   return { ok: true, data: toItem(data as ProjectRow) };
 }

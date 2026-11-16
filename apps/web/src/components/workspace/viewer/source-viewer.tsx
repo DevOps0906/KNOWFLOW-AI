@@ -57,7 +57,19 @@ function initialPhase(source: SourceMeta): Phase {
   return "loading";
 }
 
-export function SourceViewer({ source, initialChunkId }: { source: SourceMeta; initialChunkId: string | null }) {
+export function SourceViewer({
+  source,
+  initialChunkId,
+  youtubeEnabled = false,
+  captureEnabled = false,
+}: {
+  source: SourceMeta;
+  initialChunkId: string | null;
+  /** 서버가 유튜브 기능 플래그를 읽어 넘긴다. 꺼지면 플레이어·요약·장면 카드 대신 "준비 중" */
+  youtubeEnabled?: boolean;
+  /** 서버가 L1 캡처 플래그를 읽어 넘긴다(task-030, 기본 꺼짐) */
+  captureEnabled?: boolean;
+}) {
   const [phase, setPhase] = useState<Phase>(() => initialPhase(source));
   const [items, setItems] = useState<ViewerChunk[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -259,7 +271,7 @@ export function SourceViewer({ source, initialChunkId }: { source: SourceMeta; i
 
   return (
     <div className="flex min-w-0 flex-col gap-4">
-      {isYoutube ? <YoutubeSlot source={source} startSeconds={chunkStartSeconds(highlighted)} /> : null}
+      {isYoutube ? <YoutubeSlot source={source} startSeconds={chunkStartSeconds(highlighted)} youtubeEnabled={youtubeEnabled} captureEnabled={captureEnabled} /> : null}
 
       {aroundNotice}
 

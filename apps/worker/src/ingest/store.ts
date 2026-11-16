@@ -7,7 +7,7 @@ import { INGEST_ERROR_CODES } from "./settings.js";
 export interface IngestSource {
   id: string;
   project_id: string;
-  user_id: string;
+  organization_id: string;
   source_type: string;
   title: string;
   storage_path: string | null;
@@ -16,7 +16,7 @@ export interface IngestSource {
 }
 
 export interface UsageEvent {
-  userId: string;
+  organizationId: string;
   projectId: string;
   eventType: string;
   provider: string;
@@ -42,8 +42,8 @@ export function createPgIngestStore(pool: Pick<Pool, "query" | "connect">): Inge
   return {
     async loadSource(sourceId) {
       const r = await pool.query<IngestSource>(
-        `select id, project_id, user_id, source_type, title, storage_path, content_hash, deleted_at is not null as deleted
-           from public.sources where id = $1`,
+        `select id, project_id, organization_id, source_type, title, storage_path, content_hash, deleted_at is not null as deleted
+           from nomad_knowflow.sources where id = $1`,
         [sourceId],
       );
       return r.rows[0] ?? null;
@@ -52,7 +52,7 @@ export function createPgIngestStore(pool: Pick<Pool, "query" | "connect">): Inge
       const client = await pool.connect();
       try {
         await client.query("begin");
-        const replaced = await client.query<{ ok: boolean }>("select public.replace_source_chunks($1, $2, $3::jsonb) as ok", [
+        const replaced = await client.query<{ ok: boolean }>("select nomad_knowflow.replace_source_chunks($1, $2, $3::jsonb) as ok", [
           jobId,
           attempt,
           JSON.stringify(chunks),
@@ -61,7 +61,7 @@ export function createPgIngestStore(pool: Pick<Pool, "query" | "connect">): Inge
           await client.query("rollback");
           return false;
         }
-        const done = await client.query<{ ok: boolean }>("select public.complete_job($1, $2) as ok", [jobId, attempt]);
+        const done = await client.query<{ ok: boolean }>("select nomad_knowflow.complete_job($1, $2) as ok", [jobId, attempt]);
         if (done.rows[0]?.ok !== true) {
           await client.query("rollback");
           return false;
@@ -79,14 +79,14 @@ export function createPgIngestStore(pool: Pick<Pool, "query" | "connect">): Inge
     },
     async projectNeedsSummary(projectId) {
       const r = await pool.query<{ ok: boolean }>(
-        "select summary is null as ok from public.projects where id = $1 and deleted_at is null",
+        "select summary is null as ok from nomad_knowflow.projects where id = $1 and deleted_at is null",
         [projectId],
       );
       return r.rows[0]?.ok === true;
     },
     async saveInitialSummary(projectId, summary, questions) {
       const r = await pool.query(
-        `update public.projects set summary = $2, suggested_questions = $3::jsonb
+        `update nomad_knowflow.projects set summary = $2, suggested_questions = $3::jsonb
           where id = $1 and summary is null and deleted_at is null`,
         [projectId, summary, JSON.stringify(questions)],
       );
@@ -94,9 +94,9 @@ export function createPgIngestStore(pool: Pick<Pool, "query" | "connect">): Inge
     },
     async recordUsage(e) {
       await pool.query(
-        `insert into public.usage_events (user_id, project_id, event_type, provider, model, input_tokens, output_tokens)
+        `insert into nomad_knowflow.usage_events (organization_id, project_id, event_type, provider, model, input_tokens, output_tokens)
          values ($1, $2, $3, $4, $5, $6, $7)`,
-        [e.userId, e.projectId, e.eventType, e.provider, e.model, e.inputTokens, e.outputTokens],
+        [e.organizationId, e.projectId, e.eventType, e.provider, e.model, e.inputTokens, e.outputTokens],
       );
     },
   };

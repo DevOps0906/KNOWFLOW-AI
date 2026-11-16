@@ -23,6 +23,22 @@ export const YOUTUBE_SETTINGS = {
   maxMomentDescriptionChars: 2000,
 } as const;
 
+/**
+ * 영상 단위 요약(task-029 구현 결정 2). 후행 단계라 실패해도 자료는 완료 상태로 남는다.
+ * 저장 계약은 save_source_summary(문장 1~50개, 문장 1~1000자, 인용 1~20개).
+ */
+export const VIDEO_SUMMARY_SETTINGS = {
+  /** 공급자에 보내는 청크 수 상한. 영상 전체에서 고르게 고른다(앞부분만 보내지 않는다) */
+  maxInputChunks: 20,
+  /** 보내는 청크 본문 합계 상한(문자). 넘으면 청크마다 같은 길이로 자른다 */
+  maxInputChars: 20_000,
+  maxSentences: 12,
+  maxSentenceChars: 500,
+  maxCitationsPerSentence: 5,
+  /** 요약 문장이 청크 본문과 이 길이 이상 연속으로 같으면 그 문장을 버린다(긴 원문 인용 금지) */
+  maxQuoteChars: 100,
+} as const;
+
 /** Gemini 어댑터 설정. 키는 env GEMINI_API_KEY로만 받는다(config.ts) */
 export const GEMINI_SETTINGS = {
   apiBase: "https://generativelanguage.googleapis.com/v1beta/models",

@@ -21,3 +21,24 @@ export function verifyCitations({ cited, allowedChunks }) {
   const status = verified.length === 0 ? "none" : rejected.length === 0 ? "ok" : "partial";
   return { verified, rejected, status };
 }
+
+const isTimeRange = (v) =>
+  typeof v === "object" &&
+  v !== null &&
+  Number.isFinite(v.t_start) &&
+  Number.isFinite(v.t_end) &&
+  v.t_end > v.t_start;
+
+export function overlappingChunks(moment, chunks) {
+  if (!isTimeRange(moment)) return [];
+  const hits = [];
+  chunks.forEach((chunk, index) => {
+    const loc = chunk?.locator;
+    if (!isTimeRange(loc)) return;
+    // 반열린 구간 [s, e): 겹친 길이가 0이면(맞닿음 포함) 겹침이 아니다
+    const overlap = Math.min(moment.t_end, loc.t_end) - Math.max(moment.t_start, loc.t_start);
+    if (overlap > 0) hits.push({ chunk, overlap, start: loc.t_start, index });
+  });
+  hits.sort((a, b) => b.overlap - a.overlap || a.start - b.start || a.index - b.index);
+  return hits.map((h) => h.chunk);
+}

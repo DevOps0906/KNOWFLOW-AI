@@ -30,7 +30,7 @@ export interface YoutubeStore {
 export function createPgYoutubeStore(pool: Pick<Pool, "query" | "connect">): YoutubeStore {
   return {
     async loadVideo(sourceId) {
-      const r = await pool.query<YoutubeVideo>("select video_id, duration_seconds from public.sources where id = $1", [sourceId]);
+      const r = await pool.query<YoutubeVideo>("select video_id, duration_seconds from nomad_knowflow.sources where id = $1", [sourceId]);
       return r.rows[0] ?? null;
     },
     async replaceAndComplete(jobId, attempt, chunks, moments) {
@@ -40,12 +40,12 @@ export function createPgYoutubeStore(pool: Pick<Pool, "query" | "connect">): You
       try {
         await client.query("begin");
         const step = async (sql: string, params: unknown[]) => (await client.query<{ ok: boolean }>(sql, params)).rows[0]?.ok === true;
-        let ok = await step("select public.replace_source_chunks($1, $2, $3::jsonb) as ok", [jobId, attempt, JSON.stringify(chunks)]);
+        let ok = await step("select nomad_knowflow.replace_source_chunks($1, $2, $3::jsonb) as ok", [jobId, attempt, JSON.stringify(chunks)]);
         if (ok) {
           invalidCode = YOUTUBE_ERROR_CODES.invalidMoments;
-          ok = await step("select public.replace_source_moments($1, $2, $3::jsonb) as ok", [jobId, attempt, JSON.stringify(moments)]);
+          ok = await step("select nomad_knowflow.replace_source_moments($1, $2, $3::jsonb) as ok", [jobId, attempt, JSON.stringify(moments)]);
         }
-        if (ok) ok = await step("select public.complete_job($1, $2) as ok", [jobId, attempt]);
+        if (ok) ok = await step("select nomad_knowflow.complete_job($1, $2) as ok", [jobId, attempt]);
         if (!ok) {
           await client.query("rollback");
           return false;
@@ -102,7 +102,7 @@ export function createPgRecheckStore(pool: Pick<Pool, "query" | "connect">): Rec
       const r = await pool.query<RecheckTarget>(
         `select s.video_id, s.duration_seconds, (s.deleted_at is not null or p.deleted_at is not null) as deleted,
                 s.unavailable_at is not null as unavailable
-           from public.sources s join public.projects p on p.id = s.project_id
+           from nomad_knowflow.sources s join nomad_knowflow.projects p on p.id = s.project_id
           where s.id = $1`,
         [sourceId],
       );
@@ -113,8 +113,8 @@ export function createPgRecheckStore(pool: Pick<Pool, "query" | "connect">): Rec
       try {
         await client.query("begin");
         const step = async (sql: string, params: unknown[]) => (await client.query<{ ok: boolean }>(sql, params)).rows[0]?.ok === true;
-        let ok = await step("select public.apply_source_recheck($1, $2, $3::jsonb) as ok", [jobId, attempt, JSON.stringify(result)]);
-        if (ok) ok = await step("select public.complete_job($1, $2) as ok", [jobId, attempt]);
+        let ok = await step("select nomad_knowflow.apply_source_recheck($1, $2, $3::jsonb) as ok", [jobId, attempt, JSON.stringify(result)]);
+        if (ok) ok = await step("select nomad_knowflow.complete_job($1, $2) as ok", [jobId, attempt]);
         if (!ok) {
           await client.query("rollback");
           return false;
@@ -130,7 +130,7 @@ export function createPgRecheckStore(pool: Pick<Pool, "query" | "connect">): Rec
       }
     },
     async sweep(limit) {
-      const r = await pool.query<{ r: SweepResult }>("select public.sweep_source_rechecks($1) as r", [limit]);
+      const r = await pool.query<{ r: SweepResult }>("select nomad_knowflow.sweep_source_rechecks($1) as r", [limit]);
       return r.rows[0]!.r;
     },
   };

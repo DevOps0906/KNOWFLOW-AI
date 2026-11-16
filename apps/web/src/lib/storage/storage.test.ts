@@ -5,9 +5,10 @@ import { clientFileProblem, uploadPdfs, type UploadDeps } from "./upload-flow";
 
 const SITE = "https://app.example.test";
 const USER = "11111111-1111-4111-8111-111111111111";
+const ORG = "55555555-5555-4555-8555-555555555555";
 const PROJECT = "22222222-2222-4222-8222-222222222222";
 const FILE_ID = "33333333-3333-4333-8333-333333333333";
-const PATH = `${USER}/${PROJECT}/${FILE_ID}.pdf`;
+const PATH = `${ORG}/${PROJECT}/${FILE_ID}.pdf`;
 const PDF_HEAD = new TextEncoder().encode("%PDF-1.7\n%âãÏÓ\n");
 const HASH = "a".repeat(64);
 
@@ -15,7 +16,7 @@ function setup(overrides: Partial<SourcesBackend> = {}) {
   const logs: SourceAuditEvent[] = [];
   const backend: SourcesBackend = {
     getUserId: vi.fn(async () => USER),
-    projectExists: vi.fn(async () => true),
+    projectOrganization: vi.fn(async () => ORG),
     createUploadUrl: vi.fn(async (path: string) => ({ ok: true as const, token: `tok-${path.slice(-8)}`, signedUrl: `https://storage.test/${path}` })),
     readHead: vi.fn(async () => ({ ok: true as const, size: 1000, head: PDF_HEAD })),
     register: vi.fn(async () => ({ ok: true as const, sourceId: "s1", jobId: "j1", duplicate: false })),
@@ -61,12 +62,12 @@ describe("파일명·매직 바이트", () => {
 });
 
 describe("서명 업로드 URL 발급(step=upload_url)", () => {
-  it("파일명이 아니라 무작위 이름으로 본인·프로젝트 폴더 경로를 만든다", async () => {
+  it("파일명이 아니라 무작위 이름으로 조직·프로젝트 폴더 경로를 만든다", async () => {
     const { handlers, backend } = setup();
     const res = await handlers.post(post({ step: "upload_url", files: [pdfFile({ name: "../../etc/passwd.pdf" })] }), PROJECT);
     expect(res.status).toBe(200);
     const { uploads } = await res.json();
-    expect(uploads[0].path).toMatch(new RegExp(`^${USER}/${PROJECT}/[0-9a-f-]{36}\\.pdf$`));
+    expect(uploads[0].path).toMatch(new RegExp(`^${ORG}/${PROJECT}/[0-9a-f-]{36}\\.pdf$`));
     expect(uploads[0].title).toBe("passwd");
     expect(backend.createUploadUrl).toHaveBeenCalledTimes(1);
   });
@@ -93,8 +94,11 @@ describe("서명 업로드 URL 발급(step=upload_url)", () => {
     expect(backend.createUploadUrl).not.toHaveBeenCalled();
   });
 
-  it("타인·없는 프로젝트는 404, 로그인 없으면 401", async () => {
-    expect((await setup({ projectExists: async () => false }).handlers.post(post({ step: "upload_url", files: [pdfFile()] }), PROJECT)).status).toBe(404);
+  it("타인·없는·쓰기 권한 없는 프로젝트는 404(발급·등록 모두), 로그인 없으면 401", async () => {
+    expect((await setup({ projectOrganization: async () => null }).handlers.post(post({ step: "upload_url", files: [pdfFile()] }), PROJECT)).status).toBe(404);
+    const none = setup({ projectOrganization: async () => null });
+    expect((await none.handlers.post(post({ step: "register", items: [registerItem()] }), PROJECT)).status).toBe(404);
+    expect(none.backend.register).not.toHaveBeenCalled();
     expect((await setup({ getUserId: async () => null }).handlers.post(post({ step: "upload_url", files: [pdfFile()] }), PROJECT)).status).toBe(401);
   });
 
@@ -130,15 +134,15 @@ describe("등록(step=register)", () => {
     expect((await res.json()).results[0]).toMatchObject({ ok: true, sourceId: "s1", jobId: "j1", status: 202 });
   });
 
-  it("다른 사용자·다른 프로젝트 경로, 경로 조작, 대문자 id는 DB 호출 없이 400", async () => {
+  it("다른 조직·다른 프로젝트 경로, 경로 조작, 대문자 id는 DB 호출 없이 400", async () => {
     const { handlers, backend } = setup();
     const other = "99999999-9999-4999-8999-999999999999";
     for (const path of [
       `${other}/${PROJECT}/${FILE_ID}.pdf`,
-      `${USER}/${other}/${FILE_ID}.pdf`,
-      `${USER}/${PROJECT}/../${FILE_ID}.pdf`,
-      `${USER}/${PROJECT}/AAAAAAAA-AAAA-4AAA-8AAA-AAAAAAAAAAAA.pdf`,
-      `${USER}/${PROJECT}/${FILE_ID}.exe`,
+      `${ORG}/${other}/${FILE_ID}.pdf`,
+      `${ORG}/${PROJECT}/../${FILE_ID}.pdf`,
+      `${ORG}/${PROJECT}/AAAAAAAA-AAAA-4AAA-8AAA-AAAAAAAAAAAA.pdf`,
+      `${ORG}/${PROJECT}/${FILE_ID}.exe`,
     ]) {
       expect((await handlers.post(post({ step: "register", items: [registerItem({ path })] }), PROJECT)).status).toBe(400);
     }
@@ -163,8 +167,8 @@ describe("등록(step=register)", () => {
     expect(hashes[2]).not.toBe(hashes[0]);
   });
 
-  it("DB 결과를 상태 코드로 옮긴다: 409·429·404", async () => {
-    for (const [kind, status] of [["conflict", 409], ["limit", 429], ["not_found", 404], ["too_large", 413], ["unsupported", 415]] as const) {
+  it("DB 결과를 상태 코드로 옮긴다: 409·429·404·403(플랜 잠김)", async () => {
+    for (const [kind, status] of [["conflict", 409], ["limit", 429], ["not_found", 404], ["too_large", 413], ["unsupported", 415], ["locked", 403]] as const) {
       const { handlers } = setup({ register: async () => ({ ok: false, kind }) });
       expect((await handlers.post(post({ step: "register", items: [registerItem()] }), PROJECT)).status).toBe(status);
     }
@@ -175,7 +179,7 @@ describe("등록(step=register)", () => {
     const { handlers } = setup({
       register: async () => (++n === 1 ? { ok: true, sourceId: "s1", jobId: "j1", duplicate: false } : { ok: false, kind: "conflict" }),
     });
-    const second = `${USER}/${PROJECT}/44444444-4444-4444-8444-444444444444.pdf`;
+    const second = `${ORG}/${PROJECT}/44444444-4444-4444-8444-444444444444.pdf`;
     const res = await handlers.post(post({ step: "register", items: [registerItem(), registerItem({ path: second, idempotencyKey: "key-2" })] }), PROJECT);
     expect(res.status).toBe(202);
     const body = await res.json();

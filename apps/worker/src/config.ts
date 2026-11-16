@@ -29,6 +29,8 @@ export interface WorkerConfig {
   youtubeMetadataProvider: "stub" | "youtube";
   /** Worker 전용 YouTube Data API 키(YOUTUBE_WORKER_API_KEY, 웹 키와 별개). 로그에 남기지 않는다. 플래그 꺼짐·스텁이면 null */
   youtubeWorkerApiKey: string | null;
+  /** L1 캡처 객체 정리용 Storage 접근(SUPABASE_URL·SUPABASE_SERVICE_ROLE_KEY, 둘 다 있을 때만). 키는 로그에 남기지 않는다. 없으면 정리 꺼짐 */
+  captureStorage: { url: string; serviceRoleKey: string } | null;
 }
 
 function int(env: NodeJS.ProcessEnv, name: string, fallback: number, min: number, max: number): number {
@@ -48,6 +50,10 @@ function oneOf<const T extends readonly string[]>(env: NodeJS.ProcessEnv, name: 
 }
 
 const DUMMY_DB_HOSTS = new Set(["db", "localhost", "127.0.0.1", "::1", "[::1]"]);
+/** 캡처 정리 Storage 호스트(task-030): 운영은 프로젝트 ref 한 단계 하위 도메인만(와일드카드 하위 경로·다른 도메인 거부) */
+const SUPABASE_CLOUD_HOST = /^[a-z0-9]{1,63}\.supabase\.co$/;
+/** 로컬 Supabase(로컬 DB일 때만): loopback과 compose 서비스명 kong(Supabase API 게이트웨이) */
+const LOCAL_SUPABASE_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]", "kong"]);
 
 // pg가 실제로 쓰는 해석기(새 의존성 없음): ConnectionParameters는 pg 공개 경로(pg/lib/*), pg-connection-string은 pg 기준으로 해석한다
 const require = createRequire(import.meta.url);
@@ -118,6 +124,29 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): WorkerConfig {
       throw new Error("YOUTUBE_METADATA_PROVIDER=youtube에는 올바른 YOUTUBE_WORKER_API_KEY가 필요합니다");
     }
   }
+  // 캡처 객체 정리(task-030): 둘 다 있어야 켠다. 하나만 있으면 설정 실수로 보고 기동을 거부한다
+  const supabaseUrl = env.SUPABASE_URL ?? "";
+  const serviceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+  let captureStorage: WorkerConfig["captureStorage"] = null;
+  if (supabaseUrl || serviceRoleKey) {
+    if (!supabaseUrl || !serviceRoleKey) throw new Error("SUPABASE_URL과 SUPABASE_SERVICE_ROLE_KEY는 함께 지정해야 합니다");
+    let u: URL;
+    try {
+      u = new URL(supabaseUrl);
+    } catch {
+      throw new Error("SUPABASE_URL 형식이 올바르지 않습니다");
+    }
+    // 경로·사용자 정보·쿼리 없이 origin만. 호스트는 운영 https://<ref>.supabase.co(기본 포트) 또는
+    // 로컬 DB를 쓸 때의 로컬 Supabase(loopback·compose 서비스명, http 허용)만. 그 밖의 호스트로는 키를 보내지 않는다
+    const host = u.hostname.toLowerCase();
+    const remoteOk = u.protocol === "https:" && u.port === "" && SUPABASE_CLOUD_HOST.test(host);
+    const localOk = (u.protocol === "http:" || u.protocol === "https:") && LOCAL_SUPABASE_HOSTS.has(host) && isLocalDbUrl(databaseUrl);
+    if ((!remoteOk && !localOk) || u.username || u.password || u.search || u.hash || (u.pathname !== "/" && u.pathname !== "")) {
+      throw new Error("SUPABASE_URL은 https://<ref>.supabase.co origin(로컬 DB일 때는 로컬 Supabase)이어야 합니다");
+    }
+    if (!/^[\x21-\x7e]{1,4096}$/.test(serviceRoleKey)) throw new Error("SUPABASE_SERVICE_ROLE_KEY 형식이 올바르지 않습니다");
+    captureStorage = { url: u.origin, serviceRoleKey };
+  }
   return {
     databaseUrl,
     dbRole,
@@ -137,5 +166,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): WorkerConfig {
     geminiModel,
     youtubeMetadataProvider,
     youtubeWorkerApiKey,
+    captureStorage,
   };
 }

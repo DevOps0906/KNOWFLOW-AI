@@ -1,3 +1,4 @@
+import { CAPTURE_CLEANUP_SETTINGS, createPgCaptureTrashStore, createSupabaseStorageRemover, runCaptureCleanup } from "./captures/cleanup.js";
 import { loadConfig, type WorkerConfig } from "./config.js";
 import { createPool, DbIdentityError, verifyDbIdentity } from "./db.js";
 import { buildHandlers } from "./handlers.js";
@@ -76,6 +77,24 @@ if (config.youtubeEnabled) {
   sweep.unref();
 }
 
+// L1 캡처 객체 정리(task-030): Storage 설정이 있을 때만. 기동 직후 1회, 이후 주기마다. 겹쳐 돌지 않게 하나씩만.
+let captureCleanup: NodeJS.Timeout | undefined;
+if (config.captureStorage) {
+  const trashStore = createPgCaptureTrashStore(pool);
+  const remover = createSupabaseStorageRemover(config.captureStorage);
+  let cleaning = false;
+  const runCleanup = () => {
+    if (cleaning || stopping) return;
+    cleaning = true;
+    void runCaptureCleanup(trashStore, remover, log).finally(() => {
+      cleaning = false;
+    });
+  };
+  runCleanup();
+  captureCleanup = setInterval(runCleanup, CAPTURE_CLEANUP_SETTINGS.intervalMs);
+  captureCleanup.unref();
+}
+
 function sleep(ms: number) {
   // 처리 중에 종료 신호를 받았으면 wake가 이미 지나갔으므로 대기에 들어가지 않는다
   if (stopping) return Promise.resolve();
@@ -131,5 +150,6 @@ process.on("SIGINT", () => shutdown("SIGINT"));
 await loop();
 clearInterval(metrics);
 clearInterval(sweep);
+clearInterval(captureCleanup);
 await pool.end();
 log({ event: "worker_stopped", workerId: config.workerId });

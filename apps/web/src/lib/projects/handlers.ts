@@ -120,7 +120,7 @@ export function createProjectHandlers(deps: ProjectsDeps) {
         checkOrigin(request);
         await requireUser();
         const body = await readJson(request);
-        // 본문의 user_id 등 다른 키는 읽지 않는다. 소유자는 DB가 세션에서 정한다.
+        // 본문의 user_id·organization_id 등 다른 키는 읽지 않는다. 소유 조직은 서버가 세션의 조직 목록에서 정하고 DB가 쓰기 역할을 판정한다.
         const name = validName(body.name);
         if (!name) return fail(422, "invalid_name", PROJECT_MESSAGES.invalidName);
         const description = body.description === undefined ? null : text(body.description);

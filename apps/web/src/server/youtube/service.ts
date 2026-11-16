@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
+import { KNOWFLOW_SCHEMA } from "@/lib/db-schema";
 import { readYoutubeConfig, youtubeUsable, type YoutubeConfig } from "./config";
 import { createStubMetadataProvider, createYoutubeDataApiProvider } from "./metadata";
 import { createYoutubeSources, type RegisterRpcInput, type RegisterRpcResult } from "./register";
@@ -31,9 +32,12 @@ export function isYoutubeEnabled() {
 async function registerViaServiceRole(input: RegisterRpcInput): Promise<RegisterRpcResult> {
   const env = serviceRoleEnv();
   if (!env) return { ok: false, error: null };
-  const admin = createClient(env.url, env.serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
+  const admin = createClient(env.url, env.serviceKey, {
+    db: { schema: KNOWFLOW_SCHEMA },
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
   const { data, error } = await admin.rpc("register_youtube_source", {
-    p_user_id: input.userId,
+    p_organization_id: input.organizationId,
     p_project_id: input.projectId,
     p_video_id: input.videoId,
     p_title: input.title,

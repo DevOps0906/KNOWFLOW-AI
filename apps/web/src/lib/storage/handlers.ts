@@ -16,11 +16,13 @@ export type RegisterKind =
   | "conflict"
   | "too_large"
   | "unsupported"
+  | "locked"
   | "unknown";
 
 export interface SourcesBackend {
   getUserId(): Promise<string | null>;
-  projectExists(projectId: string): Promise<boolean>;
+  /** RLS로 보이고 세션 사용자가 쓰기 역할(owner·admin·editor)인 프로젝트의 조직 id. 아니면 null(404) */
+  projectOrganization(projectId: string): Promise<string | null>;
   createUploadUrl(path: string): Promise<{ ok: true; token: string; signedUrl: string } | { ok: false }>;
   /** Storage 객체의 앞부분과 전체 크기를 읽는다. 없으면 missing. */
   readHead(path: string): Promise<{ ok: true; size: number | null; head: Uint8Array } | { ok: false; kind: "missing" | "error" }>;
@@ -50,7 +52,7 @@ export interface YoutubeRegisterInput {
   body: Record<string, unknown>;
   /** A-04 공통 규칙: `Idempotency-Key` 헤더 */
   idempotencyKey: string | null;
-  projectExists: (projectId: string) => Promise<boolean>;
+  projectOrganization: (projectId: string) => Promise<string | null>;
 }
 
 export type YoutubeRegisterOutcome =
@@ -80,6 +82,7 @@ export const SOURCE_MESSAGES = {
   missing: "업로드된 파일을 찾지 못했습니다. 다시 올려 주세요.",
   limit: "자료 수 또는 이번 달 처리 한도에 도달했습니다.",
   duplicate: "이미 같은 내용의 자료가 있거나 같은 요청이 다른 입력으로 들어왔습니다.",
+  locked: "현재 플랜에서 사용할 수 없는 기능입니다. 플랜을 업그레이드해 주세요.",
   server: "일시적인 문제가 생겼습니다. 잠시 후 다시 시도해 주세요.",
 } as const;
 
@@ -111,6 +114,7 @@ const KIND_FAILURE: Record<RegisterKind, ItemFailure> = {
   conflict: { status: 409, code: "conflict", message: SOURCE_MESSAGES.duplicate },
   too_large: { status: 413, code: "file_too_large", message: SOURCE_MESSAGES.tooLarge },
   unsupported: { status: 415, code: "unsupported_media_type", message: SOURCE_MESSAGES.unsupported },
+  locked: { status: 403, code: "feature_locked", message: SOURCE_MESSAGES.locked },
   unknown: { status: 500, code: "server_error", message: SOURCE_MESSAGES.server },
 };
 
@@ -153,12 +157,13 @@ export function createSourceHandlers(deps: SourcesDeps) {
       planned.push({ title: titleFromFileName(name) ?? "문서" });
     }
 
-    if (!(await backend.projectExists(projectId))) return fail(404, "not_found", SOURCE_MESSAGES.notFound);
+    const organizationId = await backend.projectOrganization(projectId);
+    if (!organizationId) return fail(404, "not_found", SOURCE_MESSAGES.notFound);
 
     const uploads = [];
     for (const { title } of planned) {
-      // 저장 경로에는 사용자 입력(파일명)을 넣지 않는다: user/project/무작위.pdf
-      const path = `${userId}/${projectId}/${randomUUID()}.pdf`;
+      // 저장 경로에는 사용자 입력(파일명)을 넣지 않는다: organization/project/무작위.pdf
+      const path = `${organizationId}/${projectId}/${randomUUID()}.pdf`;
       const url = await backend.createUploadUrl(path);
       if (!url.ok) {
         log({ event: "upload_url", outcome: "failure", reason: "sign_failed", userId, projectId });
@@ -170,13 +175,13 @@ export function createSourceHandlers(deps: SourcesDeps) {
     return json(200, { uploads });
   }
 
-  async function registerOne(userId: string, projectId: string, raw: unknown) {
+  async function registerOne(organizationId: string, projectId: string, raw: unknown) {
     const item = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
     const path = typeof item.path === "string" ? item.path : "";
     const title = titleFromFileName(typeof item.title === "string" ? `${item.title}.pdf` : undefined);
     const contentHash = item.contentHash === undefined || item.contentHash === null ? null : item.contentHash;
     const key = item.idempotencyKey;
-    const prefix = `${userId}/${projectId}/`;
+    const prefix = `${organizationId}/${projectId}/`;
     const fileId = path.startsWith(prefix) ? path.slice(prefix.length).replace(/\.pdf$/, "") : "";
 
     const bad = (failure: ItemFailure) => ({ path, ok: false as const, ...failure });
@@ -215,8 +220,11 @@ export function createSourceHandlers(deps: SourcesDeps) {
     if (!Array.isArray(items) || items.length === 0) return fail(400, "bad_request", SOURCE_MESSAGES.invalidRequest);
     if (items.length > MAX_FILES_PER_REQUEST) return fail(400, "too_many_files", SOURCE_MESSAGES.tooMany);
 
+    const organizationId = await backend.projectOrganization(projectId);
+    if (!organizationId) return fail(404, "not_found", SOURCE_MESSAGES.notFound);
+
     const results = [];
-    for (const item of items) results.push(await registerOne(userId, projectId, item));
+    for (const item of items) results.push(await registerOne(organizationId, projectId, item));
     const accepted = results.filter((r) => r.ok).length;
     log({
       event: "register",
@@ -233,7 +241,7 @@ export function createSourceHandlers(deps: SourcesDeps) {
 
   async function registerYoutube(userId: string, projectId: string, body: Record<string, unknown>, idempotencyKey: string | null) {
     const result = deps.youtube
-      ? await deps.youtube.register({ userId, projectId, body, idempotencyKey, projectExists: (id) => backend.projectExists(id) })
+      ? await deps.youtube.register({ userId, projectId, body, idempotencyKey, projectOrganization: (id) => backend.projectOrganization(id) })
       : ({ ok: false, status: 422, code: "youtube_disabled", message: "유튜브 등록은 아직 사용할 수 없습니다.", reason: "youtube_disabled" } as const);
     if (!result.ok) {
       log({ event: "register", outcome: "failure", reason: `youtube:${result.reason}`, userId, projectId });

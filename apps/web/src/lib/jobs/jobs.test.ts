@@ -130,6 +130,7 @@ describe("A-05 POST 재시도", () => {
     ["KF410", "idempotency_resource_missing", null, 409, "conflict", null],
     ["22023", "source_already_completed", null, 422, "source_completed", null],
     ["KF422", "source_not_retryable", null, 422, "not_retryable", null],
+    ["KF403", "feature_locked", null, 403, "feature_locked", null],
     ["KF429", "retry_limit_exceeded", null, 429, "retry_limit_exceeded", null],
     ["KF429", "quota_exceeded", "86400", 429, "quota_exceeded", "86400"],
     ["KF429", "retry_rate_limited", "37", 429, "rate_limited", "37"],

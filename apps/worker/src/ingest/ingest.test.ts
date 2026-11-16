@@ -186,7 +186,7 @@ function memoryStore(source: IngestSource, job: { attempt: number; status: strin
 const baseSource: IngestSource = {
   id: "s1",
   project_id: "p1",
-  user_id: "u1",
+  organization_id: "u1",
   source_type: "pdf",
   title: "샘플",
   storage_path: SAMPLE_PATH,
@@ -195,7 +195,7 @@ const baseSource: IngestSource = {
 };
 
 function jobFor(attempt: number): Job {
-  return { id: "j1", user_id: "u1", source_id: "s1", report_id: null, job_type: "source_ingest", attempt_count: attempt, max_attempts: 3 };
+  return { id: "j1", organization_id: "u1", source_id: "s1", report_id: null, job_type: "source_ingest", attempt_count: attempt, max_attempts: 3 };
 }
 
 function queueFor(job: Job): JobQueue & { calls: string[] } {
@@ -250,7 +250,7 @@ describe("source_ingest 핸들러", () => {
     expect(state.chunks.filter((c) => c.locator.page === 2).length).toBeGreaterThan(1);
     expect(state.summary).toBeTruthy();
     expect(state.questions.length).toBeGreaterThanOrEqual(1);
-    expect(state.usage).toEqual([expect.objectContaining({ eventType: "project_summary", provider: "stub", projectId: "p1", userId: "u1" })]);
+    expect(state.usage).toEqual([expect.objectContaining({ eventType: "project_summary", provider: "stub", projectId: "p1", organizationId: "u1" })]);
     expect(logs).toContainEqual(expect.objectContaining({ event: "source_extracted", pages: 4, skippedPages: 1 }));
     expect(logs).toContainEqual(expect.objectContaining({ event: "after_complete", outcome: "saved" }));
     const logText = JSON.stringify(logs);
@@ -309,7 +309,7 @@ describe("source_ingest 핸들러", () => {
     const table: [Partial<IngestSource>, string][] = [
       [{ source_type: "url" }, INGEST_ERROR_CODES.unsupportedSourceType],
       [{ deleted: true }, INGEST_ERROR_CODES.sourceDeleted],
-      [{ user_id: "other" }, INGEST_ERROR_CODES.sourceOwnerMismatch],
+      [{ organization_id: "other" }, INGEST_ERROR_CODES.sourceOwnerMismatch],
       [{ storage_path: "../etc/passwd" }, INGEST_ERROR_CODES.sourcePathInvalid],
       [{ content_hash: "0".repeat(64) }, "content_hash_mismatch"],
     ];

@@ -26,7 +26,18 @@ for f in /migrate/migrations/*.sql; do
   apply "$f" "$(basename "$f")"
 done
 
-# 비밀번호는 마이그레이션 밖에서 설정한다(마이그레이션의 역할은 비밀번호 없이 만들어진다)
+# 워커 로그인 롤은 nomad 마이그레이션 범위 밖(클러스터 롤)이라 로컬 compose에서만 여기서 만든다.
+# 비밀번호는 마이그레이션 밖에서 설정한다.
+run_psql <<'SQL'
+do $$
+begin
+  if not exists (select from pg_catalog.pg_roles where rolname = 'knowflow_worker') then
+    create role knowflow_worker login nosuperuser nocreatedb nocreaterole noreplication nobypassrls noinherit;
+  end if;
+end
+$$;
+grant service_role to knowflow_worker;
+SQL
 run_psql <<'SQL'
 \getenv pw WORKER_DB_PASSWORD
 alter role knowflow_worker password :'pw';

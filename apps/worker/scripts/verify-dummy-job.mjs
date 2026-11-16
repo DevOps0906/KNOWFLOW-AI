@@ -13,11 +13,11 @@ function psql(sql) {
 }
 
 const SEED = `
-with u as (insert into auth.users (email) values ('verify-' || gen_random_uuid() || '@example.test') returning id),
-     p as (insert into public.projects (user_id, name) select id, '검증' from u returning id, user_id),
-     s as (insert into public.sources (project_id, user_id, source_type, title, original_url)
-           select id, user_id, 'url', '검증', 'https://example.test/a' from p returning id, user_id),
-     j as (insert into public.processing_jobs (user_id, source_id, job_type) select user_id, id, 'source_ingest' from s returning id)
+with u as (insert into nomad_core.organizations (name) values ('verify-' || gen_random_uuid()) returning id),
+     p as (insert into nomad_knowflow.projects (organization_id, name) select id, '검증' from u returning id, organization_id),
+     s as (insert into nomad_knowflow.sources (project_id, organization_id, source_type, title, original_url)
+           select id, organization_id, 'url', '검증', 'https://example.test/a' from p returning id, organization_id),
+     j as (insert into nomad_knowflow.processing_jobs (organization_id, source_id, job_type) select organization_id, id, 'source_ingest' from s returning id)
 select id from j;`;
 
 function expectRefused(name, envOverride, reason) {
@@ -32,7 +32,7 @@ function expectRefused(name, envOverride, reason) {
 
 async function waitForStatus(jobId) {
   for (let i = 0; i < 60; i++) {
-    const status = psql(`select status from public.processing_jobs where id = '${jobId}'`);
+    const status = psql(`select status from nomad_knowflow.processing_jobs where id = '${jobId}'`);
     if (status === "succeeded" || status === "failed") return status;
     await new Promise((resolve) => setTimeout(resolve, 1000));
   }
@@ -46,8 +46,8 @@ try {
   // 완료 조건 그대로 attached `docker compose up worker`로 띄운다
   const attached = spawn("docker", ["compose", "up", "--no-build", "worker"], { cwd: repoRoot, env, stdio: "ignore" });
   const status = await waitForStatus(jobId);
-  const attempts = psql(`select attempt_count from public.processing_jobs where id = '${jobId}'`);
-  const sourceStatus = psql(`select s.status from public.sources s join public.processing_jobs j on j.source_id = s.id where j.id = '${jobId}'`);
+  const attempts = psql(`select attempt_count from nomad_knowflow.processing_jobs where id = '${jobId}'`);
+  const sourceStatus = psql(`select s.status from nomad_knowflow.sources s join nomad_knowflow.processing_jobs j on j.source_id = s.id where j.id = '${jobId}'`);
   console.log(`${status === "succeeded" ? "통과" : "실패"} [더미 작업] status=${status}, attempt_count=${attempts}, source=${sourceStatus}`);
   ok = status === "succeeded";
 

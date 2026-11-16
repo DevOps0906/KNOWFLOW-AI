@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { captureObjectPaths, removeCaptureObjects } from "@/lib/storage/capture-objects";
 import type { ChunkPage, ChunksResult, DeleteResult, LatestJobRow, ProjectRow, SourceReadBackend, SourceRow } from "./handlers";
 
 // 읽기는 로그인 사용자의 세션으로 RLS를 통해서만 한다(본인·삭제되지 않은 프로젝트·자료만 보인다).
@@ -93,8 +94,11 @@ export function createSupabaseSourceReadBackend(supabase: SupabaseClient): Sourc
     },
 
     async deleteSources(projectId, sourceIds) {
+      // task-030: 삭제 RPC가 캡처 행을 지우므로 객체 경로는 먼저 모으고, 성공한 뒤 객체를 지운다
+      const capturePaths = await captureObjectPaths(supabase, sourceIds);
       const { data, error } = await supabase.rpc("delete_sources", { p_project_id: projectId, p_source_ids: sourceIds });
       if (error) return deleteError(error);
+      await removeCaptureObjects(supabase, capturePaths);
       return { ok: true, deleted: Number(data) };
     },
   };
