@@ -8,6 +8,7 @@ import { SourceMetaHeader } from "@/components/workspace/viewer/source-meta";
 import { SourceViewer } from "@/components/workspace/viewer/source-viewer";
 import { supabaseEnv } from "@/lib/auth/supabase-server";
 import { sourceReadHandlersForRequest } from "@/lib/sources/server";
+import { isCaptureEnabled } from "@/server/youtube/capture";
 import { isYoutubeEnabled } from "@/server/youtube/service";
 
 export const metadata: Metadata = { title: "원문 보기 · KNOWFLOW-AI" };
@@ -55,6 +56,7 @@ export default async function SourceViewerPage({
         source={source}
         initialChunkId={initialChunkId}
         youtubeEnabled={isYoutubeEnabled()}
+        captureEnabled={isCaptureEnabled()}
       />
     </div>
   );

@@ -12,7 +12,16 @@ export interface MomentCardItem {
 }
 
 // L0 장면 카드: AI가 영상을 보고 만든 설명이라 전사 근거가 아니다. 카드를 누르면 그 시각부터 재생한다. 썸네일 없음.
-export function MomentCards({ moments, onSeek }: { moments: MomentCardItem[]; onSeek: (seconds: number) => void }) {
+// renderAction: 카드 옆 추가 동작(task-030 L1 캡처 버튼, 데스크톱 전용). 없으면 L0 그대로.
+export function MomentCards({
+  moments,
+  onSeek,
+  renderAction,
+}: {
+  moments: MomentCardItem[];
+  onSeek: (seconds: number) => void;
+  renderAction?: (moment: MomentCardItem, label: string) => React.ReactNode;
+}) {
   return (
     <section aria-labelledby="moment-cards-title" className="flex min-w-0 flex-col gap-3 rounded-panel border border-border bg-card p-4">
       <div className="flex flex-wrap items-center gap-2">
@@ -31,7 +40,7 @@ export function MomentCards({ moments, onSeek }: { moments: MomentCardItem[]; on
             const range = `${formatTimestamp(m.locator.t_start)} ~ ${formatTimestamp(m.locator.t_end)}`;
             const title = cleanUntrustedText(m.title);
             return (
-              <li key={m.id}>
+              <li key={m.id} className="flex flex-col gap-2">
                 <button
                   type="button"
                   data-moment-id={m.id}
@@ -44,6 +53,7 @@ export function MomentCards({ moments, onSeek }: { moments: MomentCardItem[]; on
                   <span className="text-caption break-words whitespace-pre-wrap">{cleanUntrustedText(m.description)}</span>
                   {m.citable ? null : <span className="text-caption text-warning">겹치는 전사가 없어 리포트에 인용할 수 없습니다.</span>}
                 </button>
+                {renderAction ? <div className="flex justify-end">{renderAction(m, `${range} ${title}`)}</div> : null}
               </li>
             );
           })}

@@ -8,10 +8,13 @@ export function YoutubeSlot({
   source,
   startSeconds,
   youtubeEnabled = false,
+  captureEnabled = false,
 }: {
   source: SourceMeta;
   startSeconds: number | null;
   youtubeEnabled?: boolean;
+  /** L1 탭 캡처 플래그(task-030). 유튜브 플래그와 별도, 기본 꺼짐 */
+  captureEnabled?: boolean;
 }) {
   return (
     <section
@@ -28,6 +31,7 @@ export function YoutubeSlot({
           title={source.title}
           originalUrl={source.original_url}
           initialStart={startSeconds}
+          captureEnabled={captureEnabled}
         />
       ) : (
         <div className="flex items-start gap-3 rounded-panel border border-dashed border-border bg-card p-4">
