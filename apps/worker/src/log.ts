@@ -34,6 +34,9 @@ export interface LogFields {
   purged?: number;
   cleaned?: number;
   staleQueued?: number;
+  /** 캡처 정리(task-030): 형식이 틀려 보내지 않은 경로 수, Storage가 4xx로 거부해 남긴 경로 수(경로 자체는 남기지 않는다) */
+  invalidPaths?: number;
+  rejectedPaths?: number;
 }
 
 export type Logger = (fields: LogFields) => void;
@@ -42,7 +45,7 @@ const ALLOWED = new Set([
   "event", "jobId", "jobType", "attempt", "outcome", "reason", "workerId", "claimed", "succeeded",
   "failed", "requeued", "stale", "jobsPerMinute", "windowSeconds", "errorName", "pages", "skippedPages", "chunks",
   "windows", "droppedSegments", "droppedScenes", "moments", "previousDurationSeconds", "durationSeconds", "enqueued", "purged", "cleaned",
-  "staleQueued", "sentences", "droppedSentences",
+  "staleQueued", "sentences", "droppedSentences", "invalidPaths", "rejectedPaths",
 ]);
 
 export function sanitize(fields: LogFields): Record<string, string | number> {

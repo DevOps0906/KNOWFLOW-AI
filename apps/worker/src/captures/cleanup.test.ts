@@ -12,8 +12,9 @@ import {
 
 // task-030: L1 캡처 객체 정리(claim → Storage 삭제 → ack, 실패 시 ack 안 함)
 
-const P1 = "01010101-0000-0000-0000-000000000001/10000000-0000-0000-0000-000000000001/20000000-0000-0000-0000-000000000001/a.png";
-const P2 = "01010101-0000-0000-0000-000000000001/10000000-0000-0000-0000-000000000001/20000000-0000-0000-0000-000000000001/b.webp";
+const P1 = "01010101-0000-0000-0000-000000000001/10000000-0000-0000-0000-000000000001/20000000-0000-0000-0000-000000000001/30000000-0000-0000-0000-00000000000a.png";
+const P2 = "01010101-0000-0000-0000-000000000001/10000000-0000-0000-0000-000000000001/20000000-0000-0000-0000-000000000001/30000000-0000-0000-0000-00000000000b.webp";
+const P3 = "01010101-0000-0000-0000-000000000001/10000000-0000-0000-0000-000000000001/20000000-0000-0000-0000-000000000001/30000000-0000-0000-0000-00000000000c.png";
 const KEY = "service-role-KEY-123";
 
 function fakeStore(batches: string[][]) {
@@ -34,7 +35,7 @@ describe("runCaptureCleanup", () => {
     expect(store.claim).toHaveBeenCalledWith(100);
     expect(remover.remove).toHaveBeenCalledWith([P1, P2]);
     expect(store.ack).toHaveBeenCalledWith([P1, P2]);
-    expect(sanitize(logs[0]!)).toEqual({ event: "capture_cleanup", outcome: "done", claimed: 2, cleaned: 2 });
+    expect(sanitize(logs[0]!)).toEqual({ event: "capture_cleanup", outcome: "done", claimed: 2, cleaned: 2, invalidPaths: 0, rejectedPaths: 0 });
   });
 
   it("Storage 삭제가 실패하면 ack하지 않고(경로는 claim 재배정으로 다시) 로그에 경로를 남기지 않는다", async () => {
@@ -43,7 +44,7 @@ describe("runCaptureCleanup", () => {
     const logs: LogFields[] = [];
     await runCaptureCleanup(store, remover, (f) => void logs.push(f), 100);
     expect(store.ack).not.toHaveBeenCalled();
-    expect(sanitize(logs[0]!)).toEqual({ event: "capture_cleanup", outcome: "failed", claimed: 2, cleaned: 0, reason: "http_500", errorName: "CaptureRemoveError" });
+    expect(sanitize(logs[0]!)).toEqual({ event: "capture_cleanup", outcome: "failed", claimed: 2, cleaned: 0, invalidPaths: 0, rejectedPaths: 0, reason: "http_500", errorName: "CaptureRemoveError" });
     expect(JSON.stringify(logs)).not.toContain("01010101");
   });
 
@@ -58,6 +59,57 @@ describe("runCaptureCleanup", () => {
     await runCaptureCleanup(full, remover, () => {}, 2, 2);
     expect(full.claim).toHaveBeenCalledTimes(2);
     expect(full.ack).toHaveBeenCalledTimes(2);
+  });
+
+  it("형식이 틀린 경로는 Storage에 보내지 않고 ack하지 않으며 개수만 남긴다", async () => {
+    const bad = [
+      "../01010101-0000-0000-0000-000000000001/x.png",
+      P1.replace(".png", ".svg"),
+      P1.toUpperCase(),
+      `${P1}/extra.png`,
+      "01010101-0000-0000-0000-000000000001/10000000-0000-0000-0000-000000000001/30000000-0000-0000-0000-00000000000a.png",
+    ];
+    const store = fakeStore([[...bad, P2]]);
+    const remover: CaptureObjectRemover = { remove: vi.fn(async () => {}) };
+    const logs: LogFields[] = [];
+    await runCaptureCleanup(store, remover, (f) => void logs.push(f), 100);
+    expect(remover.remove).toHaveBeenCalledWith([P2]);
+    expect(store.ack).toHaveBeenCalledWith([P2]);
+    expect(sanitize(logs[0]!)).toMatchObject({ outcome: "done", claimed: 6, cleaned: 1, invalidPaths: 5, rejectedPaths: 0 });
+
+    const onlyBad = fakeStore([bad]);
+    const r2: CaptureObjectRemover = { remove: vi.fn(async () => {}) };
+    await runCaptureCleanup(onlyBad, r2, () => {}, 100);
+    expect(r2.remove).not.toHaveBeenCalled();
+    expect(onlyBad.ack).not.toHaveBeenCalled();
+  });
+
+  it("경로 때문에 거부된 4xx는 한 건씩 다시 보내 되는 것만 ack하고 다음 배치로 넘어간다", async () => {
+    const store = fakeStore([[P1, P2], [P3]]);
+    const remover: CaptureObjectRemover = {
+      remove: vi.fn(async (paths: string[]) => {
+        if (paths.includes(P1)) throw new CaptureRemoveError("http_400", 400);
+      }),
+    };
+    const logs: LogFields[] = [];
+    await runCaptureCleanup(store, remover, (f) => void logs.push(f), 2);
+    expect(store.ack).toHaveBeenNthCalledWith(1, [P2]);
+    expect(store.ack).toHaveBeenNthCalledWith(2, [P3]);
+    expect(sanitize(logs[0]!)).toMatchObject({ outcome: "done", claimed: 3, cleaned: 2, rejectedPaths: 1 });
+    expect(JSON.stringify(logs)).not.toContain("01010101");
+  });
+
+  it("401·403·429·5xx는 경로 문제가 아니므로 한 건씩 재시도하지 않고 주기를 멈춘다", async () => {
+    for (const status of [401, 403, 429, 503]) {
+      const store = fakeStore([[P1, P2], [P3]]);
+      const remover: CaptureObjectRemover = { remove: vi.fn(async () => Promise.reject(new CaptureRemoveError(`http_${status}`, status))) };
+      const logs: LogFields[] = [];
+      await runCaptureCleanup(store, remover, (f) => void logs.push(f), 2);
+      expect(remover.remove).toHaveBeenCalledTimes(1);
+      expect(store.claim).toHaveBeenCalledTimes(1);
+      expect(store.ack).not.toHaveBeenCalled();
+      expect(logs[0]).toMatchObject({ outcome: "failed", reason: `http_${status}` });
+    }
   });
 
   it("claim·ack DB 오류도 Worker를 멈추지 않고 failed 로그만 남긴다", async () => {
@@ -137,6 +189,36 @@ describe("설정", () => {
     }
     try {
       loadConfig({ DATABASE_URL: REMOTE, SUPABASE_URL: "https://abc.supabase.co", SUPABASE_SERVICE_ROLE_KEY: "bad key" });
+      expect.unreachable();
+    } catch (e) {
+      expect((e as Error).message).toMatch(/SUPABASE_SERVICE_ROLE_KEY/);
+      expect((e as Error).message).not.toContain("bad key");
+    }
+  });
+
+  it("호스트는 <ref>.supabase.co 또는 로컬 DB일 때의 로컬 Supabase만", () => {
+    const ok = (db: string, url: string) => loadConfig({ DATABASE_URL: db, SUPABASE_URL: url, SUPABASE_SERVICE_ROLE_KEY: KEY }).captureStorage?.url;
+    expect(ok(REMOTE, "https://ABC123.supabase.co")).toBe("https://abc123.supabase.co");
+    for (const url of ["https://localhost:54321", "http://kong:8000", "http://[::1]:54321"]) expect(ok(LOCAL, url)).toBe(new URL(url).origin);
+    for (const url of [
+      "https://evil.example.com",
+      "https://a.b.supabase.co",
+      "https://abc.supabase.co.evil.com",
+      "https://abc.supabase.com",
+      "https://supabase.co",
+      "https://abc.supabase.co:8443",
+      "https://localhost:54321",
+      "http://kong:8000",
+    ]) {
+      expect(() => ok(REMOTE, url)).toThrow(/SUPABASE_URL/);
+    }
+    expect(() => ok(LOCAL, "http://abc.supabase.co")).toThrow(/SUPABASE_URL/);
+    expect(() => ok(LOCAL, "http://example.com")).toThrow(/SUPABASE_URL/);
+  });
+
+  it("키 형식 오류 메시지에도 키가 없다", () => {
+    try {
+      loadConfig({ DATABASE_URL: LOCAL, SUPABASE_URL: "http://127.0.0.1:54321", SUPABASE_SERVICE_ROLE_KEY: "bad key" });
       expect.unreachable();
     } catch (e) {
       expect((e as Error).message).toMatch(/SUPABASE_SERVICE_ROLE_KEY/);

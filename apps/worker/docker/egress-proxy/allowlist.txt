@@ -4,3 +4,4 @@ api.anthropic.com:443
 generativelanguage.googleapis.com:443
 # YouTube Data API videos.list(메타데이터 재확인 task-027d, YOUTUBE_METADATA_PROVIDER=youtube일 때만 호출)
 www.googleapis.com:443
+# Supabase Storage(캡처 정리 task-030, SUPABASE_URL을 줄 때만): 정확한 <ref>.supabase.co:443 한 줄만 추가(와일드카드 금지). docs/security/worker-service-role.md

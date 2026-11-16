@@ -109,6 +109,10 @@ services:
       # 키는 Worker 전용 YOUTUBE_WORKER_API_KEY(웹의 YOUTUBE_API_KEY와 별개)를 셸 환경 변수로만 넘긴다
       YOUTUBE_METADATA_PROVIDER: ${YOUTUBE_METADATA_PROVIDER:-stub}
       YOUTUBE_WORKER_API_KEY: ${YOUTUBE_WORKER_API_KEY:-}
+      # 캡처 이미지 정리(task-030): 둘 다 비우면 꺼짐. 키는 셸 환경 변수로만 넘긴다(파일에 쓰지 않는다).
+      # 운영 호스트(https://<ref>.supabase.co)는 프록시 allowlist에 정확한 host:443 한 줄을 추가해야 나간다(docs/security/worker-service-role.md)
+      SUPABASE_URL: ${SUPABASE_URL:-}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-}
     volumes:
       - ./apps/worker/fixtures:/fixtures:ro
     # 파서 하위 프로세스 힙 512MB(pdf/settings.ts) + Worker 본체

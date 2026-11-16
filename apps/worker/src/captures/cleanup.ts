@@ -43,10 +43,26 @@ export function createPgCaptureTrashStore(pool: Pick<Pool, "query">): CaptureTra
 
 /** Storage 삭제가 2xx가 아니거나 네트워크 오류일 때. 메시지는 고정 코드만(경로·응답 본문 없음) */
 export class CaptureRemoveError extends Error {
-  constructor(readonly code: string) {
+  constructor(readonly code: string, readonly status?: number) {
     super(code);
     this.name = "CaptureRemoveError";
   }
+}
+
+/** claim_capture_object_trash가 만드는 경로: <조직>/<프로젝트>/<자료>/<캡처>.(png|webp), 모두 소문자 uuid */
+const UUID = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
+const CAPTURE_PATH = new RegExp(`^${UUID}/${UUID}/${UUID}/${UUID}\\.(png|webp)$`);
+
+export function isCapturePath(path: string): boolean {
+  return CAPTURE_PATH.test(path);
+}
+
+/**
+ * 이 경로들 때문에 거부된 4xx인가(다른 경로에는 영향 없음). 인증·권한(401·403)·시간 초과(408)·속도 제한(429)은
+ * 설정·일시 문제라 경로를 바꿔도 같으므로 주기 전체를 멈춘다
+ */
+function isPathRejection(e: unknown): boolean {
+  return e instanceof CaptureRemoveError && e.status !== undefined && e.status >= 400 && e.status < 500 && ![401, 403, 408, 429].includes(e.status);
 }
 
 export interface StorageRemoverOptions {
@@ -84,14 +100,18 @@ export function createSupabaseStorageRemover(opts: StorageRemoverOptions): Captu
       }
       // 본문(삭제된 객체 목록)은 쓰지 않는다
       await res.body?.cancel().catch(() => {});
-      if (!res.ok) throw new CaptureRemoveError(`http_${res.status}`);
+      if (!res.ok) throw new CaptureRemoveError(`http_${res.status}`, res.status);
     },
   };
 }
 
 /**
- * 정리 한 주기: 맡기 → 지우기 → ack를 배치마다. 한 배치라도 Storage 삭제가 실패하면 그 배치는 ack하지 않고 멈춘다
- * (다음 주기에 claim 재배정으로 다시). 실패해도 Worker를 멈추지 않고 로그만 남긴다.
+ * 정리 한 주기: 맡기 → 지우기 → ack를 배치마다.
+ * - 형식이 틀린 경로(isCapturePath 불일치)는 Storage에 보내지 않고 ack하지도 않는다(개수만 invalidPaths로 남긴다).
+ * - 경로 때문에 거부된 4xx(isPathRejection)는 한 건씩 다시 보내 되는 것만 ack하고, 거부된 경로는 남긴 채 다음 배치로 넘어간다.
+ *   맡은 경로는 15분 동안 다시 배정되지 않으므로 같은 주기 안에서 앞을 막지 않는다.
+ * - 그 밖의 실패(5xx·네트워크·시간 초과·401·403·429)는 그 배치를 ack하지 않고 멈춘다(다음 주기에 claim 재배정으로 다시).
+ * 실패해도 Worker를 멈추지 않고 로그만 남긴다.
  */
 export async function runCaptureCleanup(
   store: CaptureTrashStore,
@@ -102,22 +122,45 @@ export async function runCaptureCleanup(
 ): Promise<void> {
   let claimed = 0;
   let cleaned = 0;
+  let invalidPaths = 0;
+  let rejectedPaths = 0;
   try {
     for (let i = 0; i < maxBatches; i++) {
       const paths = await store.claim(limit);
       if (paths.length === 0) break;
       claimed += paths.length;
-      await remover.remove(paths);
-      cleaned += await store.ack(paths);
+      const valid = paths.filter(isCapturePath);
+      invalidPaths += paths.length - valid.length;
+      if (valid.length > 0) {
+        try {
+          await remover.remove(valid);
+          cleaned += await store.ack(valid);
+        } catch (e) {
+          if (!isPathRejection(e)) throw e;
+          const removed: string[] = [];
+          for (const path of valid) {
+            try {
+              await remover.remove([path]);
+              removed.push(path);
+            } catch (e1) {
+              if (!isPathRejection(e1)) throw e1;
+              rejectedPaths += 1;
+            }
+          }
+          if (removed.length > 0) cleaned += await store.ack(removed);
+        }
+      }
       if (paths.length < limit) break;
     }
-    log({ event: "capture_cleanup", outcome: "done", claimed, cleaned });
+    log({ event: "capture_cleanup", outcome: "done", claimed, cleaned, invalidPaths, rejectedPaths });
   } catch (e) {
     log({
       event: "capture_cleanup",
       outcome: "failed",
       claimed,
       cleaned,
+      invalidPaths,
+      rejectedPaths,
       reason: e instanceof CaptureRemoveError ? e.code : undefined,
       errorName: e instanceof Error ? e.name : "unknown",
     });
