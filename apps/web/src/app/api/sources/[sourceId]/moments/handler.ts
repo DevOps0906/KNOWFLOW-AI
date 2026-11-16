@@ -63,6 +63,7 @@ export const MOMENTS_MESSAGES = {
   sourceNotFound: "자료를 찾을 수 없습니다.",
   notReady: "아직 처리가 끝나지 않은 자료입니다. 처리가 끝난 뒤 다시 열어 주세요.",
   server: "일시적인 문제가 생겼습니다. 잠시 후 다시 시도해 주세요.",
+  chunkLimit: "전사가 너무 길어 장면 카드와 요약의 인용을 확인할 수 없습니다.",
 } as const;
 
 type TimedChunk = { chunk_id: string; t_start: number; t_end: number };
@@ -126,6 +127,8 @@ export function createMomentsHandler(deps: MomentsDeps) {
 
       // 청크 위치(id·t_start·t_end)만 모은다. 본문은 응답에 넣지 않는다
       const chunks: TimedChunk[] = [];
+      // 상한 안에 끝까지 못 모으면 인용 누락(citable·요약 인용 오판)을 막기 위해 실패로 돌려준다
+      let complete = false;
       let afterIndex: number | null = null;
       for (let i = 0; i < MOMENT_CHUNK_MAX_PAGES; i++) {
         const result = await backend.getChunks({ sourceId, afterIndex, limit: MOMENT_CHUNK_PAGE, aroundChunkId: null });
@@ -142,9 +145,13 @@ export function createMomentsHandler(deps: MomentsDeps) {
           if (range) chunks.push({ chunk_id: c.id, ...range });
         }
         const last = page.chunks.at(-1);
-        if (!page.has_more || !last) break;
+        if (!page.has_more || !last) {
+          complete = true;
+          break;
+        }
         afterIndex = last.chunk_index;
       }
+      if (!complete) return fail(500, "chunk_limit", MOMENTS_MESSAGES.chunkLimit);
 
       const [rows, sentences] = await Promise.all([backend.listMoments(sourceId), backend.getSummarySentences(sourceId)]);
       return json(200, {

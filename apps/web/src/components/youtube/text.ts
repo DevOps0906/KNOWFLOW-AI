@@ -3,8 +3,8 @@
 /** video_id 11자. 저장값이어도 렌더 때 다시 확인한다 */
 export const VIDEO_ID_RE = /^[A-Za-z0-9_-]{11}$/;
 
-// 양방향 제어(U+202A~202E, U+2066~2069, U+200E·200F)·zero-width(U+200B~200D, U+2060, U+FEFF) 문자
-const INVISIBLE = /[​-‏‪-‮⁠⁦-⁩﻿]/g;
+// Bidi_Control 전체(U+061C, U+200E·200F, U+202A~202E, U+2066~2069)·zero-width(U+200B~200D, U+2060, U+FEFF) 문자
+const INVISIBLE = /[\u061C\u200B-\u200F\u202A-\u202E\u2060\u2066-\u2069\uFEFF]/g;
 
 /** 비신뢰 텍스트에서 보이지 않는 제어 문자를 지운다 */
 export function cleanUntrustedText(text: string): string {

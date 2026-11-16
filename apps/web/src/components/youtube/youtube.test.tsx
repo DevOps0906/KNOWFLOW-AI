@@ -46,6 +46,8 @@ describe("유튜브 임베드 주소", () => {
 
   it("양방향·zero-width 문자를 지운다", () => {
     expect(cleanUntrustedText("a‮b​c⁦d﻿")).toBe("abcd");
+    // Bidi_Control 전체: U+061C(아랍 문자 표시)·U+200E/200F·U+202A~202E·U+2066~2069
+    expect(cleanUntrustedText("a\u061Cb\u200Ec\u200Fd\u202Ae\u202Ef\u2066g\u2069h")).toBe("abcdefgh");
   });
 
   it("video_id가 틀리면 iframe 대신 원본 링크를 보여 준다", () => {

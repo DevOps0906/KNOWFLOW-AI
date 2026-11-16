@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { ChunkPage, ChunksResult, SourceRow } from "@/lib/sources/handlers";
-import { createMomentsHandler, MOMENT_CHUNK_PAGE, toMoments, toSummary, type MomentRow, type MomentsBackend } from "./handler";
+import { createMomentsHandler, MOMENT_CHUNK_MAX_PAGES, MOMENT_CHUNK_PAGE, toMoments, toSummary, type MomentRow, type MomentsBackend } from "./handler";
 
 const SOURCE_ID = "5b0c7a2e-1d3f-4e6a-9b8c-7d6e5f4a3b21";
 const C1 = "0e1f2a3b-4c5d-4e6f-8a9b-0c1d2e3f4a5b";
@@ -114,6 +114,14 @@ describe("A-07 /moments", () => {
     expect(getChunks).toHaveBeenCalledTimes(2);
     expect(getChunks.mock.calls[1]![0]).toMatchObject({ afterIndex: 0, limit: MOMENT_CHUNK_PAGE });
     expect(body.moments[0].citable).toBe(true);
+  });
+
+  it("상한 쪽 수까지 has_more면 인용을 누락한 채 답하지 않고 chunk_limit 실패를 준다", async () => {
+    const getChunks = vi.fn(async (): Promise<ChunksResult> => ({ ok: true, page: page({ has_more: true }) }));
+    const res = await call(backend({ getChunks }));
+    expect(getChunks).toHaveBeenCalledTimes(MOMENT_CHUNK_MAX_PAGES);
+    expect(res.status).toBe(500);
+    expect((await res.json()).error.code).toBe("chunk_limit");
   });
 
   it("401 · 404(형식·없음) · 409 미완료 · 500", async () => {
