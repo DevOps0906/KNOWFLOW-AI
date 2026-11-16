@@ -304,7 +304,7 @@ describe("Gemini 어댑터 (fetch 목)", () => {
 const baseSource: IngestSource = {
   id: "s1",
   project_id: "p1",
-  user_id: "u1",
+  organization_id: "u1",
   source_type: "youtube",
   title: "영상",
   storage_path: null,
@@ -346,7 +346,7 @@ function stores(video: YoutubeVideo, job: { attempt: number; status: string }, s
 }
 
 function jobFor(attempt: number): Job {
-  return { id: "j1", user_id: "u1", source_id: "s1", report_id: null, job_type: "source_ingest", attempt_count: attempt, max_attempts: 3 };
+  return { id: "j1", organization_id: "u1", source_id: "s1", report_id: null, job_type: "source_ingest", attempt_count: attempt, max_attempts: 3 };
 }
 
 function queueFor(job: Job): JobQueue & { calls: string[] } {
@@ -553,7 +553,7 @@ function fakePool(failOn?: string) {
   const pool = {
     query: async (text: string) => {
       sql.push(text.replace(/\s+/g, " ").trim());
-      return { rows: text.includes("from public.sources") ? [row] : [], rowCount: 0 };
+      return { rows: text.includes("from nomad_knowflow.sources") ? [row] : [], rowCount: 0 };
     },
     connect: async () => client,
   };

@@ -10,7 +10,7 @@ export function browserUploadDeps(): UploadDeps {
     async upload(path, token, file) {
       if (!url || !anonKey) return { error: "config" };
       const client = createClient(url, anonKey, { auth: { persistSession: false, autoRefreshToken: false } });
-      const { error } = await client.storage.from("sources").uploadToSignedUrl(path, token, file, { contentType: "application/pdf" });
+      const { error } = await client.storage.from("knowflow-sources").uploadToSignedUrl(path, token, file, { contentType: "application/pdf" });
       return error ? { error: "upload_failed" } : {};
     },
     async hash(file) {

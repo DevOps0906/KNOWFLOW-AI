@@ -28,7 +28,7 @@ const fail = (code: string) => new PermanentError(code);
 /** 첫 자료 요약. summary가 이미 있으면 건너뛰고, 경합으로 다른 자료가 먼저 저장했으면 버린다. */
 export async function runSummaryStep(
   deps: Pick<IngestDeps, "store"> & { summarizer: SummaryProvider },
-  source: Pick<IngestSource, "project_id" | "user_id">,
+  source: Pick<IngestSource, "project_id" | "organization_id">,
   chunks: Pick<ChunkDraft, "content">[],
 ): Promise<"skipped" | "saved" | "lost_race"> {
   const { store, summarizer } = deps;
@@ -36,7 +36,7 @@ export async function runSummaryStep(
   const raw = await summarizer.summarize(buildSummaryPrompt(chunks.map((c) => c.content)));
   // 공급자 호출은 결과가 쓸모없어도 사용 기록에 남긴다
   await store.recordUsage({
-    userId: source.user_id,
+    organizationId: source.organization_id,
     projectId: source.project_id,
     eventType: "project_summary",
     provider: summarizer.name,
@@ -56,7 +56,7 @@ export function createIngestHandler(deps: IngestDeps): Handler {
     await progress("validate", 5);
     const source = await deps.store.loadSource(job.source_id);
     if (!source) throw fail(INGEST_ERROR_CODES.sourceNotFound);
-    if (source.user_id !== job.user_id) throw fail(INGEST_ERROR_CODES.sourceOwnerMismatch);
+    if (source.organization_id !== job.organization_id) throw fail(INGEST_ERROR_CODES.sourceOwnerMismatch);
     if (source.deleted) throw fail(INGEST_ERROR_CODES.sourceDeleted);
     const summarizer = deps.summarizer;
     if (source.source_type === "youtube") {

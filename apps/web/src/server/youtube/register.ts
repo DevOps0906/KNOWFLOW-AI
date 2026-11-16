@@ -7,7 +7,7 @@ import { parseYoutubeVideoId } from "./url";
 
 // A-04 유튜브 분기(task-027b): 플래그 → URL → 소유 → videos.list 동기 거절 → register_youtube_source(service_role).
 export interface RegisterRpcInput {
-  userId: string;
+  organizationId: string;
   projectId: string;
   videoId: string;
   title: string;
@@ -46,6 +46,7 @@ export const YOUTUBE_MESSAGES = {
   conflict: "같은 요청이 다른 입력으로 들어왔습니다. 새로 시도해 주세요.",
   sourceLimit: "자료 수 또는 이번 달 처리 한도에 도달했습니다.",
   videoLimit: "이번 달 영상 처리 시간 한도에 도달했습니다.",
+  featureLocked: "현재 플랜에서 사용할 수 없는 기능입니다. 플랜을 업그레이드해 주세요.",
   server: "일시적인 문제가 생겼습니다. 잠시 후 다시 시도해 주세요.",
 } as const satisfies Record<YoutubeRejection, string> & Record<string, string>;
 
@@ -59,7 +60,7 @@ const failure = (status: number, code: string, message: string, reason = code): 
   reason,
 });
 
-/** register_youtube_source 오류(SQLSTATE) → 응답. KF429 quota_exceeded는 HINT(source_jobs|video_seconds)로 한도 종류를 구분하고, source_limit_exceeded는 HINT가 없다. */
+/** register_youtube_source 오류(SQLSTATE) → 응답. KF403은 플랜에서 잠긴 기능(업그레이드 안내). KF429 quota_exceeded는 HINT(source_jobs|video_seconds)로 한도 종류를 구분하고, source_limit_exceeded는 HINT가 없다. */
 export function classifyRegisterError(error: { code?: string; message?: string; details?: string | null; hint?: string | null } | null): YoutubeRegisterOutcome {
   switch (error?.code) {
     case "23505": // message duplicate_video: 같은 프로젝트에 같은 영상
@@ -69,6 +70,8 @@ export function classifyRegisterError(error: { code?: string; message?: string; 
       return failure(409, "conflict", YOUTUBE_MESSAGES.conflict);
     case "KF413":
       return failure(422, "video_too_long", YOUTUBE_MESSAGES.video_too_long);
+    case "KF403": // feature_locked: HINT = 잠긴 기능(knowledge_base)
+      return failure(403, "feature_locked", YOUTUBE_MESSAGES.featureLocked, error.hint ? `feature_locked:${error.hint}` : "feature_locked");
     case "KF429": {
       return error.hint === "video_seconds"
         ? failure(429, "limit_exceeded", YOUTUBE_MESSAGES.videoLimit, "video_seconds")
@@ -90,7 +93,7 @@ export function youtubeRequestHash(projectId: string, videoId: string) {
 
 export function createYoutubeSources(deps: YoutubeSourcesDeps): YoutubeSources {
   return {
-    async register({ userId, projectId, body, idempotencyKey, projectExists }: YoutubeRegisterInput) {
+    async register({ projectId, body, idempotencyKey, projectOrganization }: YoutubeRegisterInput) {
       const config = deps.config();
       if (!config.enabled) return failure(422, "youtube_disabled", YOUTUBE_MESSAGES.disabled);
       const problem = youtubeConfigProblem(config);
@@ -101,8 +104,9 @@ export function createYoutubeSources(deps: YoutubeSourcesDeps): YoutubeSources {
       const key = idempotencyKey;
       if (typeof key !== "string" || !KEY.test(key)) return failure(400, "bad_request", YOUTUBE_MESSAGES.invalidRequest);
 
-      // 남의 프로젝트로 외부 쿼터를 쓰지 않도록 세션(RLS)으로 먼저 확인한다. 함수가 한 번 더 확인한다.
-      if (!(await projectExists(projectId))) return failure(404, "not_found", YOUTUBE_MESSAGES.notFound);
+      // 남의 프로젝트로 외부 쿼터를 쓰지 않도록 세션(RLS·쓰기 역할)으로 먼저 확인한다. 함수가 조직·프로젝트를 한 번 더 확인한다.
+      const organizationId = await projectOrganization(projectId);
+      if (!organizationId) return failure(404, "not_found", YOUTUBE_MESSAGES.notFound);
 
       const lookup = await deps.provider(config).lookup(videoId);
       if (!lookup.ok) return failure(502, "metadata_unavailable", YOUTUBE_MESSAGES.metadataUnavailable);
@@ -113,7 +117,7 @@ export function createYoutubeSources(deps: YoutubeSourcesDeps): YoutubeSources {
       }
 
       const result = await deps.register({
-        userId,
+        organizationId,
         projectId,
         videoId,
         title: lookup.video.title,

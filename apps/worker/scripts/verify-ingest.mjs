@@ -18,16 +18,16 @@ function psql(sql) {
 }
 
 const SEED = `
-with u as (insert into auth.users (email) values ('ingest-' || gen_random_uuid() || '@example.test') returning id),
-     p as (insert into public.projects (user_id, name) select id, '종단 검증' from u returning id, user_id),
-     s as (insert into public.sources (project_id, user_id, source_type, title, storage_path, content_hash)
-           select id, user_id, 'pdf', '샘플 PDF', '${STORAGE_PATH}', '${hash}' from p returning id, user_id),
-     j as (insert into public.processing_jobs (user_id, source_id, job_type) select user_id, id, 'source_ingest' from s returning id, source_id)
+with u as (insert into nomad_core.organizations (name) values ('ingest-' || gen_random_uuid()) returning id),
+     p as (insert into nomad_knowflow.projects (organization_id, name) select id, '종단 검증' from u returning id, organization_id),
+     s as (insert into nomad_knowflow.sources (project_id, organization_id, source_type, title, storage_path, content_hash)
+           select id, organization_id, 'pdf', '샘플 PDF', '${STORAGE_PATH}', '${hash}' from p returning id, organization_id),
+     j as (insert into nomad_knowflow.processing_jobs (organization_id, source_id, job_type) select organization_id, id, 'source_ingest' from s returning id, source_id)
 select id || '|' || source_id from j;`;
 
 async function waitForJob(jobId) {
   for (let i = 0; i < 120; i++) {
-    const status = psql(`select status from public.processing_jobs where id = '${jobId}'`);
+    const status = psql(`select status from nomad_knowflow.processing_jobs where id = '${jobId}'`);
     if (status === "succeeded" || status === "failed") return status;
     await new Promise((resolve) => setTimeout(resolve, 1000));
   }
@@ -44,7 +44,7 @@ const chunkStats = (sourceId) =>
   psql(`select count(*) || '|' || count(distinct chunk_index) || '|' || count(*) filter (where (locator ->> 'page') ~ '^[0-9]+$')
                || '|' || coalesce(string_agg(distinct locator ->> 'page', ',' order by locator ->> 'page'), '')
                || '|' || count(*) filter (where embedding_model is not null)
-          from public.source_chunks where source_id = '${sourceId}'`).split("|");
+          from nomad_knowflow.source_chunks where source_id = '${sourceId}'`).split("|");
 
 try {
   bringUpDependencies(env);
@@ -52,35 +52,35 @@ try {
   const attached = spawn("docker", ["compose", "up", "--no-build", "worker"], { cwd: repoRoot, env, stdio: "ignore" });
 
   const status = await waitForJob(jobId);
-  const err = psql(`select coalesce(error_code, '') from public.processing_jobs where id = '${jobId}'`);
+  const err = psql(`select coalesce(error_code, '') from nomad_knowflow.processing_jobs where id = '${jobId}'`);
   check(status === "succeeded", "[종단] queued→succeeded", `status=${status}${err ? `, error_code=${err}` : ""}`);
-  check(psql(`select status from public.sources where id = '${sourceId}'`) === "completed", "[종단] sources.status=completed");
+  check(psql(`select status from nomad_knowflow.sources where id = '${sourceId}'`) === "completed", "[종단] sources.status=completed");
 
   const [n, distinct, withPage, pages, withModel] = chunkStats(sourceId);
   check(Number(n) > 0 && n === withPage, "[청크] 모든 청크에 locator.page", `청크 ${n}개, page 있음 ${withPage}개, 쪽 ${pages}`);
   check(pages === "1,2,3", "[청크] 텍스트 쪽(1~3)만 색인, 스캔 쪽(4) 건너뜀", `쪽 ${pages}`);
   check(n === distinct, "[청크] chunk_index 중복 없음");
   check(withModel === "0", "[청크] embedding_model은 벡터 저장 전이라 NULL");
-  check(psql(`select count(*) from public.source_chunks where source_id = '${sourceId}' and content_tsv <> ''::tsvector`) === n, "[색인] content_tsv 생성");
+  check(psql(`select count(*) from nomad_knowflow.source_chunks where source_id = '${sourceId}' and content_tsv <> ''::tsvector`) === n, "[색인] content_tsv 생성");
 
   // 요약은 완료 뒤 후행 단계라 조금 늦을 수 있다
   let summary = "";
   for (let i = 0; i < 20 && !summary; i++) {
-    summary = psql(`select coalesce(summary, '') || '|' || jsonb_array_length(suggested_questions) from public.projects p
-                     join public.sources s on s.project_id = p.id where s.id = '${sourceId}' and p.summary is not null`);
+    summary = psql(`select coalesce(summary, '') || '|' || jsonb_array_length(suggested_questions) from nomad_knowflow.projects p
+                     join nomad_knowflow.sources s on s.project_id = p.id where s.id = '${sourceId}' and p.summary is not null`);
     if (!summary) await new Promise((resolve) => setTimeout(resolve, 500));
   }
   const [summaryText = "", questions = "0"] = summary.split("|");
   check(summaryText.length > 0 && Number(questions) >= 1, "[요약] projects.summary·suggested_questions 채워짐(스텁)", `질문 ${questions}개`);
   check(
-    psql(`select count(*) from public.usage_events e join public.sources s on s.project_id = e.project_id
+    psql(`select count(*) from nomad_knowflow.usage_events e join nomad_knowflow.sources s on s.project_id = e.project_id
            where s.id = '${sourceId}' and e.event_type = 'project_summary' and e.provider = 'stub'`) === "1",
     "[사용 기록] usage_events(project_summary, stub) 1건",
   );
 
   // 재처리: 같은 자료에 새 작업 → 청크 수가 같고 중복 없음
-  const job2 = psql(`with j as (insert into public.processing_jobs (user_id, source_id, job_type)
-                     select user_id, id, 'source_ingest' from public.sources where id = '${sourceId}' returning id) select id from j`);
+  const job2 = psql(`with j as (insert into nomad_knowflow.processing_jobs (organization_id, source_id, job_type)
+                     select organization_id, id, 'source_ingest' from nomad_knowflow.sources where id = '${sourceId}' returning id) select id from j`);
   const status2 = await waitForJob(job2);
   const [n2, distinct2] = chunkStats(sourceId);
   check(status2 === "succeeded" && n2 === n && distinct2 === n, "[재처리] 청크 중복 없음", `처음 ${n}개 → 재처리 ${n2}개`);

@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
+import { KNOWFLOW_SCHEMA } from "@/lib/db-schema";
 import { createAuthHandlers, type AuthBackend, type AuthFailureKind } from "./handlers";
 import { logAuthEvent } from "./log";
 
@@ -16,7 +17,9 @@ export async function createSupabaseServerClient(): Promise<SupabaseClient> {
   const env = supabaseEnv();
   if (!env) throw new Error("supabase_env_missing");
   const store = await cookies();
-  return createServerClient(env.url, env.anonKey, {
+  // 생성 타입이 없어 스키마 이름만 다른 SupabaseClient로 맞춘다(기본 스키마 = nomad_knowflow)
+  const client = createServerClient(env.url, env.anonKey, {
+    db: { schema: KNOWFLOW_SCHEMA },
     cookies: {
       getAll: () => store.getAll(),
       setAll: (items) => {
@@ -28,6 +31,7 @@ export async function createSupabaseServerClient(): Promise<SupabaseClient> {
       },
     },
   });
+  return client as unknown as SupabaseClient;
 }
 
 function classify(error: { code?: string; status?: number } | null): AuthFailureKind | null {

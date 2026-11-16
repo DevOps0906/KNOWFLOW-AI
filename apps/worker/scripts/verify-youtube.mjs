@@ -29,21 +29,21 @@ function psql(sql) {
 }
 
 const SEED = `
-with u as (insert into auth.users (email) values ('youtube-' || gen_random_uuid() || '@example.test') returning id),
-     p as (insert into public.projects (user_id, name) select id, '유튜브 종단 검증' from u returning id, user_id),
-     s as (insert into public.sources (project_id, user_id, source_type, title, original_url, video_id, channel_title, duration_seconds, metadata_checked_at)
-           select id, user_id, 'youtube', '검증 영상', 'https://www.youtube.com/watch?v=${VIDEO_ID}', '${VIDEO_ID}', '검증 채널', ${DURATION}, now()
-             from p returning id, user_id),
-     j as (insert into public.processing_jobs (user_id, source_id, job_type) select user_id, id, 'source_ingest' from s returning id, source_id)
+with u as (insert into nomad_core.organizations (name) values ('youtube-' || gen_random_uuid()) returning id),
+     p as (insert into nomad_knowflow.projects (organization_id, name) select id, '유튜브 종단 검증' from u returning id, organization_id),
+     s as (insert into nomad_knowflow.sources (project_id, organization_id, source_type, title, original_url, video_id, channel_title, duration_seconds, metadata_checked_at)
+           select id, organization_id, 'youtube', '검증 영상', 'https://www.youtube.com/watch?v=${VIDEO_ID}', '${VIDEO_ID}', '검증 채널', ${DURATION}, now()
+             from p returning id, organization_id),
+     j as (insert into nomad_knowflow.processing_jobs (organization_id, source_id, job_type) select organization_id, id, 'source_ingest' from s returning id, source_id)
 select id || '|' || source_id from j;`;
 
 const enqueue = (sourceId) =>
-  psql(`with j as (insert into public.processing_jobs (user_id, source_id, job_type)
-         select user_id, id, 'source_ingest' from public.sources where id = '${sourceId}' returning id) select id from j`);
+  psql(`with j as (insert into nomad_knowflow.processing_jobs (organization_id, source_id, job_type)
+         select organization_id, id, 'source_ingest' from nomad_knowflow.sources where id = '${sourceId}' returning id) select id from j`);
 
 async function waitForJob(jobId) {
   for (let i = 0; i < 120; i++) {
-    const status = psql(`select status from public.processing_jobs where id = '${jobId}'`);
+    const status = psql(`select status from nomad_knowflow.processing_jobs where id = '${jobId}'`);
     if (status === "succeeded" || status === "failed") return status;
     await new Promise((resolve) => setTimeout(resolve, 1000));
   }
@@ -62,11 +62,11 @@ const chunkStats = (sourceId) =>
                                             and (locator ->> 't_start')::numeric >= 0 and (locator ->> 't_end')::numeric <= ${DURATION}
                                             and (locator ->> 't_end')::numeric > (locator ->> 't_start')::numeric and not locator ? 'page')
                || '|' || coalesce(min((locator ->> 't_start')::numeric), -1) || '|' || coalesce(max((locator ->> 't_end')::numeric), -1)
-          from public.source_chunks where source_id = '${sourceId}'`).split("|");
+          from nomad_knowflow.source_chunks where source_id = '${sourceId}'`).split("|");
 
 const momentStats = (sourceId) =>
   psql(`select count(*) || '|' || count(distinct moment_index) || '|' || count(*) filter (where (locator ->> 't_end')::numeric <= ${DURATION})
-          from public.source_moments where source_id = '${sourceId}'`).split("|");
+          from nomad_knowflow.source_moments where source_id = '${sourceId}'`).split("|");
 
 function startWorker(workerEnv) {
   return spawn("docker", ["compose", "up", "--no-build", "worker"], { cwd: repoRoot, env: workerEnv, stdio: "ignore" });
@@ -90,25 +90,25 @@ try {
   let attached = startWorker(env);
 
   const status = await waitForJob(jobId);
-  const err = psql(`select coalesce(error_code, '') from public.processing_jobs where id = '${jobId}'`);
+  const err = psql(`select coalesce(error_code, '') from nomad_knowflow.processing_jobs where id = '${jobId}'`);
   check(status === "succeeded", "[종단] queued→succeeded", `status=${status}${err ? `, error_code=${err}` : ""}`);
-  check(psql(`select status from public.sources where id = '${sourceId}'`) === "completed", "[종단] sources.status=completed");
+  check(psql(`select status from nomad_knowflow.sources where id = '${sourceId}'`) === "completed", "[종단] sources.status=completed");
 
   const [n, distinct, timed, minT, maxT] = chunkStats(sourceId);
   check(Number(n) > 0 && n === timed, "[청크] 모든 청크 locator에 t_start/t_end(영상 범위 안, page 없음)", `청크 ${n}개, 시각 있음 ${timed}개`);
   check(Number(minT) === 0 && Number(maxT) === DURATION, "[청크] 전사가 영상 처음부터 끝까지 덮음(분할 구간 합침)", `${minT}~${maxT}초`);
   check(n === distinct, "[청크] chunk_index 중복 없음");
-  check(psql(`select count(*) from public.source_chunks where source_id = '${sourceId}' and content_tsv <> ''::tsvector`) === n, "[색인] content_tsv 생성");
+  check(psql(`select count(*) from nomad_knowflow.source_chunks where source_id = '${sourceId}' and content_tsv <> ''::tsvector`) === n, "[색인] content_tsv 생성");
 
   const [m, mDistinct, mInRange] = momentStats(sourceId);
   check(m === "3" && mDistinct === "3" && mInRange === "3", "[장면] 구간당 장면 1개씩 3개 저장(영상 범위 안)", `장면 ${m}개`);
-  const usage = psql(`select count(*) from public.usage_events e join public.sources s on s.project_id = e.project_id
+  const usage = psql(`select count(*) from nomad_knowflow.usage_events e join nomad_knowflow.sources s on s.project_id = e.project_id
                        where s.id = '${sourceId}' and e.event_type = 'youtube_analysis' and e.provider = 'stub'`);
   check(usage === "3", "[사용 기록] usage_events(youtube_analysis, stub) 구간 수만큼 3건", `${usage}건`);
 
   let summary = "";
   for (let i = 0; i < 20 && !summary; i++) {
-    summary = psql(`select coalesce(p.summary, '') from public.projects p join public.sources s on s.project_id = p.id where s.id = '${sourceId}'`);
+    summary = psql(`select coalesce(p.summary, '') from nomad_knowflow.projects p join nomad_knowflow.sources s on s.project_id = p.id where s.id = '${sourceId}'`);
     if (!summary) await new Promise((resolve) => setTimeout(resolve, 500));
   }
   check(summary.length > 0, "[요약] 첫 자료 요약 저장(스텁)");
@@ -125,15 +125,15 @@ try {
   collectLogs(env);
 
   // 재확인 대상으로 만든다(마지막 확인 22일 전). 플래그 꺼짐 Worker는 스윕하지 않아야 한다
-  psql(`update public.sources set metadata_checked_at = now() - interval '22 days' where id = '${sourceId}'`);
-  const recheckCount = () => psql(`select count(*) from public.processing_jobs where source_id = '${sourceId}' and job_type = 'source_recheck'`);
+  psql(`update nomad_knowflow.sources set metadata_checked_at = now() - interval '22 days' where id = '${sourceId}'`);
+  const recheckCount = () => psql(`select count(*) from nomad_knowflow.processing_jobs where source_id = '${sourceId}' and job_type = 'source_recheck'`);
 
   // 플래그 꺼짐: 유튜브 처리를 등록하지 않으므로 들어온 작업은 재시도 없이 영구 실패
   const offEnv = { ...base, YOUTUBE_ENABLED: "0" };
   attached = startWorker(offEnv);
   const job3 = enqueue(sourceId);
   const status3 = await waitForJob(job3);
-  const [code3, attempts3] = psql(`select coalesce(error_code, '') || '|' || attempt_count from public.processing_jobs where id = '${job3}'`).split("|");
+  const [code3, attempts3] = psql(`select coalesce(error_code, '') || '|' || attempt_count from nomad_knowflow.processing_jobs where id = '${job3}'`).split("|");
   check(status3 === "failed" && code3 === "youtube_disabled" && attempts3 === "1", "[플래그 꺼짐] youtube_disabled로 재시도 없이 실패", `status=${status3}, error_code=${code3}, 시도 ${attempts3}`);
   check(chunkStats(sourceId)[0] === n && momentStats(sourceId)[0] === m, "[플래그 꺼짐] 기존 청크·장면은 그대로");
   check(recheckCount() === "0", "[플래그 꺼짐] 재확인 스윕 없음");
@@ -142,18 +142,18 @@ try {
 
   // 재확인: 플래그 켜진 Worker의 기동 스윕 → source_recheck → 스텁 videos.list(600초)로 길이 갱신
   const quotaOf = () => psql(`select s.status || '|' || q.used_source_jobs || '|' || q.used_video_seconds || '|' || coalesce(s.video_seconds_charged, -1)
-                                from public.sources s left join public.user_quotas q on q.user_id = s.user_id where s.id = '${sourceId}'`);
+                                from nomad_knowflow.sources s left join nomad_knowflow.org_quotas q on q.organization_id = s.organization_id where s.id = '${sourceId}'`);
   const beforeRecheck = quotaOf();
   attached = startWorker(env);
   let recheckJob = "";
   for (let i = 0; i < 60 && !recheckJob; i++) {
-    recheckJob = psql(`select coalesce(max(id::text), '') from public.processing_jobs where source_id = '${sourceId}' and job_type = 'source_recheck'`);
+    recheckJob = psql(`select coalesce(max(id::text), '') from nomad_knowflow.processing_jobs where source_id = '${sourceId}' and job_type = 'source_recheck'`);
     if (!recheckJob) await new Promise((resolve) => setTimeout(resolve, 500));
   }
   const status4 = recheckJob ? await waitForJob(recheckJob) : "missing";
   check(status4 === "succeeded" && recheckCount() === "1", "[재확인] 기동 스윕이 source_recheck 1건을 만들고 성공", `status=${status4}`);
   const [dur4, fresh4, unavailable4] = psql(`select duration_seconds || '|' || (metadata_checked_at > now() - interval '5 minutes') || '|' || (unavailable_at is null)
-                                               from public.sources where id = '${sourceId}'`).split("|");
+                                               from nomad_knowflow.sources where id = '${sourceId}'`).split("|");
   check(dur4 === "600" && fresh4 === "true" && unavailable4 === "true", "[재확인] 실제 길이로 갱신·확인 시각 갱신·비활성 아님", `${DURATION}→${dur4}초`);
   check(quotaOf() === beforeRecheck, "[재확인] 자료 상태·쿼터·차감 영상 시간 불변", `${beforeRecheck} → ${quotaOf()}`);
   await stopWorker(env, attached);

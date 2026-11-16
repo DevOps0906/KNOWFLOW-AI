@@ -40,6 +40,7 @@ export type RetryKind =
   | "retry_limit"
   | "quota"
   | "rate_limited"
+  | "locked"
   | "unknown";
 
 export type ListResult = { ok: true; rows: JobRow[] } | { ok: false; kind: ListKind };
@@ -68,6 +69,7 @@ export const JOB_MESSAGES = {
   retryLimit: "이 자료의 재시도 횟수를 모두 사용했습니다.",
   quota: "이번 달 처리 한도에 도달했습니다.",
   rateLimited: "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.",
+  locked: "현재 플랜에서 사용할 수 없는 기능입니다. 플랜을 업그레이드해 주세요.",
   server: "일시적인 문제가 생겼습니다. 잠시 후 다시 시도해 주세요.",
 } as const;
 
@@ -90,6 +92,7 @@ const RETRY_FAILURE: Record<RetryKind, { status: number; code: string; message: 
   retry_limit: { status: 429, code: "retry_limit_exceeded", message: JOB_MESSAGES.retryLimit },
   quota: { status: 429, code: "quota_exceeded", message: JOB_MESSAGES.quota },
   rate_limited: { status: 429, code: "rate_limited", message: JOB_MESSAGES.rateLimited },
+  locked: { status: 403, code: "feature_locked", message: JOB_MESSAGES.locked },
   unknown: { status: 500, code: "server_error", message: JOB_MESSAGES.server },
 };
 
@@ -142,6 +145,8 @@ export function classifyRetryError(error: RpcError): Exclude<RetryResult, { ok: 
       return { ok: false, kind: "completed" };
     case "KF422":
       return { ok: false, kind: "not_retryable" };
+    case "KF403": // feature_locked: 플랜에서 잠긴 기능(knowledge_base)
+      return { ok: false, kind: "locked" };
     case "KF409":
     case "KF410":
       return { ok: false, kind: "conflict" };

@@ -7,7 +7,7 @@ import { backoffMs, PermanentError, runOnce, StaleAttemptError, type Handlers } 
 
 const job: Job = {
   id: "j1",
-  user_id: "u1",
+  organization_id: "u1",
   source_id: "s1",
   report_id: null,
   job_type: "source_ingest",

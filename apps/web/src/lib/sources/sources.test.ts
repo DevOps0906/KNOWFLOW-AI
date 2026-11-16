@@ -299,7 +299,8 @@ describe("자료 오류 문구 표", () => {
 
   it("DB·러너가 남기는 코드(lease_expired·no_handler·unknown·handler_error)를 모두 담는다", () => {
     const dir = new URL("../../../../../supabase/migrations/", import.meta.url);
-    const sql = readdirSync(dir).map((f) => readFileSync(new URL(f, dir), "utf8")).join("\n");
+    // nomad DB: 자료 오류 코드는 knowflow 이식본에만 있다(코어 마이그레이션의 다른 case 식은 제외)
+    const sql = readdirSync(dir).filter((f) => f.includes("_knowflow_")).map((f) => readFileSync(new URL(f, dir), "utf8")).join("\n");
     const fromSql = [...sql.matchAll(/error_code = '([a-z0-9_]+)'|sync_source_status\([^;]*?'failed', '([a-z0-9_]+)'\)|else '([a-z0-9_]+)' end/g)].map((m) => m[1] ?? m[2] ?? m[3]!);
     const runner = worker("runner.ts");
     const fromRunner = [...runner.matchAll(/queue\.fail\([^)]*?"([a-z0-9_]+)"|permanent \? e\.code : "([a-z0-9_]+)"/g)].map((m) => m[1] ?? m[2]!);

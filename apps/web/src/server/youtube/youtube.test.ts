@@ -15,6 +15,7 @@ import { canonicalYoutubeUrl, parseYoutubeVideoId } from "./url";
 
 const SITE = "https://app.example.test";
 const USER = "11111111-1111-4111-8111-111111111111";
+const ORG = "55555555-5555-4555-8555-555555555555";
 const PROJECT = "22222222-2222-4222-8222-222222222222";
 const ID = "dQw4w9WgXcQ";
 
@@ -34,14 +35,14 @@ const video = (over: Partial<VideoMetadata> = {}): VideoMetadata => ({
   ...over,
 });
 
-function setup(opts: { config?: YoutubeConfig; lookup?: VideoMetadataProvider["lookup"]; rpc?: RegisterRpcResult; projectExists?: boolean } = {}) {
+function setup(opts: { config?: YoutubeConfig; lookup?: VideoMetadataProvider["lookup"]; rpc?: RegisterRpcResult; projectOrganization?: string | null } = {}) {
   const logs: SourceAuditEvent[] = [];
   const lookup = vi.fn(opts.lookup ?? (async () => ({ ok: true as const, video: video() })));
   const provider = vi.fn(() => ({ lookup }));
   const register = vi.fn(async () => opts.rpc ?? ({ ok: true, sourceId: "s1", jobId: "j1", duplicate: false } as const));
   const backend: SourcesBackend = {
     getUserId: vi.fn(async () => USER),
-    projectExists: vi.fn(async () => opts.projectExists ?? true),
+    projectOrganization: vi.fn(async () => (opts.projectOrganization === undefined ? ORG : opts.projectOrganization)),
     createUploadUrl: vi.fn(),
     readHead: vi.fn(),
     register: vi.fn(),
@@ -151,7 +152,7 @@ describe("A-04 유튜브 등록", () => {
   });
 
   it("유튜브 구현이 주입되지 않아도 422", async () => {
-    const backend = { getUserId: async () => USER, projectExists: async () => true } as unknown as SourcesBackend;
+    const backend = { getUserId: async () => USER, projectOrganization: async () => ORG } as unknown as SourcesBackend;
     const res = await createSourceHandlers({ backend, siteUrl: SITE, log: () => {} }).post(post(yt()), PROJECT);
     expect(res.status).toBe(422);
   });
@@ -178,8 +179,8 @@ describe("A-04 유튜브 등록", () => {
     expect(s.lookup).not.toHaveBeenCalled();
   });
 
-  it("남의 프로젝트면 videos.list 전에 404", async () => {
-    const s = setup({ projectExists: false });
+  it("남의·쓰기 권한 없는 프로젝트면 videos.list 전에 404", async () => {
+    const s = setup({ projectOrganization: null });
     expect((await send(s, yt())).status).toBe(404);
     expect(s.lookup).not.toHaveBeenCalled();
   });
@@ -222,7 +223,7 @@ describe("A-04 유튜브 등록", () => {
     expect(r.status).toBe(202);
     expect(r.body).toEqual({ sourceId: "s1", jobId: "j1", duplicate: false, status: "queued" });
     expect(s.register).toHaveBeenCalledWith({
-      userId: USER,
+      organizationId: ORG,
       projectId: PROJECT,
       videoId: ID,
       title: "영상",
@@ -247,6 +248,7 @@ describe("A-04 유튜브 등록", () => {
     [{ code: "KF409" }, 409, "conflict"],
     [{ code: "KF410" }, 409, "conflict"],
     [{ code: "KF413" }, 422, "video_too_long"],
+    [{ code: "KF403", message: "feature_locked", hint: "knowledge_base" }, 403, "feature_locked"],
     [{ code: "KF429", message: "quota_exceeded", hint: "video_seconds" }, 429, "limit_exceeded"],
     [{ code: "KF429", message: "quota_exceeded", hint: "source_jobs" }, 429, "limit_exceeded"],
     [{ code: "KF429", message: "source_limit_exceeded" }, 429, "limit_exceeded"],

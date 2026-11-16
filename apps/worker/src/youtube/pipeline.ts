@@ -166,7 +166,7 @@ export function toMoments(scenes: Scene[], durationSec: number, settings: Settin
 export async function processYoutubeSource(
   deps: YoutubeDeps & { recordUsage: IngestStore["recordUsage"]; log?: Logger },
   ctx: HandlerContext,
-  source: Pick<IngestSource, "id" | "project_id" | "user_id">,
+  source: Pick<IngestSource, "id" | "project_id" | "organization_id">,
 ): Promise<ChunkDraft<TimeLocator>[]> {
   const { job, signal, progress } = ctx;
   const video = await deps.store.loadVideo(source.id);
@@ -184,7 +184,7 @@ export async function processYoutubeSource(
     const r = await deps.analyzer.analyze({ videoId: video.video_id, videoUrl: canonicalVideoUrl(video.video_id), window }, signal);
     // 공급자 호출은 결과가 쓸모없어도 사용 기록에 남긴다(월 처리 차감은 등록 때 했다)
     await deps.recordUsage({
-      userId: source.user_id,
+      organizationId: source.organization_id,
       projectId: source.project_id,
       eventType: "youtube_analysis",
       provider: deps.analyzer.name,

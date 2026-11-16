@@ -2,7 +2,7 @@ import type { Pool } from "pg";
 
 export interface Job {
   id: string;
-  user_id: string;
+  organization_id: string;
   source_id: string | null;
   report_id: string | null;
   job_type: "source_ingest" | "report_generate" | "source_recheck";
@@ -26,23 +26,23 @@ type Queryable = Pick<Pool, "query">;
 export function createPgQueue(db: Queryable): JobQueue {
   return {
     async claim(leaseSeconds) {
-      const r = await db.query<{ job: Job | null }>("select public.claim_job($1) as job", [leaseSeconds]);
+      const r = await db.query<{ job: Job | null }>("select nomad_knowflow.claim_job($1) as job", [leaseSeconds]);
       return r.rows[0]?.job ?? null;
     },
     async heartbeat(jobId, attempt, leaseSeconds) {
-      const r = await db.query<{ ok: boolean }>("select public.heartbeat_job($1, $2, $3) as ok", [jobId, attempt, leaseSeconds]);
+      const r = await db.query<{ ok: boolean }>("select nomad_knowflow.heartbeat_job($1, $2, $3) as ok", [jobId, attempt, leaseSeconds]);
       return r.rows[0]?.ok === true;
     },
     async progress(jobId, attempt, step, progress) {
-      const r = await db.query<{ ok: boolean }>("select public.progress_job($1, $2, $3, $4) as ok", [jobId, attempt, step, progress]);
+      const r = await db.query<{ ok: boolean }>("select nomad_knowflow.progress_job($1, $2, $3, $4) as ok", [jobId, attempt, step, progress]);
       return r.rows[0]?.ok === true;
     },
     async complete(jobId, attempt) {
-      const r = await db.query<{ ok: boolean }>("select public.complete_job($1, $2) as ok", [jobId, attempt]);
+      const r = await db.query<{ ok: boolean }>("select nomad_knowflow.complete_job($1, $2) as ok", [jobId, attempt]);
       return r.rows[0]?.ok === true;
     },
     async fail(jobId, attempt, errorCode, retryable) {
-      const r = await db.query<{ result: FailResult }>("select public.fail_job($1, $2, $3, $4) as result", [jobId, attempt, errorCode, retryable]);
+      const r = await db.query<{ result: FailResult }>("select nomad_knowflow.fail_job($1, $2, $3, $4) as result", [jobId, attempt, errorCode, retryable]);
       return r.rows[0]!.result;
     },
   };

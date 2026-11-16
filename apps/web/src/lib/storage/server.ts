@@ -1,8 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/auth/supabase-server";
+import { writableProjectOrganization } from "@/lib/organizations/queries";
 import { createSourceHandlers, type RegisterKind, type SourceAuditEvent, type SourcesBackend } from "./handlers";
 
-const BUCKET = "sources";
+const BUCKET = "knowflow-sources";
 const HEAD_BYTES = 1024;
 
 function classify(error: { code?: string }): RegisterKind {
@@ -22,6 +23,8 @@ function classify(error: { code?: string }): RegisterKind {
       return "too_large";
     case "KF415":
       return "unsupported";
+    case "KF403": // feature_locked: 플랜에서 잠긴 기능
+      return "locked";
     default:
       return "unknown";
   }
@@ -71,12 +74,7 @@ export function createSupabaseSourcesBackend(supabase: SupabaseClient): SourcesB
       const { data } = await supabase.auth.getUser();
       return data.user?.id ?? null;
     },
-    async projectExists(projectId) {
-      // RLS: 본인·삭제되지 않은 프로젝트만 보인다
-      const { data, error } = await supabase.from("projects").select("id").eq("id", projectId).is("deleted_at", null).maybeSingle();
-      if (error) throw new Error("project_lookup_failed");
-      return Boolean(data);
-    },
+    projectOrganization: (projectId) => writableProjectOrganization(supabase, projectId),
     async createUploadUrl(path) {
       const { data, error } = await supabase.storage.from(BUCKET).createSignedUploadUrl(path);
       if (error || !data?.token) return { ok: false };

@@ -109,7 +109,7 @@ describe("videos.list 공급자", () => {
 
 // ── 핸들러: 가짜 큐·저장소로 runOnce ──
 const recheckJob = (attempt = 1): Job =>
-  ({ id: "j1", user_id: "u1", source_id: "s1", report_id: null, job_type: "source_recheck", attempt_count: attempt, max_attempts: 3 });
+  ({ id: "j1", organization_id: "u1", source_id: "s1", report_id: null, job_type: "source_recheck", attempt_count: attempt, max_attempts: 3 });
 
 function queueFor(job: Job): JobQueue & { calls: string[] } {
   const calls: string[] = [];

@@ -2,6 +2,10 @@
 # 로컬 CLI·Docker로는 아직 검증하지 못했다(supabase-verify.md 확인 필요).
 project_id = "knowflow-ai"
 
+# nomad DB(org안): knowflow 테이블·RPC는 nomad_knowflow 스키마에 있다. nomad_knowflow_private·nomad_core는 노출하지 않는다.
+[api]
+schemas = ["public", "graphql_public", "nomad_knowflow"]
+
 [auth]
 site_url = "http://localhost:3000"
 additional_redirect_urls = ["http://localhost:3000/api/auth/callback"]
