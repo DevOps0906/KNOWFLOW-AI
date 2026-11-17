@@ -6,7 +6,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     <div className="flex min-h-dvh flex-col">
       <header className="border-b border-border">
         <div className="mx-auto flex max-w-5xl items-center px-4 py-3 md:px-6">
-          <Link href="/" className="text-h2 font-bold text-primary">
+          <Link href="/intro" className="text-h2 font-bold text-primary">
             KNOWFLOW-AI
           </Link>
         </div>

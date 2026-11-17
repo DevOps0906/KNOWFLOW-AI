@@ -28,7 +28,7 @@ export function ResetPasswordForm({ mode, linkError }: { mode: "request" | "upda
         ? await postAuth("/api/auth/reset-password", { email: form.get("email") })
         : await postAuth("/api/auth/update-password", { password: form.get("password") });
     if (result.ok && mode === "update") {
-      router.replace("/dashboard");
+      router.replace("/");
       router.refresh();
       return;
     }

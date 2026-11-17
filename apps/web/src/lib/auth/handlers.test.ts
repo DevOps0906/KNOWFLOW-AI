@@ -107,7 +107,7 @@ describe("로그인 한도", () => {
     const ok = await handlers.login(post({ email: "a@example.test", password: GOOD_PASSWORD, next: "/projects" }));
     expect((await ok.json()).redirectTo).toBe("/projects");
     const evil = await handlers.login(post({ email: "b@example.test", password: GOOD_PASSWORD, next: "https://evil.test" }));
-    expect((await evil.json()).redirectTo).toBe("/dashboard");
+    expect((await evil.json()).redirectTo).toBe("/");
   });
 });
 

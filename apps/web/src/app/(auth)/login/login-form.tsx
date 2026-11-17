@@ -23,7 +23,7 @@ export function LoginForm({ next }: { next?: string }) {
       next,
     });
     if (result.ok) {
-      router.replace(result.redirectTo ?? "/dashboard");
+      router.replace(result.redirectTo ?? "/");
       router.refresh();
       return;
     }

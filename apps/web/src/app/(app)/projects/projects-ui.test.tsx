@@ -21,7 +21,7 @@ describe("온보딩", () => {
     fireEvent.click(screen.getByRole("button", { name: "다음" }));
     fireEvent.change(screen.getByRole("textbox"), { target: { value: "첫 프로젝트" } });
     fireEvent.click(screen.getByRole("button", { name: "다음" }));
-    await waitFor(() => expect(screen.getByRole("link", { name: "대시보드로 이동" }).getAttribute("href")).toBe("/dashboard"));
+    await waitFor(() => expect(screen.getByRole("link", { name: "대시보드로 이동" }).getAttribute("href")).toBe("/"));
     const call = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
     expect(JSON.parse(String(call[1].body))).toEqual({ name: "첫 프로젝트" });
   });
@@ -33,6 +33,6 @@ describe("온보딩", () => {
     fireEvent.change(screen.getByRole("textbox"), { target: { value: "x" } });
     fireEvent.click(screen.getByRole("button", { name: "다음" }));
     await waitFor(() => expect(screen.getByRole("alert").textContent).toContain("한도 초과"));
-    expect(screen.getByRole("link", { name: "건너뛰기" }).getAttribute("href")).toBe("/dashboard");
+    expect(screen.getByRole("link", { name: "건너뛰기" }).getAttribute("href")).toBe("/");
   });
 });

@@ -10,11 +10,17 @@ export type ImportSearchParams = Promise<Record<string, string | string[] | unde
 // /new/source(유튜브)·/new/source/pdf(문서) 공용. ?folder=<id>면 그 폴더에 넣는다(모르는 id는 무시하고 기본 폴더).
 export async function ImportPage({ tab, searchParams }: { tab: ImportTab; searchParams: ImportSearchParams }) {
   // /new는 proxy 보호 목록(lib/auth/paths.ts)에 없어서 여기서 로그인을 확인한다
+  // 설정 누락·조회 실패도 비로그인으로 본다(fail-closed)
   const supabase = await serverSupabaseOrNull();
-  if (supabase) {
+  if (!supabase) redirect("/login");
+  let userId: string | null = null;
+  try {
     const { data } = await supabase.auth.getUser();
-    if (!data.user) redirect("/login");
+    userId = data.user?.id ?? null;
+  } catch {
+    userId = null;
   }
+  if (!userId) redirect("/login");
   const params = await searchParams;
   const folderId = typeof params.folder === "string" ? params.folder : undefined;
   const youtubeEnabled = isYoutubeEnabled();

@@ -20,7 +20,9 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
             >
               다시 시도
             </button>
-            <a href="/dashboard" className="text-caption text-muted-foreground underline underline-offset-4">
+            {/* global-error는 루트 레이아웃 밖이라 Link를 쓸 수 없다 */}
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+            <a href="/" className="text-caption text-muted-foreground underline underline-offset-4">
               처음으로
             </a>
           </div>

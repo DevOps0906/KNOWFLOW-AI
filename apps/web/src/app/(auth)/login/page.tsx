@@ -17,6 +17,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       </div>
       <LoginForm next={next ? safeNextPath(next) : undefined} />
       <nav aria-label="약관" className="flex flex-wrap gap-4 text-caption text-muted-foreground">
+        <Link href="/intro" className="underline underline-offset-4">
+          서비스 소개
+        </Link>
         <Link href="/terms" className="underline underline-offset-4">
           이용약관
         </Link>

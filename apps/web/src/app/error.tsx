@@ -24,7 +24,7 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
             <RotateCw />
             다시 시도
           </Button>
-          <Link href="/dashboard" className="text-caption text-muted-foreground underline underline-offset-4">
+          <Link href="/" className="text-caption text-muted-foreground underline underline-offset-4">
             처음으로
           </Link>
         </div>

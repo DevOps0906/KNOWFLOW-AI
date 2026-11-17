@@ -44,7 +44,7 @@ export async function proxy(request: NextRequest) {
     login.searchParams.set("next", `${pathname}${search}`);
     return NextResponse.redirect(login);
   }
-  if (decision.kind === "home") return NextResponse.redirect(new URL("/dashboard", request.url));
+  if (decision.kind === "home") return NextResponse.redirect(new URL("/", request.url));
 
   return response;
 }

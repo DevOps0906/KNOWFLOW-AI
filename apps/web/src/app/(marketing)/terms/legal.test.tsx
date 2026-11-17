@@ -5,7 +5,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ back: vi.fn(), push: vi.
 
 import LoginPage from "../../(auth)/login/page";
 import SignupPage from "../../(auth)/signup/page";
-import LandingPage from "../page";
+import LandingPage from "../intro/page";
 import PrivacyPage from "../privacy/page";
 import { rightsContactEmail } from "./legal";
 import TermsPage from "./page";
@@ -34,7 +34,7 @@ describe.each([
     expect(screen.getByRole("note").textContent).toContain("초안 — 법무 확인 전");
     expect(screen.getByRole("heading", { level: 1, name: title })).toBeTruthy();
     const crumb = screen.getByRole("navigation", { name: "현재 위치" });
-    expect(within(crumb).getByRole("link", { name: "홈" }).getAttribute("href")).toBe("/");
+    expect(within(crumb).getByRole("link", { name: "홈" }).getAttribute("href")).toBe("/intro");
     expect(screen.getByRole("button", { name: "이전으로" })).toBeTruthy();
     expect(screen.getByRole("link", { name: other.label }).getAttribute("href")).toBe(other.href);
   });

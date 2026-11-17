@@ -15,7 +15,7 @@ export default function NotFound() {
         className="w-full"
       >
         <Button asChild>
-          <Link href="/dashboard">처음으로</Link>
+          <Link href="/">처음으로</Link>
         </Button>
       </StateCard>
     </main>

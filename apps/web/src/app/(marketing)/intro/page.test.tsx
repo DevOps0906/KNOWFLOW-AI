@@ -3,8 +3,8 @@ import { afterEach, describe, expect, it } from "vitest";
 
 afterEach(cleanup);
 import LandingPage from "./page";
-import { PreorderCta } from "./preorder-cta";
-import { buildPreorderHref } from "./preorder";
+import { PreorderCta } from "../preorder-cta";
+import { buildPreorderHref } from "../preorder";
 
 afterEach(cleanup);
 
@@ -41,12 +41,23 @@ describe("PreorderCta", () => {
 });
 
 describe("S-01 랜딩", () => {
-  it("핵심 구성이 렌더되고 로그인·금지 문구가 없다", () => {
+  it("섹션 ①~⑧이 렌더되고 CTA 링크가 맞다", () => {
     const { container } = render(<LandingPage />);
-    expect(screen.getByRole("heading", { level: 1, name: "자료로 답하는 지식 워크스페이스" })).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "만들고 있는 기능" })).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "사전예약 개인정보 수집 안내" })).toBeTruthy();
-    const text = container.textContent ?? "";
-    expect(text).not.toMatch(/무료로 시작|로그인|정확하다|환각 없음/);
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toContain("지식 워크스페이스");
+    for (const name of [
+      "흩어진 자료를 한곳으로",
+      "근거를 눌러 원문에서 확인",
+      "자료에서 출처 달린 리포트로",
+      "읽다가 막히면 바로 묻기",
+      "폴더로 모아 정리",
+      "지금 자료를 올려 보세요",
+      "사전예약 개인정보 수집 안내",
+    ]) {
+      expect(screen.getByRole("heading", { name })).toBeTruthy();
+    }
+    expect(screen.getAllByRole("link", { name: "시작하기" })[0].getAttribute("href")).toBe("/signup");
+    expect(screen.getAllByRole("link", { name: "로그인" })[0].getAttribute("href")).toBe("/login");
+    expect(screen.getAllByText("곧 지원").length).toBeGreaterThan(0);
+    expect(container.textContent ?? "").not.toMatch(/무료로 시작|정확하다|환각 없음/);
   });
 });

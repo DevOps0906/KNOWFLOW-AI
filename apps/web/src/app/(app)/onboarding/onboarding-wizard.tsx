@@ -45,7 +45,7 @@ export function OnboardingWizard() {
               다음
             </Button>
             <Button asChild variant="outline" size="lg" className="md:flex-1">
-              <Link href="/dashboard">건너뛰기</Link>
+              <Link href="/">건너뛰기</Link>
             </Button>
           </div>
         </>
@@ -71,7 +71,7 @@ export function OnboardingWizard() {
             </Button>
           </div>
           <Button asChild variant="link" size="sm" className="self-start">
-            <Link href="/dashboard">건너뛰기</Link>
+            <Link href="/">건너뛰기</Link>
           </Button>
         </form>
       ) : null}
@@ -82,7 +82,7 @@ export function OnboardingWizard() {
             프로젝트에 PDF나 웹 페이지를 추가하면, 자료에 근거한 답과 출처를 확인할 수 있습니다. 자료 추가 기능은 곧 열립니다.
           </p>
           <Button asChild size="lg">
-            <Link href="/dashboard">대시보드로 이동</Link>
+            <Link href="/">대시보드로 이동</Link>
           </Button>
         </>
       ) : null}

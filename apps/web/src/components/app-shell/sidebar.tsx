@@ -63,7 +63,7 @@ export function SidebarContent({
           <Search aria-hidden className="size-[1.125rem]" />
         </Link>
       </div>
-      <div className="flex"><NavLink href={importHref(youtubeEnabled)} label="자료 가져오기" Icon={Plus} active={within("/new/source")} /></div>
+      <div className="flex"><NavLink href={importHref(youtubeEnabled)} label="자료 가져오기" Icon={Plus} active={pathname === "/" || within("/new/source")} /></div>
       <nav aria-label="주 메뉴" className="mt-3 flex flex-col gap-0.5">
         <div className="flex items-center gap-1">
           <NavLink href="/sources" label="자료" Icon={Library} active={within("/sources")} />

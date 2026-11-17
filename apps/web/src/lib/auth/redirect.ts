@@ -1,4 +1,4 @@
-export const DEFAULT_AFTER_LOGIN = "/dashboard";
+export const DEFAULT_AFTER_LOGIN = "/";
 
 /** 열린 리디렉션 방지: 같은 사이트의 절대 경로만 허용한다. */
 export function safeNextPath(next: unknown, fallback: string = DEFAULT_AFTER_LOGIN): string {

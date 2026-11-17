@@ -53,7 +53,7 @@ describe("safeNextPath", () => {
   it("같은 사이트의 경로만 허용한다", () => {
     expect(safeNextPath("/projects?x=1")).toBe("/projects?x=1");
     for (const bad of ["https://evil.test", "//evil.test", "/\\evil.test", "javascript:alert(1)", "", undefined, "/a\nb"]) {
-      expect(safeNextPath(bad)).toBe("/dashboard");
+      expect(safeNextPath(bad)).toBe("/");
     }
   });
 });

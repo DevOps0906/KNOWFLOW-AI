@@ -58,7 +58,7 @@ export function LegalShell({
     <>
       <header className="border-b border-border">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3 md:px-6">
-          <Link href="/" className="text-h2 font-bold text-primary">
+          <Link href="/intro" className="text-h2 font-bold text-primary">
             KNOWFLOW-AI
           </Link>
         </div>
@@ -68,7 +68,7 @@ export function LegalShell({
         <nav aria-label="현재 위치" className="text-caption text-muted-foreground">
           <ol className="flex flex-wrap items-center gap-1">
             <li>
-              <Link href="/" className="underline underline-offset-4">
+              <Link href="/intro" className="underline underline-offset-4">
                 홈
               </Link>
             </li>
