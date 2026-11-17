@@ -12,7 +12,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ko" suppressHydrationWarning className={inter.variable}>
       <body className="bg-background text-foreground font-sans">
-        {/* 테마는 루트에 한 번만 둔다: 라우트 그룹 사이 이동 때 다시 마운트되면 next-themes 스크립트 경고가 난다 */}
+        {/* 테마는 루트에 한 번만 둔다. 스크립트 태그 경고 대응은 theme-provider.tsx 참고 */}
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
