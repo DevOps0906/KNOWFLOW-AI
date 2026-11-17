@@ -76,8 +76,6 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const KEY = /^[A-Za-z0-9_.:-]{1,200}$/;
 const VIDEO_ID = /^[A-Za-z0-9_-]{11}$/;
 const NO_STORE = { "Cache-Control": "no-store" };
-/** 서명 URL 유효 시간(초). 목록을 다시 불러오면 새로 받는다 */
-const SIGNED_URL_SECONDS = 300;
 
 const json = (status: number, body: unknown) => Response.json(body, { status, headers: NO_STORE });
 const fail = (status: number, code: string, message: string) => json(status, { error: { code, message } });

@@ -2,14 +2,20 @@
 // 확인: 청크 locator.page, projects.summary·suggested_questions, usage_events, 같은 자료 재처리 시 청크 중복 없음, 로그에 본문 없음.
 // 실행: node apps/worker/scripts/verify-ingest.mjs (docker 데몬 필요). 픽스처: apps/worker/fixtures/sample/knowflow-sample.pdf
 import { spawn, spawnSync } from "node:child_process";
-import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { createHash, randomUUID } from "node:crypto";
+import { copyFileSync, mkdirSync, readFileSync, rmSync } from "node:fs";
 import path from "node:path";
 import { bringUpDependencies, compose, composeCapture, createVerifyEnv, repoRoot, tearDown } from "./compose-env.mjs";
 
 const env = { ...createVerifyEnv("knowflow-verify-ingest", 54341), WORKER_DUMMY_HANDLERS: "0", WORKER_SOURCE_READER: "fixture", WORKER_SUMMARY_PROVIDER: "stub" };
-const STORAGE_PATH = "sample/knowflow-sample.pdf";
-const hash = createHash("sha256").update(readFileSync(path.join(repoRoot, "apps/worker/fixtures", STORAGE_PATH))).digest("hex");
+const FIXTURES = path.join(repoRoot, "apps/worker/fixtures");
+const SAMPLE = path.join(FIXTURES, "sample/knowflow-sample.pdf");
+// worker는 storage_path가 소유자 폴더(<user_id>/...) 안일 때만 읽는다. 검증 사용자 id를 미리 정하고
+// 픽스처를 그 폴더에 복사한다(compose가 fixtures를 읽기 전용으로 마운트하므로 실행 동안만 두고 finally에서 지운다).
+const USER_ID = randomUUID();
+const OWNER_DIR = path.join(FIXTURES, USER_ID);
+const STORAGE_PATH = `${USER_ID}/knowflow-sample.pdf`;
+const hash = createHash("sha256").update(readFileSync(SAMPLE)).digest("hex");
 
 function psql(sql) {
   const r = composeCapture(env, ["exec", "-T", "db", "psql", "-U", "postgres", "-d", "knowflow", "-X", "-At", "-v", "ON_ERROR_STOP=1"], sql);
@@ -18,7 +24,7 @@ function psql(sql) {
 }
 
 const SEED = `
-with u as (insert into auth.users (email) values ('ingest-' || gen_random_uuid() || '@example.test') returning id),
+with u as (insert into auth.users (id, email) values ('${USER_ID}', 'ingest-${USER_ID}@example.test') returning id),
      p as (insert into public.projects (user_id, name) select id, '종단 검증' from u returning id, user_id),
      s as (insert into public.sources (project_id, user_id, source_type, title, storage_path, content_hash)
            select id, user_id, 'pdf', '샘플 PDF', '${STORAGE_PATH}', '${hash}' from p returning id, user_id),
@@ -47,6 +53,8 @@ const chunkStats = (sourceId) =>
           from public.source_chunks where source_id = '${sourceId}'`).split("|");
 
 try {
+  mkdirSync(OWNER_DIR);
+  copyFileSync(SAMPLE, path.join(OWNER_DIR, "knowflow-sample.pdf"));
   bringUpDependencies(env);
   const [jobId, sourceId] = psql(SEED).split("|");
   const attached = spawn("docker", ["compose", "up", "--no-build", "worker"], { cwd: repoRoot, env, stdio: "ignore" });
@@ -107,6 +115,7 @@ try {
   check(![env.KF_DB_SUPERUSER_PASSWORD, env.WORKER_DB_PASSWORD].some((s) => all.includes(s)), "[로그] DB 비밀번호 없음");
 } finally {
   tearDown(env);
+  rmSync(OWNER_DIR, { recursive: true, force: true });
 }
 console.log(ok ? "\n자료 처리 종단 검증 통과" : "\n자료 처리 종단 검증 실패");
 process.exit(ok ? 0 : 1);
