@@ -20,14 +20,25 @@
 | `--color-destructive` | `#b42318` | `#f0857b` |
 | `--color-destructive-foreground` | `#ffffff` | `#230b08` |
 | `--color-border` | `#e7e8e3` | `#2e343a` |
+| `--color-line` | `#d6d8cf` | `—` |
 | `--color-input` | `#8a8d7a` | `#6e7882` |
 | `--color-ring` | `#1c1e15` | `#6cc4cc` |
 | `--color-sidebar` | `#f5f4ed` | `#171b1e` |
 | `--color-sidebar-foreground` | `#1c1e15` | `#e9ecee` |
 | `--color-heading` | `#0c0d08` | `#f4f6f7` |
 | `--color-faint` | `#9fa28e` | `#8a939c` |
-| `--color-lime` | `#d4f04c` | `#b9d63a` |
+| `--color-olive` | `#565b4a` | `—` |
+| `--color-moss` | `#797d67` | `—` |
+| `--color-lime` | `#bce602` | `#b9d63a` |
 | `--color-lime-fg` | `#1c1e15` | `#11140a` |
+| `--color-marker` | `#e3ff95` | `—` |
+| `--color-marker-fg` | `#1c1e15` | `—` |
+| `--color-section-1` | `#fdfcf6` | `—` |
+| `--color-section-2` | `#f5f4ed` | `—` |
+| `--color-section-3` | `#eeede5` | `—` |
+| `--color-section-dark` | `#1c1e15` | `—` |
+| `--color-section-dark-fg` | `#f9f8f4` | `—` |
+| `--color-footer` | `#f4f3ea` | `—` |
 | `--color-bg` | `#f9f8f4` | `#121518` |
 | `--color-surface` | `#fdfdfa` | `#1a1e22` |
 | `--color-text` | `#1c1e15` | `#e9ecee` |
@@ -59,17 +70,28 @@
 | `--text-hero` | 1.75rem | 2rem | 2.25rem |
 | `--text-nav` | 0.875rem | 0.875rem | 0.875rem |
 | `--text-label` | 0.75rem | 0.75rem | 0.75rem |
+| `--text-digest-title` | 1.875rem | 2.25rem | 2.625rem |
+| `--text-digest-chapter` | 1.5rem | 1.75rem | 2rem |
+| `--text-digest-section` | 1.0625rem | 1.125rem | 1.1875rem |
+| `--text-digest-chip` | 0.6875rem | 0.6875rem | 0.6875rem |
+| `--text-digest-toc` | 0.75rem | 0.8125rem | 0.8125rem |
+| `--text-intro-display` | 2rem | 3rem | 3.875rem |
+| `--text-intro-title` | 1.5rem | 2rem | 2.625rem |
+| `--text-intro-lead` | 0.9375rem | 1.125rem | 1.375rem |
 
 ## 서체 · 반경 · 그림자 · 기타
 | 토큰 | 값 |
 |---|---|
 | `--font-sans` | `var(--font-inter, Inter), "Pretendard Variable", Pretendard, system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif` |
-| `--font-serif` | `"Noto Serif KR", "Nanum Myeongjo", "Batang", serif` |
-| `--font-mono` | `ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace` |
+| `--font-serif` | `var(--font-playfair, "Playfair Display"), var(--font-noto-serif-kr, "Noto Serif KR"), "Nanum Myeongjo", "Batang", serif` |
+| `--font-mono` | `var(--font-jetbrains-mono, "JetBrains Mono"), ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace` |
 | `--radius` | `0.75rem` |
 | `--radius-control` | `999px` |
 | `--radius-row` | `0.625rem` |
 | `--radius-panel` | `1rem` |
+| `--radius-pill` | `9999px` |
+| `--radius-card` | `1.25rem` |
+| `--radius-tag` | `0.1875rem` |
 | `--shadow-panel` | `0 1px 2px rgb(27 31 35 / 0.05), 0 8px 24px -6px rgb(27 31 35 / 0.1)` |
 | `--shadow-sheet` | `0 -4px 40px rgb(27 31 35 / 0.18)` |
 | `--size-touch` | `2.75rem` |
@@ -88,3 +110,14 @@
 | `--text-hero--line-height` | `1.5` |
 | `--text-nav--line-height` | `1.25rem` |
 | `--text-label--line-height` | `1.125rem` |
+| `--text-digest-title--line-height` | `1.25` |
+| `--text-digest-title--font-weight` | `600` |
+| `--text-digest-chapter--line-height` | `1.3` |
+| `--text-digest-chapter--font-weight` | `600` |
+| `--text-digest-section--line-height` | `1.375` |
+| `--text-digest-section--font-weight` | `600` |
+| `--text-digest-chip--line-height` | `1.55` |
+| `--text-digest-toc--line-height` | `1.5` |
+| `--text-intro-display--line-height` | `1.15` |
+| `--text-intro-title--line-height` | `1.25` |
+| `--text-intro-lead--line-height` | `1.6` |
