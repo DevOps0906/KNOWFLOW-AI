@@ -7,8 +7,8 @@ import type { LogFields } from "../log.js";
 import { sha256Hex } from "../pdf/parser.js";
 import type { FailResult, Job, JobQueue } from "../queue.js";
 import { PermanentError, runOnce } from "../runner.js";
-import { createStubVideoSummaryProvider, type SummarySentence, type VideoSummaryStore } from "../youtube/summary.js";
 import { chunkPages, type ChunkDraft } from "./chunking.js";
+import { createStubDigestProvider, type Digest, type DigestStore } from "./digest.js";
 import { createMockEmbeddingProvider, embedChunks } from "./embedding.js";
 import { createIngestHandler } from "./handler.js";
 import { CHUNK_SETTINGS, INGEST_ERROR_CODES, SUMMARY_SETTINGS } from "./settings.js";
@@ -324,52 +324,53 @@ describe("source_ingest 핸들러", () => {
     }
   });
 
-  /** 자료 요약 저장소: 교체된 청크를 실제 id처럼 돌려주고 저장 호출을 모은다 */
-  function sourceSummaryStore(state: { chunks: ChunkDraft[] }) {
+  /** 다이제스트 저장소: 교체된 청크를 실제 id처럼 돌려주고 저장 호출을 모은다 */
+  function digestStore(state: { chunks: ChunkDraft[] }) {
     const id = (i: number) => `00000000-0000-4000-8000-${String(i).padStart(12, "0")}`;
-    const saved: { jobId: string; sentences: SummarySentence[]; model: string }[] = [];
-    const store: VideoSummaryStore = {
+    const saved: { jobId: string; status: string; digest: Digest | null; model: string }[] = [];
+    const store: DigestStore = {
       loadChunks: async () => state.chunks.map((c) => ({ chunk_id: id(c.chunk_index), content: c.content, locator: c.locator })),
-      async save(jobId, sentences, model) {
-        saved.push({ jobId, sentences, model });
+      async save(jobId, status, digest, model) {
+        saved.push({ jobId, status, digest, model });
         return true;
       },
     };
     return { store, saved, id };
   }
 
-  it("PDF도 유튜브 의존성 없이 자료 요약을 쪽 청크 인용으로 저장하고 사용 기록은 source_summary로 남긴다", async () => {
+  it("PDF도 유튜브 의존성 없이 다이제스트를 쪽 청크 인용으로 저장하고 사용 기록은 source_digest로 남긴다", async () => {
     const { store, state } = memoryStore(baseSource, { attempt: 1, status: "running" });
-    const sum = sourceSummaryStore(state);
+    const sum = digestStore(state);
     const logs: LogFields[] = [];
-    const deps = { store, reader, summarizer: createStubSummaryProvider(), sourceSummary: { provider: createStubVideoSummaryProvider(), store: sum.store } };
+    const deps = { store, reader, summarizer: createStubSummaryProvider(), digest: { provider: createStubDigestProvider(), store: sum.store } };
     expect(await runIngest(jobFor(1), deps, logs)).toBe("succeeded");
     expect(sum.saved.length).toBe(1);
+    expect(sum.saved[0]).toMatchObject({ jobId: "j1", status: "ready", model: "stub-digest-v1" });
     const ids = new Set(state.chunks.map((c) => sum.id(c.chunk_index)));
-    for (const s of sum.saved[0]!.sentences) {
-      expect(s.text).toMatch(/^문서 \d+쪽의/);
-      for (const c of s.chunk_ids) expect(ids.has(c)).toBe(true);
-    }
-    expect(state.usage.map((u) => u.eventType)).toEqual(["project_summary", "source_summary"]);
-    expect(state.usage.map((u) => u.eventType)).not.toContain("video_summary");
+    const d = sum.saved[0]!.digest!;
+    expect(d.version).toBe(1);
+    expect(d.glance[0]!.text).toMatch(/문서 \d+쪽/);
+    const cited = [...d.glance, ...d.terms, ...d.chapters, ...d.chapters.flatMap((c) => c.points)].flatMap((i) => i.chunk_ids);
+    for (const c of cited) expect(ids.has(c)).toBe(true);
+    expect(state.usage.map((u) => u.eventType)).toEqual(["project_summary", "source_digest"]);
     expect(logs).toContainEqual(expect.objectContaining({ event: "after_complete", outcome: "project:saved source:saved" }));
   });
 
-  it("PDF 프로젝트 요약 실패와 자료 요약 실패는 서로를 막지 않는다", async () => {
+  it("PDF 프로젝트 요약 실패와 다이제스트 실패는 서로를 막지 않는다", async () => {
     const broken: SummaryProvider = { name: "x", model: "x", summarize: async () => { throw new Error("공급자 오류"); } };
     const a = memoryStore(baseSource, { attempt: 1, status: "running" });
-    const sumA = sourceSummaryStore(a.state);
+    const sumA = digestStore(a.state);
     const logsA: LogFields[] = [];
-    expect(await runIngest(jobFor(1), { store: a.store, reader, summarizer: broken, sourceSummary: { provider: createStubVideoSummaryProvider(), store: sumA.store } }, logsA)).toBe("succeeded");
+    expect(await runIngest(jobFor(1), { store: a.store, reader, summarizer: broken, digest: { provider: createStubDigestProvider(), store: sumA.store } }, logsA)).toBe("succeeded");
     expect(sumA.saved.length).toBe(1);
     expect(logsA).toContainEqual(expect.objectContaining({ event: "after_complete", outcome: "project:failed source:saved" }));
 
     const b = memoryStore(baseSource, { attempt: 1, status: "running" });
-    const failing: VideoSummaryStore = { loadChunks: async () => { throw new TypeError("db down"); }, save: async () => true };
+    const failing: DigestStore = { loadChunks: async () => { throw new TypeError("db down"); }, save: async () => true };
     const logsB: LogFields[] = [];
-    expect(await runIngest(jobFor(1), { store: b.store, reader, summarizer: createStubSummaryProvider(), sourceSummary: { provider: createStubVideoSummaryProvider(), store: failing }, log: (f) => void logsB.push(f) }, logsB)).toBe("succeeded");
+    expect(await runIngest(jobFor(1), { store: b.store, reader, summarizer: createStubSummaryProvider(), digest: { provider: createStubDigestProvider(), store: failing }, log: (f) => void logsB.push(f) }, logsB)).toBe("succeeded");
     expect(b.state.summary).toBeTruthy();
-    expect(logsB).toContainEqual(expect.objectContaining({ event: "after_complete_step", reason: "source_summary", outcome: "failed", errorName: "TypeError" }));
+    expect(logsB).toContainEqual(expect.objectContaining({ event: "after_complete_step", reason: "source_digest", outcome: "failed", errorName: "TypeError" }));
     expect(logsB).toContainEqual(expect.objectContaining({ event: "after_complete", outcome: "project:saved source:failed" }));
     expect(JSON.stringify(logsB)).not.toContain("db down");
   });

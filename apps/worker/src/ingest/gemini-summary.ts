@@ -1,4 +1,4 @@
-// Gemini 요약 공급자(프로젝트 요약·영상 요약). WORKER_SUMMARY_PROVIDER=gemini일 때만 쓴다.
+// Gemini 요약 공급자(프로젝트 요약·영상 요약·자료 다이제스트). WORKER_SUMMARY_PROVIDER=gemini일 때만 쓴다.
 // 키는 헤더로만 보내고(URL·로그·오류 메시지에 넣지 않는다), 응답 본문은 오류 메시지·로그에 담지 않는다.
 // 지시는 systemInstruction, 자료는 user part의 JSON 직렬화 데이터로만 넘긴다(자료 안 문장을 지시로 섞지 않는다).
 // 재시도는 하지 않는다. 출력 불량(JSON 아님·MAX_TOKENS·차단)은 예외 대신 빈 결과+사용량을 돌려줘 검증이 거절하게 한다.
@@ -6,7 +6,8 @@ import { PermanentError } from "../runner.js";
 import { readCapped } from "../youtube/gemini.js";
 import { GEMINI_SETTINGS } from "../youtube/settings.js";
 import type { VideoSummaryPrompt, VideoSummaryProvider } from "../youtube/summary.js";
-import { SUMMARY_GEMINI_SETTINGS } from "./settings.js";
+import type { DigestPrompt, DigestProvider } from "./digest.js";
+import { DIGEST_SETTINGS, SUMMARY_GEMINI_SETTINGS } from "./settings.js";
 import type { SummaryPrompt, SummaryProvider } from "./summary.js";
 
 /** 네트워크·HTTP 실패. 메시지는 고정 코드만(키·본문 없음) */
@@ -36,6 +37,56 @@ export const VIDEO_SUMMARY_SCHEMA = {
     },
   },
   required: ["sentences"],
+} as const;
+
+const CITED = { chunk_ids: { type: "ARRAY", items: { type: "STRING" } } } as const;
+
+/** 다이제스트(계약 §2). chunk_ids는 c1… 번호이고 코드가 UUID로 되돌린다. version은 코드가 붙인다 */
+export const DIGEST_SCHEMA = {
+  type: "OBJECT",
+  properties: {
+    title: { type: "STRING" },
+    glance: {
+      type: "ARRAY",
+      items: {
+        type: "OBJECT",
+        properties: { text: { type: "STRING" }, details: { type: "ARRAY", items: { type: "STRING" } }, ...CITED },
+        required: ["text", "details", "chunk_ids"],
+      },
+    },
+    terms: {
+      type: "ARRAY",
+      items: { type: "OBJECT", properties: { term: { type: "STRING" }, desc: { type: "STRING" }, ...CITED }, required: ["term", "desc", "chunk_ids"] },
+    },
+    chapters: {
+      type: "ARRAY",
+      items: {
+        type: "OBJECT",
+        properties: {
+          title: { type: "STRING" },
+          intro: { type: "STRING" },
+          ...CITED,
+          points: {
+            type: "ARRAY",
+            items: {
+              type: "OBJECT",
+              properties: {
+                text: { type: "STRING" },
+                ...CITED,
+                subpoints: {
+                  type: "ARRAY",
+                  items: { type: "OBJECT", properties: { text: { type: "STRING" }, ...CITED }, required: ["text", "chunk_ids"] },
+                },
+              },
+              required: ["text", "chunk_ids", "subpoints"],
+            },
+          },
+        },
+        required: ["title", "intro", "chunk_ids", "points"],
+      },
+    },
+  },
+  required: ["title", "glance", "terms", "chapters"],
 } as const;
 
 const MODEL_RE = /^[a-z0-9][a-z0-9.-]{0,63}$/;
@@ -78,15 +129,25 @@ export function parseSummaryResponse(raw: unknown): { output: Record<string, unk
   }
 }
 
+/** 호출 종류별 한도. 없으면 SUMMARY_GEMINI_SETTINGS(프로젝트 요약·영상 요약) */
+interface CallLimits {
+  maxOutputTokens?: number;
+  /** SUMMARY_GEMINI_SETTINGS·DIGEST_SETTINGS.gemini와 같은 키 이름 */
+  requestTimeoutMs?: number;
+  maxResponseBytes?: number;
+}
+
 type Call = (system: string, data: unknown, schema: object, signal?: AbortSignal) => Promise<ReturnType<typeof parseSummaryResponse>>;
 
-function createCaller(opts: GeminiSummaryOptions): { model: string; call: Call } {
+function createCaller(opts: GeminiSummaryOptions, limits: CallLimits = {}): { model: string; call: Call } {
   const model = opts.model ?? SUMMARY_GEMINI_SETTINGS.defaultModel;
   if (!MODEL_RE.test(model)) throw new Error("GEMINI_SUMMARY_MODEL 형식이 올바르지 않습니다");
   if (!opts.apiKey) throw new Error("GEMINI_API_KEY가 필요합니다");
   const doFetch = opts.fetch ?? fetch;
   const endpoint = `${GEMINI_SETTINGS.apiBase}/${model}:generateContent`;
-  const timeoutMs = opts.timeoutMs ?? SUMMARY_GEMINI_SETTINGS.requestTimeoutMs;
+  const timeoutMs = opts.timeoutMs ?? limits.requestTimeoutMs ?? SUMMARY_GEMINI_SETTINGS.requestTimeoutMs;
+  const maxOutputTokens = limits.maxOutputTokens ?? SUMMARY_GEMINI_SETTINGS.maxOutputTokens;
+  const maxResponseBytes = limits.maxResponseBytes ?? SUMMARY_GEMINI_SETTINGS.maxResponseBytes;
 
   const call: Call = async (system, data, schema, signal) => {
     const timeout = AbortSignal.timeout(timeoutMs);
@@ -102,7 +163,7 @@ function createCaller(opts: GeminiSummaryOptions): { model: string; call: Call }
       contents: [{ role: "user", parts: [{ text: JSON.stringify(data) }] }],
       generationConfig: {
         temperature: SUMMARY_GEMINI_SETTINGS.temperature,
-        maxOutputTokens: SUMMARY_GEMINI_SETTINGS.maxOutputTokens,
+        maxOutputTokens,
         thinkingConfig: { thinkingBudget: SUMMARY_GEMINI_SETTINGS.thinkingBudget },
         responseMimeType: "application/json",
         responseSchema: schema,
@@ -125,7 +186,7 @@ function createCaller(opts: GeminiSummaryOptions): { model: string; call: Call }
     }
     let text: string;
     try {
-      text = await readCapped(res, SUMMARY_GEMINI_SETTINGS.maxResponseBytes);
+      text = await readCapped(res, maxResponseBytes);
     } catch (e) {
       throw transportError(e);
     }
@@ -160,6 +221,19 @@ export function createGeminiVideoSummaryProvider(opts: GeminiSummaryOptions): Vi
     async summarize(prompt: VideoSummaryPrompt, signal?: AbortSignal) {
       const { output, usage } = await call(prompt.system, { chunks: prompt.chunks }, VIDEO_SUMMARY_SCHEMA, signal);
       return { sentences: output?.sentences ?? null, ...usage };
+    },
+  };
+}
+
+/** 다이제스트: 출력 16384토큰·thinking 0·타임아웃 120초(DIGEST_SETTINGS.gemini). MAX_TOKENS·형식 불량은 digest null(검증이 거부) */
+export function createGeminiDigestProvider(opts: GeminiSummaryOptions): DigestProvider {
+  const { model, call } = createCaller(opts, DIGEST_SETTINGS.gemini);
+  return {
+    name: "gemini",
+    model,
+    async generate(prompt: DigestPrompt, signal?: AbortSignal) {
+      const { output, usage } = await call(prompt.system, { chunks: prompt.chunks }, DIGEST_SCHEMA, signal);
+      return { digest: output, ...usage };
     },
   };
 }

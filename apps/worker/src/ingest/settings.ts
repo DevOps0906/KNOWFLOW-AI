@@ -40,6 +40,42 @@ export const SUMMARY_GEMINI_SETTINGS = {
   maxResponseBytes: 256 * 1024,
 } as const;
 
+/**
+ * 자료 다이제스트(docs/digest-contract.md §2·§2-1). 개수·길이는 계약 그대로이고 save_source_digest도 같은 상한을 검사한다.
+ * Gemini 호출 한도(출력 토큰·타임아웃)는 다이제스트에만 적용한다(프로젝트 요약은 SUMMARY_GEMINI_SETTINGS 그대로).
+ */
+export const DIGEST_SETTINGS = {
+  /** 청크를 처음부터 끝까지 고르게 이만큼 고른다 */
+  maxInputChunks: 60,
+  /** 보내는 청크 본문 합계 상한(문자). 넘으면 청크마다 같은 길이로 자른다 */
+  maxInputChars: 60_000,
+  maxTitleChars: 120,
+  maxTextChars: 300,
+  maxIntroChars: 400,
+  maxDetailChars: 200,
+  maxTermChars: 40,
+  maxDescChars: 200,
+  maxGlance: 5,
+  /** 검증 뒤 남은 glance가 이보다 적으면 전체 거부 */
+  minGlance: 2,
+  maxDetails: 3,
+  maxTerms: 6,
+  maxChapters: 6,
+  /** 검증 뒤 남은 장이 이보다 적으면 전체 거부 */
+  minChapters: 1,
+  maxPoints: 4,
+  maxSubpoints: 3,
+  maxCitationsPerItem: 5,
+  /** 항목 글이 청크 본문과 이 길이 이상 연속으로 같으면 그 항목을 버린다(긴 원문 인용 금지, VIDEO_SUMMARY_SETTINGS와 같다) */
+  maxQuoteChars: 100,
+  gemini: {
+    maxOutputTokens: 16_384,
+    requestTimeoutMs: 120_000,
+    /** 출력 16384토큰의 응답 본문이 담기는 크기 */
+    maxResponseBytes: 1024 * 1024,
+  },
+} as const;
+
 /** 원본 읽기 상한(PRD 8-1: PDF 1개 50MB) */
 export const SOURCE_MAX_BYTES = 50 * 1024 * 1024;
 

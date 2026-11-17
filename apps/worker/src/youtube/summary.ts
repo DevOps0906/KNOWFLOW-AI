@@ -71,14 +71,14 @@ const SYSTEM_PROMPTS: Record<SummarySourceKind, string> = {
   pdf: promptFor("너는 문서(PDF) 본문을 요약하는 도우미다. 각 청크의 page는 그 본문이 있는 쪽 번호다.", "문서 본문"),
 };
 
-const isTimeLocator = (v: unknown): v is { t_start: number; t_end: number } =>
+export const isTimeLocator = (v: unknown): v is { t_start: number; t_end: number } =>
   typeof v === "object" &&
   v !== null &&
   Number.isFinite((v as { t_start?: unknown }).t_start) &&
   Number.isFinite((v as { t_end?: unknown }).t_end) &&
   (v as { t_end: number }).t_end > (v as { t_start: number }).t_start;
 
-const isPageLocator = (v: unknown): v is { page: number } =>
+export const isPageLocator = (v: unknown): v is { page: number } =>
   typeof v === "object" && v !== null && Number.isInteger((v as { page?: unknown }).page) && (v as { page: number }).page >= 1;
 
 /** n개 중 k개를 처음부터 끝까지 고른 간격으로 고른다(순서 유지). k가 1이면 가운데 하나 */
@@ -117,7 +117,7 @@ export function buildVideoSummaryPrompt(
 const INVISIBLE = /[؜​-‏‪-‮⁠⁦-⁩﻿]/g;
 
 /** 보이지 않는 문자를 지우고 공백을 하나로 접는다(원문 인용 검사가 보이지 않는 문자로 우회되지 않게) */
-const collapse = (s: string) => s.replace(INVISIBLE, "").replace(/\s+/gu, " ").trim();
+export const collapse = (s: string) => s.replace(INVISIBLE, "").replace(/\s+/gu, " ").trim();
 
 /** 문장과 어느 청크 본문이 연속 n자 이상 같은가(보이지 않는 문자는 지우고 공백은 하나로 접어 비교) */
 export function quotesChunk(text: string, contents: readonly string[], n: number): boolean {

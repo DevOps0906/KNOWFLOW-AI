@@ -1,14 +1,15 @@
 // source_ingest 핸들러(task-011): 원본 읽기 → parsePdf(격리) → 청킹 → 펜싱된 청크 교체+완료 → 후행 요약.
 // youtube 자료는 youtube/pipeline.ts로 넘긴다(task-027c). 플래그가 꺼져 youtube 의존성이 없으면 영구 실패.
-// 완료 뒤 프로젝트 요약과 자료 요약(유튜브·PDF, task-029a)을 후행 단계로 서로 격리해 돈다. 자료 요약은 유튜브 플래그와 무관하다.
+// 완료 뒤 프로젝트 요약과 자료 다이제스트(유튜브·PDF, docs/digest-contract.md — 자료 요약 sentences 단계를 대체)를
+// 후행 단계로 서로 격리해 돈다. 다이제스트는 유튜브 플래그와 무관하다.
 // 청크 본문은 로그에 남기지 않는다. 월 처리 차감은 등록 때 enqueue_job이 했으므로 여기서 하지 않는다.
 import type { Logger } from "../log.js";
 import { parsePdf } from "../pdf/parser.js";
 import { PermanentError, StaleAttemptError, type Handler, type HandlerResult } from "../runner.js";
 import { processYoutubeSource, type YoutubeDeps } from "../youtube/pipeline.js";
 import { YOUTUBE_ERROR_CODES } from "../youtube/settings.js";
-import { runVideoSummaryStep, type VideoSummaryDeps } from "../youtube/summary.js";
 import { chunkPages, type ChunkDraft } from "./chunking.js";
+import { runDigestStep, type DigestDeps } from "./digest.js";
 import { INGEST_ERROR_CODES } from "./settings.js";
 import type { SourceReader } from "./source-reader.js";
 import type { IngestSource, IngestStore } from "./store.js";
@@ -22,8 +23,8 @@ export interface IngestDeps {
   parse?: typeof parsePdf;
   /** 없으면(YOUTUBE_ENABLED 꺼짐) youtube 자료를 영구 실패시킨다 */
   youtube?: YoutubeDeps;
-  /** 자료 요약(유튜브·PDF). 없으면(summaryProvider=none) 건너뛴다. 유튜브 플래그와 무관 */
-  sourceSummary?: VideoSummaryDeps;
+  /** 자료 다이제스트(유튜브·PDF). 없으면(summaryProvider=none) 건너뛴다. 유튜브 플래그와 무관 */
+  digest?: DigestDeps;
   log?: Logger;
 }
 
@@ -108,21 +109,21 @@ export function createIngestHandler(deps: IngestDeps): Handler {
     return afterIngest(job.id, source, chunks, "source");
   };
 
-  /** 프로젝트 요약·자료 요약은 서로의 실패에 막히지 않는다(둘 다 실패해도 자료는 완료 상태) */
+  /** 프로젝트 요약·자료 다이제스트는 서로의 실패에 막히지 않는다(둘 다 실패해도 자료는 완료 상태) */
   function afterIngest(jobId: string, source: IngestSource, chunks: Pick<ChunkDraft, "content">[], label: "video" | "source"): HandlerResult {
     const summarizer = deps.summarizer;
-    const sourceSummary = deps.sourceSummary;
-    if (!summarizer && !sourceSummary) return { completed: true };
+    const digest = deps.digest;
+    if (!summarizer && !digest) return { completed: true };
     return {
       completed: true,
       afterComplete: async () => {
         const project = summarizer
           ? await settle("project_summary", () => runSummaryStep({ store: deps.store, summarizer }, source, chunks), jobId, deps.log)
           : "none";
-        const own = sourceSummary
+        const own = digest
           ? await settle(
-              `${label}_summary`,
-              () => runVideoSummaryStep({ ...sourceSummary, recordUsage: (e) => deps.store.recordUsage(e), log: deps.log }, jobId, source),
+              `${label}_digest`,
+              () => runDigestStep({ ...digest, recordUsage: (e) => deps.store.recordUsage(e), log: deps.log }, jobId, source),
               jobId,
               deps.log,
             )

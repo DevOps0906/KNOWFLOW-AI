@@ -1,6 +1,7 @@
 import type pg from "pg";
 import type { WorkerConfig } from "./config.js";
-import { createGeminiSummaryProvider, createGeminiVideoSummaryProvider } from "./ingest/gemini-summary.js";
+import { createPgDigestStore, createStubDigestProvider } from "./ingest/digest.js";
+import { createGeminiDigestProvider, createGeminiSummaryProvider } from "./ingest/gemini-summary.js";
 import { createIngestHandler } from "./ingest/handler.js";
 import { createFixtureSourceReader, createStorageSourceReader } from "./ingest/source-reader.js";
 import { createPgIngestStore } from "./ingest/store.js";
@@ -12,7 +13,6 @@ import { createGeminiVideoAnalyzer } from "./youtube/gemini.js";
 import { createStubMetadataProvider, createYoutubeDataApiProvider } from "./youtube/metadata.js";
 import { createRecheckHandler } from "./youtube/recheck.js";
 import { createPgRecheckStore, createPgYoutubeStore } from "./youtube/store.js";
-import { createPgVideoSummaryStore, createStubVideoSummaryProvider } from "./youtube/summary.js";
 
 // 더미 핸들러는 기동·전이 검증용이다(WORKER_DUMMY_HANDLERS=1, 로컬 DB 전용).
 export const dummyHandler: Handler = async ({ progress, signal }) => {
@@ -66,13 +66,13 @@ export function buildHandlers(
             ? createGeminiSummaryProvider(summaryOpts)
             : undefined,
       youtube: analyzer ? { analyzer, store: createPgYoutubeStore(db) } : undefined,
-      // 자료 요약(유튜브·PDF)은 프로젝트 요약과 같은 공급자 설정을 따르고 유튜브 플래그와 무관하다
-      sourceSummary:
+      // 자료 다이제스트(유튜브·PDF, 자료 요약을 대체)는 프로젝트 요약과 같은 공급자 설정을 따르고 유튜브 플래그와 무관하다
+      digest:
         config.summaryProvider === "none"
           ? undefined
           : {
-              provider: config.summaryProvider === "gemini" ? createGeminiVideoSummaryProvider(summaryOpts) : createStubVideoSummaryProvider(),
-              store: createPgVideoSummaryStore(db),
+              provider: config.summaryProvider === "gemini" ? createGeminiDigestProvider(summaryOpts) : createStubDigestProvider(),
+              store: createPgDigestStore(db),
             },
       log,
     }),
