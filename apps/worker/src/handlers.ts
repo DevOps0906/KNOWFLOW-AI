@@ -65,20 +65,15 @@ export function buildHandlers(
           : config.summaryProvider === "gemini"
             ? createGeminiSummaryProvider(summaryOpts)
             : undefined,
-      youtube: analyzer
-        ? {
-            analyzer,
-            store: createPgYoutubeStore(db),
-            // 영상 요약은 프로젝트 요약과 같은 공급자 설정을 따른다
-            summary:
-              config.summaryProvider === "none"
-                ? undefined
-                : {
-                    provider: config.summaryProvider === "gemini" ? createGeminiVideoSummaryProvider(summaryOpts) : createStubVideoSummaryProvider(),
-                    store: createPgVideoSummaryStore(db),
-                  },
-          }
-        : undefined,
+      youtube: analyzer ? { analyzer, store: createPgYoutubeStore(db) } : undefined,
+      // 자료 요약(유튜브·PDF)은 프로젝트 요약과 같은 공급자 설정을 따르고 유튜브 플래그와 무관하다
+      sourceSummary:
+        config.summaryProvider === "none"
+          ? undefined
+          : {
+              provider: config.summaryProvider === "gemini" ? createGeminiVideoSummaryProvider(summaryOpts) : createStubVideoSummaryProvider(),
+              store: createPgVideoSummaryStore(db),
+            },
       log,
     }),
   };

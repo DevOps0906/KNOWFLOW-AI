@@ -10,7 +10,14 @@ const asUser = (sub: string) => ({ role: "authenticated" as const, sub });
 let seq = 0;
 const newVideoId = () => `sum${String(++seq).padStart(4, "0")}${randomUUID().slice(0, 4)}`;
 
-async function insertSource(uid: string, projectId: string, type: "youtube" | "pdf" = "youtube") {
+async function insertSource(uid: string, projectId: string, type: "youtube" | "pdf" | "url" = "youtube") {
+  if (type === "url") {
+    const r = await admin<{ id: string }>(
+      `insert into public.sources (project_id, user_id, source_type, title, original_url) values ($1, $2, 'url', '웹', 'https://example.test/a') returning id`,
+      [projectId, uid],
+    );
+    return r.rows[0]!.id;
+  }
   if (type === "pdf") {
     const r = await admin<{ id: string }>(
       `insert into public.sources (project_id, user_id, source_type, title, storage_path) values ($1, $2, 'pdf', '문서', $3) returning id`,
@@ -46,7 +53,7 @@ async function runIngest(uid: string, sourceId: string, n = 3) {
   return jobId;
 }
 
-async function completedSource(opts: { type?: "youtube" | "pdf" } = {}) {
+async function completedSource(opts: { type?: "youtube" | "pdf" | "url" } = {}) {
   const uid = await createUser();
   const projectId = await createProject(uid);
   const sourceId = await insertSource(uid, projectId, opts.type);
@@ -119,7 +126,7 @@ describe("save_source_summary", () => {
     expect(await save(randomUUID(), [{ text: "x", chunk_ids: [uc] }])).toBe(false);
   });
 
-  it("형식 오류·모델명 오류·유튜브가 아닌 자료는 22023", async () => {
+  it("형식 오류·모델명 오류·유튜브/PDF가 아닌 자료(url)는 22023", async () => {
     const { sourceId, jobId } = await completedSource();
     const [a] = await chunkIds(sourceId);
     const ok = { text: "문장", chunk_ids: [a] };
@@ -145,9 +152,17 @@ describe("save_source_summary", () => {
     await expect(save(jobId, [ok], " ")).rejects.toMatchObject({ code: "22023" });
     expect(await summaryRow(sourceId)).toBeUndefined();
 
+    const url = await completedSource({ type: "url" });
+    const [uc] = await chunkIds(url.sourceId);
+    await expect(save(url.jobId, [{ text: "x", chunk_ids: [uc] }])).rejects.toMatchObject({ code: "22023" });
+    expect(await summaryRow(url.sourceId)).toBeUndefined();
+  });
+
+  it("PDF 자료도 저장한다(PDF 자료 요약)", async () => {
     const pdf = await completedSource({ type: "pdf" });
     const [pc] = await chunkIds(pdf.sourceId);
-    await expect(save(pdf.jobId, [{ text: "x", chunk_ids: [pc] }])).rejects.toMatchObject({ code: "22023" });
+    expect(await save(pdf.jobId, [{ text: "문서 요약", chunk_ids: [pc] }])).toBe(true);
+    expect((await summaryRow(pdf.sourceId))?.sentences).toEqual([{ text: "문서 요약", chunk_ids: [pc] }]);
   });
 
   it("service_role 전용: anon·authenticated는 42501", async () => {

@@ -46,8 +46,11 @@ type Chunk = ChunkPage["chunks"][number];
 
 const num = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) ? v : null);
 
-/** 그 자료의 청크 전부(id·locator). 비활성·미완료로 바뀌었으면 그 사유 */
-async function loadAllChunks(backend: MomentsBackend, sourceId: string): Promise<Chunk[] | "unavailable" | "not_ready"> {
+/** 그 자료의 청크 전부(id·locator). 비활성·미완료로 바뀌었으면 그 사유. PDF 자료 요약 조회(../summary)도 쓴다 */
+export async function loadAllChunks(
+  backend: Pick<SourceReadBackend, "getChunks">,
+  sourceId: string,
+): Promise<Chunk[] | "unavailable" | "not_ready"> {
   const all: Chunk[] = [];
   let after: number | null = null;
   for (let i = 0; i < CHUNK_MAX_PAGES; i++) {

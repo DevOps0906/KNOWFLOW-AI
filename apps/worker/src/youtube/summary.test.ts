@@ -33,10 +33,28 @@ describe("표본 고르기", () => {
     expect(p.chunks.length).toBe(VIDEO_SUMMARY_SETTINGS.maxInputChunks);
     expect(p.chunks[0]!.chunk_id).toBe(uuid(0));
     expect(p.chunks.at(-1)!.chunk_id).toBe(uuid(199));
-    expect(p.chunks.some((c) => c.t_start >= 900 && c.t_start <= 1100)).toBe(true);
+    expect(p.chunks.some((c) => "t_start" in c && c.t_start >= 900 && c.t_start <= 1100)).toBe(true);
     expect(p.chunks.reduce((n, c) => n + c.content.length, 0)).toBeLessThanOrEqual(VIDEO_SUMMARY_SETTINGS.maxInputChars);
     expect(p.chunks.map((c) => c.chunk_id)).not.toContain(uuid(999));
     expect(p.system).not.toContain("가가");
+  });
+});
+
+describe("PDF 자료 요약 프롬프트", () => {
+  it("쪽(page) 청크만 고르게 뽑고 문서용 지시문을 쓴다. 스텁은 쪽 번호로 인용한다", async () => {
+    const pages = Array.from({ length: 40 }, (_, i): StoredChunk => ({ chunk_id: uuid(i), content: `본문 ${i}`, locator: { page: i + 1, char_start: 0, char_end: 4 } }));
+    const chunks = [...pages, stored(500), { chunk_id: uuid(501), content: "x", locator: { page: 0 } }];
+    const p = buildVideoSummaryPrompt(chunks, "pdf");
+    expect(p.chunks.length).toBe(VIDEO_SUMMARY_SETTINGS.maxInputChunks);
+    expect(p.chunks[0]).toEqual({ chunk_id: uuid(0), page: 1, content: "본문 0" });
+    expect(p.chunks.at(-1)!.chunk_id).toBe(uuid(39));
+    expect(p.chunks.map((c) => c.chunk_id)).not.toContain(uuid(500));
+    expect(p.chunks.map((c) => c.chunk_id)).not.toContain(uuid(501));
+    expect(p.system).toContain("문서");
+    expect(p.system).not.toContain("영상");
+    expect(buildVideoSummaryPrompt(chunks).system).toContain("영상 전사");
+    const out = await createStubVideoSummaryProvider().summarize(p);
+    expect((out.sentences as { text: string }[])[0]!.text).toMatch(/^문서 1쪽의/);
   });
 });
 

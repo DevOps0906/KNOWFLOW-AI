@@ -652,7 +652,8 @@ describe("source_ingest 핸들러 · 영상 요약", () => {
       handlerWith({
         store: ingest,
         summarizer: createStubSummaryProvider(),
-        youtube: { analyzer: createStubVideoAnalyzer(), store: youtube, summary: { provider: createStubVideoSummaryProvider(), store: sum.store } },
+        youtube: { analyzer: createStubVideoAnalyzer(), store: youtube },
+        sourceSummary: { provider: createStubVideoSummaryProvider(), store: sum.store },
         log: (f) => void logs.push(f),
       }),
       jobFor(1),
@@ -677,7 +678,8 @@ describe("source_ingest 핸들러 · 영상 요약", () => {
       handlerWith({
         store: ingest,
         summarizer: createStubSummaryProvider(),
-        youtube: { analyzer: createStubVideoAnalyzer(), store: youtube, summary: { provider: createStubVideoSummaryProvider(), store: sum.store } },
+        youtube: { analyzer: createStubVideoAnalyzer(), store: youtube },
+        sourceSummary: { provider: createStubVideoSummaryProvider(), store: sum.store },
         log: (f) => void logs.push(f),
       }),
       jobFor(1),

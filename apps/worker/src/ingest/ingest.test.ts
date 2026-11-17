@@ -7,6 +7,7 @@ import type { LogFields } from "../log.js";
 import { sha256Hex } from "../pdf/parser.js";
 import type { FailResult, Job, JobQueue } from "../queue.js";
 import { PermanentError, runOnce } from "../runner.js";
+import { createStubVideoSummaryProvider, type SummarySentence, type VideoSummaryStore } from "../youtube/summary.js";
 import { chunkPages, type ChunkDraft } from "./chunking.js";
 import { createMockEmbeddingProvider, embedChunks } from "./embedding.js";
 import { createIngestHandler } from "./handler.js";
@@ -254,7 +255,7 @@ describe("source_ingest 핸들러", () => {
     expect(state.questions.length).toBeGreaterThanOrEqual(1);
     expect(state.usage).toEqual([expect.objectContaining({ eventType: "project_summary", provider: "stub", projectId: "p1", userId: "u1" })]);
     expect(logs).toContainEqual(expect.objectContaining({ event: "source_extracted", pages: 4, skippedPages: 1 }));
-    expect(logs).toContainEqual(expect.objectContaining({ event: "after_complete", outcome: "saved" }));
+    expect(logs).toContainEqual(expect.objectContaining({ event: "after_complete", outcome: "project:saved source:none" }));
     const logText = JSON.stringify(logs);
     for (const c of state.chunks) expect(logText).not.toContain(c.content.slice(0, 20));
   });
@@ -321,6 +322,56 @@ describe("source_ingest 핸들러", () => {
       expect(await runOnce({ queue: q, handlers: { source_ingest: createIngestHandler({ store, reader }) }, leaseSeconds: 120, heartbeatSeconds: 30, log: () => {} })).toBe("failed");
       expect(q.calls.at(-1)).toBe(`fail:${code}:false`);
     }
+  });
+
+  /** 자료 요약 저장소: 교체된 청크를 실제 id처럼 돌려주고 저장 호출을 모은다 */
+  function sourceSummaryStore(state: { chunks: ChunkDraft[] }) {
+    const id = (i: number) => `00000000-0000-4000-8000-${String(i).padStart(12, "0")}`;
+    const saved: { jobId: string; sentences: SummarySentence[]; model: string }[] = [];
+    const store: VideoSummaryStore = {
+      loadChunks: async () => state.chunks.map((c) => ({ chunk_id: id(c.chunk_index), content: c.content, locator: c.locator })),
+      async save(jobId, sentences, model) {
+        saved.push({ jobId, sentences, model });
+        return true;
+      },
+    };
+    return { store, saved, id };
+  }
+
+  it("PDF도 유튜브 의존성 없이 자료 요약을 쪽 청크 인용으로 저장하고 사용 기록은 source_summary로 남긴다", async () => {
+    const { store, state } = memoryStore(baseSource, { attempt: 1, status: "running" });
+    const sum = sourceSummaryStore(state);
+    const logs: LogFields[] = [];
+    const deps = { store, reader, summarizer: createStubSummaryProvider(), sourceSummary: { provider: createStubVideoSummaryProvider(), store: sum.store } };
+    expect(await runIngest(jobFor(1), deps, logs)).toBe("succeeded");
+    expect(sum.saved.length).toBe(1);
+    const ids = new Set(state.chunks.map((c) => sum.id(c.chunk_index)));
+    for (const s of sum.saved[0]!.sentences) {
+      expect(s.text).toMatch(/^문서 \d+쪽의/);
+      for (const c of s.chunk_ids) expect(ids.has(c)).toBe(true);
+    }
+    expect(state.usage.map((u) => u.eventType)).toEqual(["project_summary", "source_summary"]);
+    expect(state.usage.map((u) => u.eventType)).not.toContain("video_summary");
+    expect(logs).toContainEqual(expect.objectContaining({ event: "after_complete", outcome: "project:saved source:saved" }));
+  });
+
+  it("PDF 프로젝트 요약 실패와 자료 요약 실패는 서로를 막지 않는다", async () => {
+    const broken: SummaryProvider = { name: "x", model: "x", summarize: async () => { throw new Error("공급자 오류"); } };
+    const a = memoryStore(baseSource, { attempt: 1, status: "running" });
+    const sumA = sourceSummaryStore(a.state);
+    const logsA: LogFields[] = [];
+    expect(await runIngest(jobFor(1), { store: a.store, reader, summarizer: broken, sourceSummary: { provider: createStubVideoSummaryProvider(), store: sumA.store } }, logsA)).toBe("succeeded");
+    expect(sumA.saved.length).toBe(1);
+    expect(logsA).toContainEqual(expect.objectContaining({ event: "after_complete", outcome: "project:failed source:saved" }));
+
+    const b = memoryStore(baseSource, { attempt: 1, status: "running" });
+    const failing: VideoSummaryStore = { loadChunks: async () => { throw new TypeError("db down"); }, save: async () => true };
+    const logsB: LogFields[] = [];
+    expect(await runIngest(jobFor(1), { store: b.store, reader, summarizer: createStubSummaryProvider(), sourceSummary: { provider: createStubVideoSummaryProvider(), store: failing }, log: (f) => void logsB.push(f) }, logsB)).toBe("succeeded");
+    expect(b.state.summary).toBeTruthy();
+    expect(logsB).toContainEqual(expect.objectContaining({ event: "after_complete_step", reason: "source_summary", outcome: "failed", errorName: "TypeError" }));
+    expect(logsB).toContainEqual(expect.objectContaining({ event: "after_complete", outcome: "project:saved source:failed" }));
+    expect(JSON.stringify(logsB)).not.toContain("db down");
   });
 
   it("소유자 폴더 밖 storage_path는 읽기 전에 source_path_invalid로 최종 실패한다", async () => {

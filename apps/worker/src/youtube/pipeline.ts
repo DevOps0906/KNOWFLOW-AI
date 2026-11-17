@@ -9,15 +9,12 @@ import { PermanentError, StaleAttemptError, type HandlerContext } from "../runne
 import type { AnalysisWindow, VideoAnalyzer } from "./analyzer.js";
 import { canonicalVideoUrl, VIDEO_ID_RE, YOUTUBE_ERROR_CODES, YOUTUBE_SETTINGS } from "./settings.js";
 import type { MomentDraft, YoutubeStore } from "./store.js";
-import type { VideoSummaryDeps } from "./summary.js";
 
 type Settings = typeof YOUTUBE_SETTINGS;
 
 export interface YoutubeDeps {
   analyzer: VideoAnalyzer;
   store: YoutubeStore;
-  /** 없으면 영상 요약 후행 단계를 건너뛴다(task-029a) */
-  summary?: VideoSummaryDeps;
 }
 
 export interface Scene {
