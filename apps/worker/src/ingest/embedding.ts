@@ -46,6 +46,51 @@ export async function embedChunks<T extends EmbeddableChunk>(
   return chunks.map((chunk, i) => ({ chunk, embedding: vectors[i]!, embedding_model: provider.model }));
 }
 
+export interface TeiEmbeddingOptions {
+  /** TEI 서버 주소(예: http://127.0.0.1:8080). POST {url}/embed */
+  url: string;
+  model: string;
+  dimensions: number;
+  /** 모델이 요구하는 접두사(예: e5 "passage: " / "query: "). 없으면 그대로 보낸다 */
+  prefix?: string;
+  /** 한 요청에 보낼 최대 개수(TEI max_client_batch_size 이하) */
+  batchSize?: number;
+  requestTimeoutMs?: number;
+}
+
+/**
+ * Hugging Face text-embeddings-inference(TEI) HTTP 공급자(task-013). 응답 형식만 확인하고 개수·차원 검사는 embedChunks가 한다.
+ * 실패는 일반 Error(재시도 대상)로 던지고, 응답 본문은 로그·오류 메시지에 넣지 않는다.
+ */
+export function createTeiEmbeddingProvider(opts: TeiEmbeddingOptions): EmbeddingProvider {
+  const { url, model, dimensions, prefix = "", batchSize = 32, requestTimeoutMs = 60_000 } = opts;
+  const endpoint = new URL("embed", url.endsWith("/") ? url : `${url}/`);
+  return {
+    model,
+    dimensions,
+    async embed(texts, signal) {
+      const out: number[][] = [];
+      for (let i = 0; i < texts.length; i += batchSize) {
+        const inputs = texts.slice(i, i + batchSize).map((t) => prefix + t);
+        const timeout = AbortSignal.timeout(requestTimeoutMs);
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ inputs, truncate: true, normalize: true }),
+          signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
+        });
+        if (!res.ok) throw new Error(`임베딩 서버 응답 오류: ${res.status}`);
+        const body: unknown = await res.json();
+        if (!Array.isArray(body) || body.length !== inputs.length || !body.every((v) => Array.isArray(v))) {
+          throw new Error("임베딩 서버 응답 형식 오류");
+        }
+        out.push(...(body as number[][]));
+      }
+      return out;
+    },
+  };
+}
+
 /** 테스트용 목: 내용 해시로 결정적인 단위 벡터를 만든다(네트워크 없음). */
 export function createMockEmbeddingProvider(model: string = EMBEDDING_SETTINGS.model, dimensions: number = EMBEDDING_SETTINGS.dimensions): EmbeddingProvider {
   return {

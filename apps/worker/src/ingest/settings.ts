@@ -1,15 +1,16 @@
 // 자료 처리 설정(task-011 할 것 4, 구현 결정 8·9·11). 값을 바꿀 때는 이 파일만 고친다(task-013은 임베딩 값만 바꾼다).
 
 /** 청킹: 쪽 경계를 넘지 않는다(locator.page가 한 쪽을 가리킨다). 단위는 UTF-16 코드 단위(문자열 길이). */
+/** 값은 골든셋 평가(pnpm eval)로 확정(ADR-0004). */
 export const CHUNK_SETTINGS = {
-  maxChars: 1000,
+  maxChars: 500,
   /** 앞 청크와 겹치는 길이. maxChars의 절반 미만 */
-  overlapChars: 150,
+  overlapChars: 100,
   /** 끊을 자리를 찾을 때 청크가 이 길이보다 짧아지지 않게 한다 */
-  minChars: 500,
+  minChars: 250,
 } as const;
 
-/** 임베딩: 잠정 bge-m3 1024차원(ADR-0002). 벡터 저장은 task-013. */
+/** 임베딩: bge-m3 1024차원(ADR-0004 확정, 골든셋 평가). 벡터 저장은 task-013 다음 단계. */
 export const EMBEDDING_SETTINGS = {
   model: "bge-m3",
   dimensions: 1024,

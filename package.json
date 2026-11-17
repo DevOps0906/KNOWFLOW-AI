@@ -8,7 +8,8 @@
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r --filter web --filter ./packages/citations test",
-    "test:db": "pnpm --filter db-tests --fail-if-no-match test"
+    "test:db": "pnpm --filter db-tests --fail-if-no-match test",
+    "eval": "node --import ./evals/ts-hooks.mjs evals/run.mjs"
   },
   "engines": {
     "node": ">=26",

@@ -1,0 +1,293 @@
+{
+  "description": "task-013 골든셋. 자작 가상 문서(evals/corpus)만 쓴다. evidence는 문서 본문의 정확한 부분 문자열이고, 정답 청크는 evidence 구간의 절반 이상을 덮는 청크다. no_answer 문항은 자료에 근거가 없다.",
+  "items": [
+    {
+      "id": "g01",
+      "doc": "garden",
+      "question": "언덕 텃밭 한 구획은 몇 제곱미터야?",
+      "evidence": "한 구획의 넓이는 9제곱미터로 조금 더 넓다"
+    },
+    {
+      "id": "g02",
+      "doc": "garden",
+      "question": "텃밭 신청은 언제 어떻게 받나요?",
+      "evidence": "모집은 매년 2월 둘째 주 월요일부터 금요일까지 시 누리집에서 온라인으로만 받는다"
+    },
+    {
+      "id": "g03",
+      "doc": "garden",
+      "question": "어르신이나 장애인에게 우선 배정하는 비율은?",
+      "evidence": "전체 구획의 20퍼센트를 우선 배정한다"
+    },
+    {
+      "id": "g04",
+      "doc": "garden",
+      "question": "강변 텃밭 1년 이용료가 얼마예요?",
+      "evidence": "이용료는 강변 제1텃밭이 연 3만 원"
+    },
+    {
+      "id": "g05",
+      "doc": "garden",
+      "question": "겨울에도 텃밭에서 농사를 지을 수 있나?",
+      "evidence": "12월부터 이듬해 3월 14일까지는 토양 휴식 기간으로 모든 경작이 금지된다"
+    },
+    {
+      "id": "g06",
+      "doc": "garden",
+      "question": "옥수수를 심어도 되나요?",
+      "evidence": "옥수수처럼 이웃 구획에 그늘을 많이 만드는 작물은 심을 수 없다"
+    },
+    {
+      "id": "g07",
+      "doc": "garden",
+      "question": "여름철 물 사용 제한량은 얼마인가?",
+      "evidence": "한 구획당 하루 40리터로 사용량을 제한한다"
+    },
+    {
+      "id": "g08",
+      "doc": "garden",
+      "question": "경고를 몇 번 받으면 자격이 없어지나요?",
+      "evidence": "한 시즌에 경고를 세 번 받으면 이용 자격이 즉시 취소되고"
+    },
+    {
+      "id": "g09",
+      "doc": "garden",
+      "question": "씨앗 나눔 행사에서는 무슨 씨앗을 주나?",
+      "evidence": "상추, 쑥갓, 방울토마토 씨앗을 한 사람당 세 봉지까지 나눠 준다"
+    },
+    {
+      "id": "g10",
+      "doc": "company",
+      "question": "핵심 근무 시간이 몇 시부터 몇 시까지야?",
+      "evidence": "오전 10시부터 오후 4시까지는 모든 직원이 업무에 참여해야 하는 핵심 근무 시간이다"
+    },
+    {
+      "id": "g11",
+      "doc": "company",
+      "question": "신입은 언제부터 재택근무가 가능한가요?",
+      "evidence": "신규 입사자는 입사 후 첫 3개월 동안 재택근무를 할 수 없다"
+    },
+    {
+      "id": "g12",
+      "doc": "company",
+      "question": "연차는 최대 며칠까지 늘어나?",
+      "evidence": "최대 25일까지 늘어난다"
+    },
+    {
+      "id": "g13",
+      "doc": "company",
+      "question": "남은 연차는 다음 해로 넘길 수 있나요?",
+      "evidence": "다음 해 3월 31일까지 최대 5일만 이월되고 나머지는 연차 수당으로 정산한다"
+    },
+    {
+      "id": "g14",
+      "doc": "company",
+      "question": "배우자가 출산하면 휴가를 며칠 주나?",
+      "evidence": "배우자 출산 시에는 20일의 출산 휴가를 유급으로 준다"
+    },
+    {
+      "id": "g15",
+      "doc": "company",
+      "question": "장기근속자에게 주는 혜택은?",
+      "evidence": "근속 5년마다 10일의 안식 휴가와 여행 지원금 200만 원을 함께 지급한다"
+    },
+    {
+      "id": "g16",
+      "doc": "company",
+      "question": "서울 출장 숙박비 한도가 얼마예요?",
+      "evidence": "1박에 서울 12만 원"
+    },
+    {
+      "id": "g17",
+      "doc": "company",
+      "question": "해외 출장 때 비즈니스석 탈 수 있어?",
+      "evidence": "비행시간이 8시간을 넘으면 프리미엄 일반석까지 허용한다"
+    },
+    {
+      "id": "g18",
+      "doc": "company",
+      "question": "책 사는 비용은 1년에 얼마까지 지원되나요?",
+      "evidence": "도서 구입비는 한 해 30만 원을 넘을 수 없다"
+    },
+    {
+      "id": "g19",
+      "doc": "company",
+      "question": "업무용 노트북을 잃어버렸을 때 어떻게 해야 하나?",
+      "evidence": "노트북을 잃어버리면 24시간 안에 보안팀에 신고해야 한다"
+    },
+    {
+      "id": "g20",
+      "doc": "coffee",
+      "question": "원두는 볶고 나서 며칠 지난 게 좋아?",
+      "evidence": "볶은 지 7일에서 21일 사이의 원두가 가장 알맞다"
+    },
+    {
+      "id": "g21",
+      "doc": "coffee",
+      "question": "원두를 냉장 보관해도 되나요?",
+      "evidence": "냉장고에 넣으면 다른 음식 냄새가 배고 꺼낼 때 이슬이 맺히므로 권하지 않는다"
+    },
+    {
+      "id": "g22",
+      "doc": "coffee",
+      "question": "강하게 볶은 원두는 몇 도 물로 내려야 하나?",
+      "evidence": "강배전 원두는 섭씨 85도에서 88도로 조금 낮춘다"
+    },
+    {
+      "id": "g23",
+      "doc": "coffee",
+      "question": "원두 20그램에 물은 얼마나 넣어?",
+      "evidence": "원두 20그램이면 물 300그램을 붓는다는 뜻이다"
+    },
+    {
+      "id": "g24",
+      "doc": "coffee",
+      "question": "뜸은 몇 초 들이나요?",
+      "evidence": "원두 무게의 두 배 정도 되는 물을 부어 30초 동안 뜸을 들인다"
+    },
+    {
+      "id": "g25",
+      "doc": "coffee",
+      "question": "커피가 너무 쓰게 나오면 어떻게 바꿔야 해?",
+      "evidence": "지나치게 쓰면 2도쯤 내린다"
+    },
+    {
+      "id": "g26",
+      "doc": "coffee",
+      "question": "드리퍼에 낀 커피 기름은 어떻게 닦나?",
+      "evidence": "일주일에 한 번은 베이킹소다를 푼 미지근한 물에 30분 담가 둔다"
+    },
+    {
+      "id": "g27",
+      "doc": "notering",
+      "question": "무료 요금제로 몇 대까지 동기화돼요?",
+      "evidence": "무료 요금제는 기기 2대까지"
+    },
+    {
+      "id": "g28",
+      "doc": "notering",
+      "question": "두 기기에서 같은 메모를 고치면 어떻게 되나?",
+      "evidence": "먼저 수정한 내용은 제목 끝에 충돌 사본이라는 말이 붙은 새 메모로 따로 저장한다"
+    },
+    {
+      "id": "g29",
+      "doc": "notering",
+      "question": "자동 백업은 몇 개까지 남아 있어?",
+      "evidence": "백업은 최근 14개를 보관하고"
+    },
+    {
+      "id": "g30",
+      "doc": "notering",
+      "question": "메모를 파일로 내보내면 어떤 형식인가요?",
+      "evidence": "모든 메모를 마크다운 파일 묶음인 ZIP 파일로 받을 수 있다"
+    },
+    {
+      "id": "g31",
+      "doc": "notering",
+      "question": "금고 비밀번호를 잊어버리면 어떻게 돼?",
+      "evidence": "금고 비밀번호를 잊으면 복구 키 없이는 메모를 되살릴 수 없다"
+    },
+    {
+      "id": "g32",
+      "doc": "notering",
+      "question": "탈퇴한 계정을 되살릴 수 있나요?",
+      "evidence": "7일 안에 다시 로그인하면 해지를 취소할 수 있다"
+    },
+    {
+      "id": "g33",
+      "doc": "garden",
+      "question": "구획을 중간에 반납하면 돈을 돌려받을 수 있어?",
+      "evidence": "6월 30일 전에 반납하면 이용료의 절반을 돌려준다"
+    },
+    {
+      "id": "g34",
+      "doc": "garden",
+      "question": "강아지를 데리고 밭 안에 들어가도 되나요?",
+      "evidence": "경작 구역 안으로는 들어올 수 없다"
+    },
+    {
+      "id": "g35",
+      "doc": "company",
+      "question": "건강검진 받는 날 연차를 써야 하나?",
+      "evidence": "건강검진을 받는 날은 공가로 처리되어 연차가 차감되지 않는다"
+    },
+    {
+      "id": "g36",
+      "doc": "company",
+      "question": "성과급은 언제 나와요?",
+      "evidence": "성과급은 12월 평가 결과에 따라 이듬해 2월 급여와 함께 지급한다"
+    },
+    {
+      "id": "g37",
+      "doc": "coffee",
+      "question": "콜드브루는 몇 시간 우려야 해?",
+      "evidence": "냉장고에서 12시간에서 16시간 동안 우린 뒤 필터로 거른다"
+    },
+    {
+      "id": "g38",
+      "doc": "notering",
+      "question": "인터넷 없이도 메모를 편집할 수 있나요?",
+      "evidence": "인터넷이 끊겨도 기기에 저장된 메모를 모두 열고 고칠 수 있다"
+    },
+    {
+      "id": "n01",
+      "doc": "garden",
+      "question": "텃밭 이용료를 신용카드로 결제할 수 있나요?",
+      "no_answer": true
+    },
+    {
+      "id": "n02",
+      "doc": "garden",
+      "question": "텃밭 근처에 주차장이 있어?",
+      "no_answer": true
+    },
+    {
+      "id": "n03",
+      "doc": "company",
+      "question": "별빛소프트 신입 개발자 연봉은 얼마인가요?",
+      "no_answer": true
+    },
+    {
+      "id": "n04",
+      "doc": "company",
+      "question": "회사 구내식당 점심 메뉴는 뭐야?",
+      "no_answer": true
+    },
+    {
+      "id": "n05",
+      "doc": "company",
+      "question": "육아휴직은 최대 몇 년까지 쓸 수 있나?",
+      "no_answer": true
+    },
+    {
+      "id": "n06",
+      "doc": "coffee",
+      "question": "에스프레소 머신 압력은 몇 바가 적당한가요?",
+      "no_answer": true
+    },
+    {
+      "id": "n07",
+      "doc": "coffee",
+      "question": "디카페인 원두는 어떻게 만들어?",
+      "no_answer": true
+    },
+    {
+      "id": "n08",
+      "doc": "notering",
+      "question": "노트링 프로 요금제 한 달 가격은 얼마예요?",
+      "no_answer": true
+    },
+    {
+      "id": "n09",
+      "doc": "notering",
+      "question": "노트링에서 다른 사람과 메모를 실시간으로 함께 편집할 수 있나?",
+      "no_answer": true
+    },
+    {
+      "id": "n10",
+      "doc": null,
+      "question": "내일 서울 날씨 어때?",
+      "no_answer": true
+    }
+  ]
+}
