@@ -214,12 +214,13 @@ describe("브라우저 업로드 흐름", () => {
   it("발급 → 업로드 → 등록 순서로 진행하고 완료를 표시한다", async () => {
     const { deps, fetchMock } = flowDeps([
       Response.json({ uploads: [{ path: PATH, title: "a", token: "t" }] }),
-      Response.json({ results: [{ path: PATH, ok: true }] }, { status: 202 }),
+      Response.json({ results: [{ path: PATH, ok: true, sourceId: "s-1" }] }, { status: 202 }),
     ]);
     const upload = vi.fn(async () => ({}));
     const seen: string[] = [];
     const out = await uploadPdfs(PROJECT, [file()], { ...deps, upload }, (s) => seen.push(s[0]!.status));
     expect(out.accepted).toBe(1);
+    expect(out.sourceIds).toEqual(["s-1"]);
     expect(upload).toHaveBeenCalledWith(PATH, "t", expect.any(File));
     expect(seen).toEqual(expect.arrayContaining(["uploading", "registering", "done"]));
     expect(fetchMock).toHaveBeenCalledTimes(2);

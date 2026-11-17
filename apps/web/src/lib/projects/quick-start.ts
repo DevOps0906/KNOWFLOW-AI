@@ -1,6 +1,7 @@
 import { callProjects, type ProjectCallResult } from "./client";
 
-// S-06 "자료부터 넣기": 프로젝트 없이 자료를 올리면 자료 이름으로 프로젝트를 자동으로 만든다.
+// S-06 "자료부터 넣기": 프로젝트 없이 자료를 올리면 자료 이름으로 프로젝트를 자동으로 만든다(이전 흐름).
+// 2026-11-18 Lilys 구조: 가져오기는 폴더(=projects)를 고르지 않으면 기본 폴더 "받은 자료"에 넣는다(ensureInboxFolder).
 // 흐름: 프로젝트 생성 → 자료 등록 → (유튜브) 영상 제목으로 이름 확정. 등록이 실패하면 빈 프로젝트를 소프트 삭제한다.
 export const PROJECT_NAME_MAX = 100; // handlers.ts validName과 같은 규칙(코드 포인트 100자)
 
@@ -107,4 +108,14 @@ export async function renameFromFirstSource(
   } catch {
     return null;
   }
+}
+
+/** 가져오기에서 폴더를 고르지 않았을 때: 기본 폴더 "받은 자료"를 찾거나 서버가 만든다. 성공하면 id. */
+export async function ensureInboxFolder(call: Call = callProjects): Promise<ProjectCallResult> {
+  return call("POST", "/api/projects/inbox");
+}
+
+/** 가져오기 성공 뒤 갈 곳: 자료 1건이면 그 자료 결과 화면, 여러 건이면 그 폴더의 자료 라이브러리. */
+export function importDestination(sourceIds: string[], folderId: string): string {
+  return sourceIds.length === 1 ? `/sources/${sourceIds[0]}` : `/sources?folder=${encodeURIComponent(folderId)}`;
 }

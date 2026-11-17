@@ -60,7 +60,7 @@ export interface JobsDeps {
 export const JOB_MESSAGES = {
   unauthorized: "로그인이 필요합니다.",
   invalidRequest: "요청을 처리할 수 없습니다. 입력 내용을 확인해 주세요.",
-  projectNotFound: "프로젝트를 찾을 수 없습니다.",
+  projectNotFound: "폴더를 찾을 수 없습니다.",
   sourceNotFound: "자료를 찾을 수 없습니다.",
   completed: "이미 처리가 끝난 자료는 다시 시도할 수 없습니다.",
   notRetryable: "이 자료는 다시 시도해도 처리할 수 없습니다. 원인을 확인해 주세요.",

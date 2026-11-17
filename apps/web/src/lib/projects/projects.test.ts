@@ -20,6 +20,7 @@ function setup(overrides: Partial<ProjectsBackend> = {}) {
   const backend: ProjectsBackend = {
     getUserId: vi.fn(async () => "user-a"),
     list: vi.fn(async () => ({ items: [item], hasMore: false })),
+    findByName: vi.fn(async () => null),
     create: vi.fn(async () => ({ ok: true as const, data: item })),
     update: vi.fn(async () => ({ ok: true as const, data: item })),
     remove: vi.fn(async () => ({ ok: true as const, data: { deletedAt: "2026-11-03T00:00:00Z" } })),
@@ -34,6 +35,32 @@ const send = (method: string, body?: unknown, headers: Record<string, string> = 
     headers: { "content-type": "application/json", ...headers },
     body: body === undefined ? undefined : typeof body === "string" ? body : JSON.stringify(body),
   });
+
+describe("기본 폴더 받은 자료(POST /api/projects/inbox)", () => {
+  it("있으면 그 폴더를 200으로 돌려주고 새로 만들지 않는다", async () => {
+    const { handlers, backend } = setup({ findByName: vi.fn(async () => ({ ...item, name: "받은 자료" })) });
+    const res = await handlers.inbox(send("POST"));
+    expect(res.status).toBe(200);
+    expect((await res.json()).id).toBe(ID);
+    expect(backend.findByName).toHaveBeenCalledWith("받은 자료");
+    expect(backend.create).not.toHaveBeenCalled();
+  });
+
+  it("없으면 '받은 자료'로 만들고 201, 한도면 429", async () => {
+    const { handlers, backend } = setup();
+    expect((await handlers.inbox(send("POST"))).status).toBe(201);
+    expect(backend.create).toHaveBeenCalledWith({ name: "받은 자료", description: null });
+    const limited = setup({ create: async () => ({ ok: false, kind: "limit" }) });
+    expect((await limited.handlers.inbox(send("POST"))).status).toBe(429);
+  });
+
+  it("로그인이 없으면 401, 다른 출처면 400", async () => {
+    const { handlers, backend } = setup({ getUserId: vi.fn(async () => null) });
+    expect((await handlers.inbox(send("POST"))).status).toBe(401);
+    expect((await setup().handlers.inbox(send("POST", undefined, { origin: "https://evil.test" }))).status).toBe(400);
+    expect(backend.findByName).not.toHaveBeenCalled();
+  });
+});
 
 describe("프로젝트 생성(A-02 POST)", () => {
   it("요청 본문의 user_id는 무시하고 이름·설명만 DB로 넘긴다", async () => {

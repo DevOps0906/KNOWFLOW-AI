@@ -1,22 +1,24 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { ReportShell } from "@/components/report/report-shell";
+import type { ReportFolder } from "@/components/report/types";
 import { ErrorState } from "@/components/states/error-state";
 import { Button } from "@/components/ui/button";
+import type { ProjectDetail } from "@/components/workspace/types";
 import type { SourceMeta } from "@/components/workspace/viewer/format";
-import { SourceMetaHeader } from "@/components/workspace/viewer/source-meta";
-import { SourceViewer } from "@/components/workspace/viewer/source-viewer";
 import { supabaseEnv } from "@/lib/auth/supabase-server";
 import { sourceReadHandlersForRequest } from "@/lib/sources/server";
 import { isYoutubeEnabled } from "@/server/youtube/service";
 
-export const metadata: Metadata = { title: "원문 보기 · KNOWFLOW-AI" };
+export const metadata: Metadata = { title: "자료 · KNOWFLOW-AI" };
 export const dynamic = "force-dynamic";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
-// S-10 문서 뷰어. 메타는 A-07 핸들러(RLS 세션)로 서버에서 읽고, 원문 청크는 클라이언트가 /chunks로 이어 읽는다.
-export default async function SourceViewerPage({
+// 자료 결과 화면(DESIGN.md §2-1). 메타는 A-07 핸들러, 폴더 요약·추천 질문은 A-03 핸들러(둘 다 RLS 세션)로 서버에서 읽는다.
+// 원문 청크는 원문 카드가 /chunks로 이어 읽고, 처리 중이면 클라이언트가 A-07을 폴링한다.
+export default async function SourceResultPage({
   params,
   searchParams,
 }: {
@@ -47,15 +49,19 @@ export default async function SourceViewerPage({
   }
   const { source } = (await res.json()) as { source: SourceMeta };
 
-  return (
-    <div className="mx-auto flex max-w-4xl min-w-0 flex-col gap-6 p-4 md:p-6">
-      <SourceMetaHeader source={source} />
-      <SourceViewer
-        key={`${source.id}:${initialChunkId ?? ""}`}
-        source={source}
-        initialChunkId={initialChunkId}
-        youtubeEnabled={isYoutubeEnabled()}
-      />
-    </div>
-  );
+  // 폴더 정보는 보조: 못 읽어도 화면은 열고 요약만 비운다
+  let folder: ReportFolder | null = null;
+  const projectRes = await handlers.projectDetail(new Request("http://localhost/"), source.project_id);
+  if (projectRes.ok) {
+    const { project, sources } = (await projectRes.json()) as ProjectDetail;
+    folder = {
+      id: project.id,
+      name: project.name,
+      summary: project.summary,
+      suggestedQuestions: project.suggested_questions,
+      sourceCount: sources.length,
+    };
+  }
+
+  return <ReportShell key={`${source.id}:${initialChunkId ?? ""}`} initialSource={source} folder={folder} initialChunkId={initialChunkId} youtubeEnabled={isYoutubeEnabled()} />;
 }

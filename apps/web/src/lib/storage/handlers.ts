@@ -73,7 +73,7 @@ export interface SourcesDeps {
 export const SOURCE_MESSAGES = {
   unauthorized: "로그인이 필요합니다.",
   invalidRequest: "요청을 처리할 수 없습니다. 입력 내용을 확인해 주세요.",
-  notFound: "프로젝트를 찾을 수 없습니다.",
+  notFound: "폴더를 찾을 수 없습니다.",
   tooLarge: "파일은 1개당 50MB까지 올릴 수 있습니다.",
   unsupported: "PDF 파일만 올릴 수 있습니다.",
   tooMany: "한 번에 최대 10개까지 올릴 수 있습니다.",

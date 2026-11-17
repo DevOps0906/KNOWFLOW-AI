@@ -17,7 +17,7 @@ import { YoutubePlayer, type Seek } from "./youtube-player";
 // 캡처(task-030 L1): 데스크톱·기능 감지 통과 시 GET /captures로 서버 스위치를 확인하고, 켜져 있을 때만 카드별 캡처 버튼·목록을 보인다.
 // 캡처 버튼은 플레이어를 그 카드 t_start로 옮긴 뒤 탭 공유를 요청한다(임베드에서 현재 재생 시각은 읽지 않는다).
 
-type State = { kind: "loading" } | { kind: "error" } | { kind: "ok"; data: MomentsResponse };
+export type MomentsState = { kind: "loading" } | { kind: "error" } | { kind: "ok"; data: MomentsResponse };
 
 export const YOUTUBE_DISABLED_TEXT = "유튜브 기능 준비 중";
 
@@ -29,7 +29,7 @@ export function YoutubeDisabledNotice() {
   );
 }
 
-async function fetchMoments(sourceId: string): Promise<State> {
+export async function fetchMoments(sourceId: string): Promise<MomentsState> {
   try {
     const res = await fetch(`/api/sources/${sourceId}/moments`, { cache: "no-store" });
     if (!res.ok) return { kind: "error" };
@@ -52,7 +52,7 @@ export function YoutubePanel({
   originalUrl: string | null;
   startSeconds: number | null;
 }) {
-  const [state, setState] = useState<State>({ kind: "loading" });
+  const [state, setState] = useState<MomentsState>({ kind: "loading" });
   // 처음에는 인용 위치에서 멈춘 채로 열고, 사용자가 시각을 누르면 그때 자동 재생한다
   const [seek, setSeek] = useState<Seek>({ seconds: startSeconds, autoplay: false, nonce: 0 });
   const playerRef = useRef<HTMLDivElement>(null);

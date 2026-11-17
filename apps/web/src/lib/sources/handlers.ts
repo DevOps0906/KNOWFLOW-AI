@@ -72,7 +72,7 @@ export interface SourceReadDeps {
 export const SOURCE_READ_MESSAGES = {
   unauthorized: "로그인이 필요합니다.",
   invalidRequest: "요청을 처리할 수 없습니다. 입력 내용을 확인해 주세요.",
-  projectNotFound: "프로젝트를 찾을 수 없습니다.",
+  projectNotFound: "폴더를 찾을 수 없습니다.",
   sourceNotFound: "자료를 찾을 수 없습니다.",
   notReady: "아직 처리가 끝나지 않은 자료입니다. 처리가 끝난 뒤 다시 열어 주세요.",
   server: "일시적인 문제가 생겼습니다. 잠시 후 다시 시도해 주세요.",

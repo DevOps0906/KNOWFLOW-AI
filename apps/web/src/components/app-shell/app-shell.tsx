@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import type { FolderOption } from "@/lib/projects/folders";
 import { SidebarContent, type SidebarUsage, type SidebarUser } from "./sidebar";
 
 // 전역 상단바 없음: 모바일에서만 햄버거가 있는 얇은 줄이 나온다. 사이드바에는 그림자를 쓰지 않는다.
@@ -11,10 +12,15 @@ export function AppShell({
   children,
   user,
   usage,
+  folders,
+  youtubeEnabled,
 }: {
   children: React.ReactNode;
   user?: SidebarUser;
   usage?: SidebarUsage;
+  /** 사이드바 "자료" 아래 폴더 목록과 가져오기 폴더 선택에 쓴다 */
+  folders?: FolderOption[];
+  youtubeEnabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -33,7 +39,7 @@ export function AppShell({
         aria-label="사이드바"
         className="hidden shrink-0 border-r border-border bg-sidebar text-sidebar-foreground md:block md:w-16 desk:w-60"
       >
-        <SidebarContent user={user} usage={usage} />
+        <SidebarContent user={user} usage={usage} folders={folders} youtubeEnabled={youtubeEnabled} />
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex h-12 shrink-0 items-center gap-2 border-b border-border px-3 md:hidden">
@@ -53,7 +59,7 @@ export function AppShell({
             >
               <SheetTitle className="sr-only">메뉴</SheetTitle>
               <SheetDescription className="sr-only">주 메뉴와 계정</SheetDescription>
-              <SidebarContent user={user} usage={usage} />
+              <SidebarContent user={user} usage={usage} folders={folders} youtubeEnabled={youtubeEnabled} />
             </SheetContent>
           </Sheet>
           <span className="font-semibold">KNOWFLOW</span>

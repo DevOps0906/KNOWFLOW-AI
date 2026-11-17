@@ -7,7 +7,7 @@ import { EmptyState } from "@/components/states/empty-state";
 import { ErrorState } from "@/components/states/error-state";
 import { LoadingState } from "@/components/states/loading-state";
 
-vi.mock("next/navigation", () => ({ usePathname: () => "/projects" }));
+vi.mock("next/navigation", () => ({ usePathname: () => "/sources", useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }) }));
 vi.mock("next-themes", () => ({
   useTheme: () => ({ resolvedTheme: "light", setTheme: vi.fn() }),
   ThemeProvider: ({ children }: { children: React.ReactNode }) => children,
@@ -58,10 +58,20 @@ describe("앱 셸", () => {
         <p>본문</p>
       </AppShell>
     );
-    const current = screen.getAllByRole("link", { name: "프로젝트" })[0];
+    const current = screen.getAllByRole("link", { name: "자료" })[0];
     expect(current.getAttribute("aria-current")).toBe("page");
+    // Lilys 구조: 가져오기·생성물, 새 프로젝트·대시보드 메뉴 없음
+    expect(screen.getAllByRole("button", { name: "가져오기" }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("link", { name: "생성물" })[0]!.getAttribute("href")).toBe("/reports");
+    expect(screen.queryByRole("link", { name: "대시보드" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "새 프로젝트" })).toBeNull();
     expect(screen.getByRole("button", { name: "메뉴 열기" })).toBeTruthy();
     expect(screen.getByText("본문")).toBeTruthy();
+  });
+
+  it("폴더 목록은 자료 아래에 폴더 보기 링크로 보인다", () => {
+    render(<AppShell folders={[{ id: "f1", name: "논문" }]}>x</AppShell>);
+    expect(screen.getAllByRole("link", { name: "논문" })[0]!.getAttribute("href")).toBe("/sources?folder=f1");
   });
 
   it("메뉴 버튼으로 시트를 열면 dialog가 나타난다", () => {

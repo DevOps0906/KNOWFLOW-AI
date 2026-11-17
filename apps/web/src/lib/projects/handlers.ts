@@ -1,9 +1,11 @@
 import { encodeCursor, parseListParams, type ListParams } from "./params";
-import type { Outcome, ProjectItem, ProjectPatch } from "./types";
+import { INBOX_FOLDER_NAME, type Outcome, type ProjectItem, type ProjectPatch } from "./types";
 
 export interface ProjectsBackend {
   getUserId(): Promise<string | null>;
   list(params: ListParams): Promise<{ items: ProjectItem[]; hasMore: boolean }>;
+  /** 이름이 같은 활성 폴더(가장 먼저 만든 것). 없으면 null */
+  findByName(name: string): Promise<ProjectItem | null>;
   create(input: { name: string; description: string | null }): Promise<Outcome<ProjectItem>>;
   update(id: string, patch: ProjectPatch): Promise<Outcome<ProjectItem>>;
   remove(id: string): Promise<Outcome<{ deletedAt: string }>>;
@@ -20,10 +22,10 @@ export interface ProjectsDeps {
 export const PROJECT_MESSAGES = {
   unauthorized: "로그인이 필요합니다.",
   invalidRequest: "요청을 처리할 수 없습니다. 입력 내용을 확인해 주세요.",
-  invalidName: "프로젝트 이름은 1~100자로 입력해 주세요.",
+  invalidName: "폴더 이름은 1~100자로 입력해 주세요.",
   invalidDescription: "설명은 1000자 이하로 입력해 주세요.",
-  notFound: "프로젝트를 찾을 수 없습니다.",
-  limit: "프로젝트는 최대 20개까지 만들 수 있습니다. 쓰지 않는 프로젝트를 삭제한 뒤 다시 시도해 주세요.",
+  notFound: "폴더를 찾을 수 없습니다.",
+  limit: "폴더는 최대 20개까지 만들 수 있습니다. 쓰지 않는 폴더를 삭제한 뒤 다시 시도해 주세요.",
   conflict: "처리 중인 작업이 있어 삭제할 수 없습니다. 작업이 끝난 뒤 다시 시도해 주세요.",
   server: "일시적인 문제가 생겼습니다. 잠시 후 다시 시도해 주세요.",
 } as const;
@@ -130,6 +132,17 @@ export function createProjectHandlers(deps: ProjectsDeps) {
           return fail(422, "invalid_description", PROJECT_MESSAGES.invalidDescription);
         }
         const result = await backend.create({ name, description: description || null });
+        return result.ok ? json(201, result.data) : outcomeError(result.kind);
+      }),
+
+    /** 기본 폴더 "받은 자료"를 찾고, 없으면 만든다. 있으면 200, 새로 만들면 201(본문 없음). */
+    inbox: (request: Request) =>
+      run(async () => {
+        checkOrigin(request);
+        await requireUser();
+        const found = await backend.findByName(INBOX_FOLDER_NAME);
+        if (found) return json(200, found);
+        const result = await backend.create({ name: INBOX_FOLDER_NAME, description: null });
         return result.ok ? json(201, result.data) : outcomeError(result.kind);
       }),
 

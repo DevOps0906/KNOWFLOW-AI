@@ -93,3 +93,19 @@ export async function deleteProject(supabase: SupabaseClient, id: string): Promi
   if (error) return classify(error);
   return { ok: true, data: { deletedAt: String(data) } };
 }
+
+/** 이름이 같은 활성(보관·삭제되지 않은) 폴더 중 가장 먼저 만든 것. 없으면 null. RLS로 본인 것만 보인다. */
+export async function findActiveProjectByName(supabase: SupabaseClient, name: string): Promise<ProjectItem | null> {
+  const { data, error } = await supabase
+    .from("projects")
+    .select("id, name, description, archived_at, created_at, updated_at")
+    .eq("name", name)
+    .is("deleted_at", null)
+    .is("archived_at", null)
+    .order("created_at", { ascending: true })
+    .order("id", { ascending: true })
+    .limit(1);
+  if (error) throw new Error("projects_find_failed");
+  const row = ((data ?? []) as unknown as ProjectRow[])[0];
+  return row ? toItem(row) : null;
+}

@@ -27,6 +27,7 @@ export const CAPTURE_TEXT = {
   failed: "화면을 캡처하지 못했습니다.",
   uploadFailed: "캡처를 저장하지 못했습니다.",
   deleteFailed: "캡처를 삭제하지 못했습니다.",
+  noTarget: "영상 플레이어가 준비되지 않아 캡처하지 않았습니다. 원문 카드에 플레이어가 보이면 다시 시도해 주세요.",
 } as const;
 
 async function errorMessage(res: Response, fallback: string) {
@@ -85,7 +86,11 @@ export function useCaptures(sourceId: string, enabled: boolean) {
   useEffect(() => () => abortRef.current?.abort(), []);
 
   const capture = useCallback(async (moment: MomentItem, target: Element | null) => {
-    if (!target) return;
+    // 캡처할 플레이어가 없으면(원문 카드·플레이어 준비 전) 조용히 넘기지 않고 알린다
+    if (!target) {
+      setMessage(CAPTURE_TEXT.noTarget);
+      return;
+    }
     setMessage(null);
     setBusy(true);
     const controller = new AbortController();

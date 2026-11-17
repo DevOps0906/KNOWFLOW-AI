@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { ArrowUpToLine, Clock, EyeOff, FileX, Info } from "lucide-react";
 import { EmptyState, StateCard } from "@/components/states/empty-state";
@@ -61,11 +61,14 @@ export function SourceViewer({
   source,
   initialChunkId,
   youtubeEnabled = false,
+  renderMedia,
 }: {
   source: SourceMeta;
   initialChunkId: string | null;
   /** 서버가 기능 플래그(YOUTUBE_ENABLED)를 읽어 넘긴다. 꺼지면 플레이어·요약·장면 카드를 숨긴다 */
   youtubeEnabled?: boolean;
+  /** 유튜브 영역을 호출부가 그린다(자료 결과 화면: 플레이어만 원문 카드에, 요약·장면 카드는 리포트에). 없으면 YoutubeSlot */
+  renderMedia?: (startSeconds: number | null) => ReactNode;
 }) {
   const [phase, setPhase] = useState<Phase>(() => initialPhase(source));
   const [items, setItems] = useState<ViewerChunk[]>([]);
@@ -268,7 +271,13 @@ export function SourceViewer({
 
   return (
     <div className="flex min-w-0 flex-col gap-4">
-      {isYoutube ? <YoutubeSlot source={source} startSeconds={chunkStartSeconds(highlighted)} enabled={youtubeEnabled} /> : null}
+      {isYoutube ? (
+        renderMedia ? (
+          renderMedia(chunkStartSeconds(highlighted))
+        ) : (
+          <YoutubeSlot source={source} startSeconds={chunkStartSeconds(highlighted)} enabled={youtubeEnabled} />
+        )
+      ) : null}
 
       {aroundNotice}
 

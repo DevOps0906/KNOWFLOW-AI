@@ -10,22 +10,28 @@ export function MomentCards({
   items,
   onPlay,
   renderAction,
+  embedded = false,
 }: {
   items: MomentItem[];
   onPlay: (seconds: number) => void;
   renderAction?: (moment: MomentItem) => ReactNode;
+  /** 자료 결과 리포트 안에 넣을 때: 제목은 리포트 장이 맡고, 리포트 단이 좁아 2열까지만 */
+  embedded?: boolean;
 }) {
+  const Root = embedded ? "div" : "section";
   return (
-    <section aria-labelledby="moment-cards-title" className="flex min-w-0 flex-col gap-3">
-      <h2 id="moment-cards-title" className="text-h2 font-bold">
-        장면 카드
-      </h2>
+    <Root aria-labelledby={embedded ? undefined : "moment-cards-title"} className="flex min-w-0 flex-col gap-3">
+      {embedded ? null : (
+        <h2 id="moment-cards-title" className="text-h2 font-bold">
+          장면 카드
+        </h2>
+      )}
       {items.length === 0 ? (
         <p role="status" className="rounded-row bg-muted p-3 text-caption text-muted-foreground">
           이 영상에서 만든 장면 카드가 없습니다.
         </p>
       ) : (
-        <ol className="grid grid-cols-1 gap-3 md:grid-cols-2 desk:grid-cols-3">
+        <ol className={embedded ? "grid grid-cols-1 gap-3 md:grid-cols-2" : "grid grid-cols-1 gap-3 md:grid-cols-2 desk:grid-cols-3"}>
           {items.map((m) => {
             const start = formatTimestamp(m.locator.t_start);
             const title = cleanText(m.title);
@@ -57,6 +63,6 @@ export function MomentCards({
           })}
         </ol>
       )}
-    </section>
+    </Root>
   );
 }

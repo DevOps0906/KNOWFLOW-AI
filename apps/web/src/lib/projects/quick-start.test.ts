@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { clampProjectName, projectNameFromPdf, projectNameFromYoutubeId, youtubeVideoIdFromUrl } from "./quick-start";
+import { describe, expect, it, vi } from "vitest";
+import { clampProjectName, ensureInboxFolder, importDestination, projectNameFromPdf, projectNameFromYoutubeId, youtubeVideoIdFromUrl } from "./quick-start";
 
 describe("자료부터 넣기 이름 규칙", () => {
   it("PDF 파일명에서 확장자를 뺀다", () => {
@@ -16,5 +16,18 @@ describe("자료부터 넣기 이름 규칙", () => {
     expect(youtubeVideoIdFromUrl("https://youtu.be/dQw4w9WgXcQ")).toBe("dQw4w9WgXcQ");
     expect(youtubeVideoIdFromUrl("https://example.com/watch?v=dQw4w9WgXcQ")).toBeNull();
     expect(projectNameFromYoutubeId("dQw4w9WgXcQ")).toBe("유튜브 영상 dQw4w9WgXcQ");
+  });
+});
+
+describe("가져오기 기본 폴더·이동 경로", () => {
+  it("폴더를 고르지 않으면 기본 폴더 API를 POST로 부른다", async () => {
+    const call = vi.fn(async () => ({ ok: true, status: 200, id: "inbox-1" }));
+    expect((await ensureInboxFolder(call)).id).toBe("inbox-1");
+    expect(call).toHaveBeenCalledWith("POST", "/api/projects/inbox");
+  });
+  it("자료 1건이면 결과 화면, 여러 건이면 폴더 라이브러리로 간다", () => {
+    expect(importDestination(["s1"], "f1")).toBe("/sources/s1");
+    expect(importDestination(["s1", "s2"], "f1")).toBe("/sources?folder=f1");
+    expect(importDestination([], "f1")).toBe("/sources?folder=f1");
   });
 });

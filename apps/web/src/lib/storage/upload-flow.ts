@@ -35,7 +35,7 @@ export async function uploadPdfs(
   files: File[],
   deps: UploadDeps,
   onChange: (states: FileState[]) => void,
-): Promise<{ accepted: number }> {
+): Promise<{ accepted: number; sourceIds: string[] }> {
   const states: FileState[] = files.map((f) => ({ name: f.name, status: "waiting" }));
   const set = (i: number, patch: Partial<FileState>) => {
     states[i] = { ...states[i]!, ...patch };
@@ -44,15 +44,15 @@ export async function uploadPdfs(
   const failAll = (message: string) => {
     states.forEach((_, i) => (states[i] = { ...states[i]!, status: "error", message }));
     onChange([...states]);
-    return { accepted: 0 };
+    return { accepted: 0, sourceIds: [] };
   };
 
-  if (files.length === 0) return { accepted: 0 };
+  if (files.length === 0) return { accepted: 0, sourceIds: [] };
   if (files.length > MAX_FILES_PER_REQUEST) return failAll("한 번에 최대 10개까지 올릴 수 있습니다.");
   const problem = files.map((f) => clientFileProblem(f));
   if (problem.some(Boolean)) {
     problem.forEach((p, i) => set(i, p ? { status: "error", message: p } : { status: "waiting" }));
-    return { accepted: 0 };
+    return { accepted: 0, sourceIds: [] };
   }
   onChange([...states]);
 
@@ -97,7 +97,7 @@ export async function uploadPdfs(
       set(i, { status: "error", message: "파일을 올리지 못했습니다. 다시 시도해 주세요." });
     }
   }
-  if (items.length === 0) return { accepted: 0 };
+  if (items.length === 0) return { accepted: 0, sourceIds: [] };
 
   const registered = await post({
     step: "register",
@@ -105,14 +105,18 @@ export async function uploadPdfs(
   });
   if (!registered) {
     items.forEach((it) => set(it.index, { status: "error", message: NETWORK_ERROR }));
-    return { accepted: 0 };
+    return { accepted: 0, sourceIds: [] };
   }
-  const results = registered.data.results as Array<{ path: string; ok: boolean; error?: { message?: string }; message?: string }> | undefined;
+  const results = registered.data.results as
+    | Array<{ path: string; ok: boolean; sourceId?: string; error?: { message?: string }; message?: string }>
+    | undefined;
   let accepted = 0;
+  const sourceIds: string[] = [];
   for (const item of items) {
     const result = results?.find((r) => r.path === item.path);
     if (result?.ok) {
       accepted++;
+      if (typeof result.sourceId === "string") sourceIds.push(result.sourceId);
       set(item.index, { status: "done" });
     } else {
       set(item.index, {
@@ -121,5 +125,5 @@ export async function uploadPdfs(
       });
     }
   }
-  return { accepted };
+  return { accepted, sourceIds };
 }

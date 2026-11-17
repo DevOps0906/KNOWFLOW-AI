@@ -6,15 +6,7 @@ import { useRef, useState } from "react";
 import { Check, CircleAlert, LoaderCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  cleanupAfterFailure,
-  createProjectNamed,
-  leftoverMessage,
-  projectNameFromPdf,
-  projectNameFromYoutubeId,
-  renameFromFirstSource,
-  youtubeVideoIdFromUrl,
-} from "@/lib/projects/quick-start";
+import { ensureInboxFolder, importDestination } from "@/lib/projects/quick-start";
 import { browserUploadDeps } from "@/lib/storage/browser";
 import { MAX_FILES_PER_REQUEST } from "@/lib/storage/files";
 import { clientFileProblem, uploadPdfs, type FileState, type UploadDeps } from "@/lib/storage/upload-flow";
@@ -33,17 +25,20 @@ const STATUS_TEXT: Record<FileState["status"], string> = {
 
 // S-09 자료 추가: PDF 탭(여러 개) + 유튜브 탭(영상 1건, 기능 플래그) + URL 탭(수집 기능은 task-009에서 연결).
 // 등록 성공은 "분석 완료"가 아니라 "대기"다.
-// projectId가 없으면(S-06 자료부터 넣기) 자료 이름으로 프로젝트를 먼저 만들고, 등록이 실패하면 그 프로젝트를 지운다.
+// 가져오기(Lilys 구조): projectId(폴더)가 없으면 기본 폴더 "받은 자료"에 넣고, 성공하면 자료 결과 화면(여러 PDF면 폴더 라이브러리)으로 간다.
 export function AddSourceForm({
   projectId,
   onDone,
   deps,
   youtubeEnabled = false,
+  openResult = false,
 }: {
   projectId?: string;
   onDone?: () => void;
   /** 서버가 기능 플래그(YOUTUBE_ENABLED)를 읽어 넘긴다. 꺼지면 유튜브 탭을 그리지 않는다. */
   youtubeEnabled?: boolean;
+  /** 폴더를 골랐어도 성공 뒤 결과 화면으로 이동한다(가져오기 다이얼로그). projectId가 없으면 항상 이동한다. */
+  openResult?: boolean;
   /** 테스트에서 대체한다. */
   deps?: UploadDeps;
 }) {
@@ -58,8 +53,9 @@ export function AddSourceForm({
   const [videoState, setVideoState] = useState<{ status: "checking" | "done" | "error"; message?: string }>();
   // 같은 주소를 다시 보내면 같은 멱등 키를 쓴다(네트워크 재시도에서 중복 등록 방지)
   const videoKey = useRef<string | null>(null);
-  const [leftover, setLeftover] = useState<{ id: string; message: string }>();
+  const [partial, setPartial] = useState<string>();
   const tabs: Tab[] = youtubeEnabled ? ["pdf", "youtube", "url"] : ["pdf", "url"];
+  const navigate = !projectId || openResult;
 
   function onPick(event: React.ChangeEvent<HTMLInputElement>) {
     const picked = Array.from(event.target.files ?? []);
@@ -74,58 +70,43 @@ export function AddSourceForm({
     if (picked.length > MAX_FILES_PER_REQUEST) setNotice("한 번에 최대 10개까지 올릴 수 있습니다.");
   }
 
-  // 등록 실패 뒤: 자료 0건이 확인될 때만 프로젝트를 지우고, 아니면 남기고 링크를 안내한다.
-  async function settle(id: string) {
-    videoKey.current = null;
-    const message = leftoverMessage(await cleanupAfterFailure(id));
-    if (message) setLeftover({ id, message });
+  /** 넣을 폴더 id. 고른 폴더가 없으면 기본 폴더를 찾거나 만든다. 실패하면 오류 문구. */
+  async function resolveFolder(): Promise<{ id: string } | { error: string }> {
+    if (projectId) return { id: projectId };
+    const inbox = await ensureInboxFolder();
+    return inbox.ok && inbox.id ? { id: inbox.id } : { error: inbox.message ?? "기본 폴더를 준비하지 못했습니다." };
   }
 
   async function submitYoutube() {
     const url = videoUrl.trim();
     if (!url) return setVideoState({ status: "error", message: "유튜브 영상 주소를 넣어 주세요." });
     const d = deps ?? browserUploadDeps();
-    const videoId = projectId ? null : youtubeVideoIdFromUrl(url);
-    if (!projectId && !videoId) return setVideoState({ status: "error", message: "올바른 유튜브 영상 주소를 넣어 주세요." });
     videoKey.current ??= d.newKey();
     setPending(true);
-    setLeftover(undefined);
     setVideoState({ status: "checking" });
-    let target = projectId;
-    let created = false;
     try {
-      if (!target) {
-        const made = await createProjectNamed(projectNameFromYoutubeId(videoId!));
-        if (!made.ok || !made.id) {
-          setVideoState({ status: "error", message: made.message ?? "프로젝트를 만들지 못했습니다." });
-          return;
-        }
-        target = made.id;
-        created = true;
-      }
-      const response = await d.fetch(`/api/projects/${target}/sources`, {
+      const folder = await resolveFolder();
+      if ("error" in folder) return setVideoState({ status: "error", message: folder.error });
+      const response = await d.fetch(`/api/projects/${folder.id}/sources`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "Idempotency-Key": videoKey.current },
         body: JSON.stringify({ source_type: "youtube", url }),
       });
-      const data = (await response.json().catch(() => ({}))) as { error?: { message?: string } };
+      const data = (await response.json().catch(() => ({}))) as { sourceId?: unknown; error?: { message?: string } };
       if (response.ok) {
         setVideoState({ status: "done" });
         setVideoUrl("");
         videoKey.current = null;
-        if (created) {
-          await renameFromFirstSource(target);
-          router.push(`/projects/${target}`);
-          return;
+        if (navigate) {
+          router.push(importDestination(typeof data.sourceId === "string" ? [data.sourceId] : [], folder.id));
+        } else {
+          router.refresh();
         }
-        router.refresh();
         onDone?.();
       } else {
-        if (created) await settle(target);
         setVideoState({ status: "error", message: data.error?.message ?? "등록하지 못했습니다." });
       }
     } catch {
-      if (created && target) await settle(target);
       setVideoState({ status: "error", message: "네트워크 연결을 확인하고 다시 시도해 주세요." });
     } finally {
       setPending(false);
@@ -138,37 +119,28 @@ export function AddSourceForm({
     if (files.length === 0) return setNotice("올릴 PDF 파일을 선택해 주세요.");
     setPending(true);
     setNotice(undefined);
-    setLeftover(undefined);
-    let target = projectId;
-    let created = false;
-    if (!target) {
-      const made = await createProjectNamed(projectNameFromPdf(files[0]!.name));
-      if (!made.ok || !made.id) {
-        setPending(false);
-        return setNotice(made.message ?? "프로젝트를 만들지 못했습니다.");
-      }
-      target = made.id;
-      created = true;
+    setPartial(undefined);
+    const folder = await resolveFolder();
+    if ("error" in folder) {
+      setPending(false);
+      return setNotice(folder.error);
     }
-    const { accepted } = await uploadPdfs(target, files, deps ?? browserUploadDeps(), setStates);
-    if (created && accepted === 0) await settle(target);
+    const { accepted, sourceIds } = await uploadPdfs(folder.id, files, deps ?? browserUploadDeps(), setStates);
     setPending(false);
-    if (created && accepted === files.length) {
-      router.push(`/projects/${target}`);
+    if (accepted === 0) return;
+    if (navigate && accepted === files.length) {
+      router.push(importDestination(sourceIds, folder.id));
+      onDone?.();
       return;
     }
-    if (created && accepted > 0) {
-      setLeftover({ id: target, message: "일부 파일만 등록되었습니다. 실패한 파일은 프로젝트에서 다시 추가할 수 있습니다." });
+    router.refresh();
+    if (accepted < files.length) {
+      if (navigate) setPartial(`/sources?folder=${encodeURIComponent(folder.id)}`);
       return;
     }
-    if (accepted > 0) {
-      router.refresh();
-      if (accepted === files.length) {
-        setFiles([]);
-        if (input.current) input.current.value = "";
-        onDone?.();
-      }
-    }
+    setFiles([]);
+    if (input.current) input.current.value = "";
+    onDone?.();
   }
 
   const blocked = states.some((s) => s.status === "error" && s.message) && !pending;
@@ -277,11 +249,11 @@ export function AddSourceForm({
           : "지원 예정: YouTube · 오디오 · Office · HWP 등. 지금은 PDF와 웹 페이지만 다룹니다."}
       </p>
 
-      {leftover ? (
+      {partial ? (
         <p role="alert" className="flex flex-wrap items-center gap-2 text-caption text-destructive break-keep">
-          <span>{leftover.message}</span>
-          <Link href={`/projects/${leftover.id}`} className="font-semibold underline">
-            프로젝트로 이동
+          <span>일부 파일만 등록되었습니다. 실패한 파일은 다시 가져올 수 있습니다.</span>
+          <Link href={partial} className="font-semibold underline">
+            폴더 열기
           </Link>
         </p>
       ) : null}

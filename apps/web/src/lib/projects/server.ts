@@ -1,7 +1,7 @@
 import { createSupabaseServerClient, supabaseEnv } from "@/lib/auth/supabase-server";
 import { purgeCapturesFromEnv } from "@/server/captures/service";
 import { createProjectHandlers, type ProjectsBackend } from "./handlers";
-import { createProject, deleteProject, listProjects, updateProject } from "./queries";
+import { createProject, deleteProject, findActiveProjectByName, listProjects, updateProject } from "./queries";
 
 // 서버 전용: 요청 쿠키에 묶인 Supabase 클라이언트로 핸들러를 조립한다(anon 키 + 사용자 세션, RLS 적용).
 export async function projectHandlersForRequest() {
@@ -12,6 +12,7 @@ export async function projectHandlersForRequest() {
       return data.user?.id ?? null;
     },
     list: (params) => listProjects(supabase, params),
+    findByName: (name) => findActiveProjectByName(supabase, name),
     create: (input) => createProject(supabase, input),
     update: (id, patch) => updateProject(supabase, id, patch),
     remove: (id) => deleteProject(supabase, id),
