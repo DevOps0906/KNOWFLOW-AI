@@ -565,7 +565,7 @@ function fakePool(failOn?: string) {
 
 describe("buildHandlers · pg 유튜브 저장소", () => {
   const base = {
-    dummyHandlers: false, sourceReader: "storage", fixtureDir: null, supabaseUrl: null, supabaseServiceRoleKey: null, summaryProvider: "none", youtubeAnalyzer: "stub", geminiApiKey: null, geminiModel: "gemini-test",
+    dummyHandlers: false, sourceReader: "storage", fixtureDir: null, supabaseUrl: null, supabaseServiceRoleKey: null, summaryProvider: "none", geminiSummaryModel: "gemini-test", youtubeAnalyzer: "stub", geminiApiKey: null, geminiModel: "gemini-test",
     youtubeMetadataProvider: "stub", youtubeWorkerApiKey: null,
   } as const;
 
@@ -696,7 +696,7 @@ describe("source_ingest 핸들러 · 영상 요약", () => {
     const { pool, sql } = fakePool();
     const handlers = buildHandlers(
       {
-        dummyHandlers: false, sourceReader: "storage", fixtureDir: null, supabaseUrl: null, supabaseServiceRoleKey: null, summaryProvider: "stub", youtubeAnalyzer: "stub", geminiApiKey: null,
+        dummyHandlers: false, sourceReader: "storage", fixtureDir: null, supabaseUrl: null, supabaseServiceRoleKey: null, summaryProvider: "stub", geminiSummaryModel: "gemini-test", youtubeAnalyzer: "stub", geminiApiKey: null,
         geminiModel: "gemini-test", youtubeMetadataProvider: "stub", youtubeWorkerApiKey: null, youtubeEnabled: true,
       },
       pool,

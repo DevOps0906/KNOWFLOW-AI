@@ -273,7 +273,7 @@ function fakePool(failOn?: string) {
 
 describe("buildHandlers · pg 재확인 저장소", () => {
   const base = {
-    dummyHandlers: false, sourceReader: "storage", fixtureDir: null, supabaseUrl: null, supabaseServiceRoleKey: null, summaryProvider: "none", youtubeAnalyzer: "stub", geminiApiKey: null, geminiModel: "gemini-test",
+    dummyHandlers: false, sourceReader: "storage", fixtureDir: null, supabaseUrl: null, supabaseServiceRoleKey: null, summaryProvider: "none", geminiSummaryModel: "gemini-test", youtubeAnalyzer: "stub", geminiApiKey: null, geminiModel: "gemini-test",
     youtubeMetadataProvider: "stub", youtubeWorkerApiKey: null,
   } as const;
 

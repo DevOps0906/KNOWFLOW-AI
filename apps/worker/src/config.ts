@@ -1,4 +1,5 @@
 import { createRequire } from "node:module";
+import { SUMMARY_GEMINI_SETTINGS } from "./ingest/settings.js";
 import { GEMINI_SETTINGS } from "./youtube/settings.js";
 
 // 환경 변수 → 설정. DATABASE_URL 등 비밀 값은 로그에 남기지 않는다(log.ts는 허용 필드만 출력).
@@ -20,13 +21,15 @@ export interface WorkerConfig {
   supabaseUrl: string | null;
   /** storage 어댑터용 서비스 키. 로그에 남기지 않는다. storage가 아니거나 더미 핸들러면 null */
   supabaseServiceRoleKey: string | null;
-  /** 후행 요약 공급자. stub은 로컬 검증 전용, none이면 요약하지 않는다 */
-  summaryProvider: "stub" | "none";
+  /** 후행 요약 공급자. stub은 로컬 검증 전용, none이면 요약하지 않는다, gemini는 명시적으로 고를 때만 */
+  summaryProvider: "stub" | "none" | "gemini";
+  /** 요약 전용 Gemini 모델(GEMINI_SUMMARY_MODEL) */
+  geminiSummaryModel: string;
   /** 유튜브 처리 기능 플래그(YOUTUBE_ENABLED=1, 기본 꺼짐). 꺼지면 유튜브 처리를 등록하지 않는다 */
   youtubeEnabled: boolean;
   /** 영상 분석 공급자. stub은 로컬 검증 전용, gemini는 명시적으로 고를 때만 */
   youtubeAnalyzer: "stub" | "gemini";
-  /** Worker 전용 Gemini 키. 로그에 남기지 않는다. 플래그 꺼짐·스텁이면 null */
+  /** Worker 전용 Gemini 키. 로그에 남기지 않는다. Gemini 영상 분석·Gemini 요약 모두 아니면 null */
   geminiApiKey: string | null;
   geminiModel: string;
   /** 재확인용 videos.list 공급자(YOUTUBE_METADATA_PROVIDER). stub은 로컬 검증 전용, youtube는 명시적으로 고를 때만 */
@@ -120,7 +123,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): WorkerConfig {
     assertLocalDb(databaseUrl, "고정 파일 어댑터");
     if (!fixtureDir) throw new Error("WORKER_SOURCE_READER=fixture에는 WORKER_FIXTURE_DIR이 필요합니다");
   }
-  const summaryProvider = oneOf(env, "WORKER_SUMMARY_PROVIDER", ["none", "stub"] as const);
+  const summaryProvider = oneOf(env, "WORKER_SUMMARY_PROVIDER", ["none", "stub", "gemini"] as const);
   if (summaryProvider === "stub") assertLocalDb(databaseUrl, "스텁 요약 공급자");
   const youtubeEnabled = env.YOUTUBE_ENABLED === "1";
   const youtubeAnalyzer = oneOf(env, "YOUTUBE_ANALYZER", ["stub", "gemini"] as const);
@@ -129,10 +132,15 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): WorkerConfig {
   let geminiApiKey: string | null = null;
   // 운영(로컬 DB가 아님)에서 플래그를 켰는데 스텁이 선택됐거나 키가 없으면 기동을 거부한다
   if (youtubeEnabled && youtubeAnalyzer === "stub") assertLocalDb(databaseUrl, "스텁 영상 분석기");
-  if (youtubeEnabled && youtubeAnalyzer === "gemini") {
+  const geminiSummaryModel = env.GEMINI_SUMMARY_MODEL || SUMMARY_GEMINI_SETTINGS.defaultModel;
+  if (!/^[a-z0-9][a-z0-9.-]{0,63}$/.test(geminiSummaryModel)) throw new Error("GEMINI_SUMMARY_MODEL 형식이 올바르지 않습니다");
+  // Gemini 요약은 유튜브 설정과 무관하게 키가 필요하다(원격 DB 허용)
+  const geminiKeyFor =
+    youtubeEnabled && youtubeAnalyzer === "gemini" ? "YOUTUBE_ANALYZER=gemini" : summaryProvider === "gemini" ? "WORKER_SUMMARY_PROVIDER=gemini" : null;
+  if (geminiKeyFor) {
     geminiApiKey = env.GEMINI_API_KEY ?? "";
     // 헤더에 그대로 실리므로 출력 가능한 ASCII만 허용한다(값은 메시지에 넣지 않는다)
-    if (!/^[\x21-\x7e]{1,256}$/.test(geminiApiKey)) throw new Error("YOUTUBE_ANALYZER=gemini에는 올바른 GEMINI_API_KEY가 필요합니다");
+    if (!/^[\x21-\x7e]{1,256}$/.test(geminiApiKey)) throw new Error(`${geminiKeyFor}에는 올바른 GEMINI_API_KEY가 필요합니다`);
   }
   const youtubeMetadataProvider = oneOf(env, "YOUTUBE_METADATA_PROVIDER", ["stub", "youtube"] as const);
   let youtubeWorkerApiKey: string | null = null;
@@ -169,6 +177,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): WorkerConfig {
     supabaseUrl,
     supabaseServiceRoleKey,
     summaryProvider,
+    geminiSummaryModel,
     youtubeEnabled,
     youtubeAnalyzer,
     geminiApiKey,

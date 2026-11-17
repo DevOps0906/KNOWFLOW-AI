@@ -1,5 +1,6 @@
 import type pg from "pg";
 import type { WorkerConfig } from "./config.js";
+import { createGeminiSummaryProvider, createGeminiVideoSummaryProvider } from "./ingest/gemini-summary.js";
 import { createIngestHandler } from "./ingest/handler.js";
 import { createFixtureSourceReader, createStorageSourceReader } from "./ingest/source-reader.js";
 import { createPgIngestStore } from "./ingest/store.js";
@@ -29,6 +30,7 @@ export function buildHandlers(
     | "supabaseUrl"
     | "supabaseServiceRoleKey"
     | "summaryProvider"
+    | "geminiSummaryModel"
     | "youtubeEnabled"
     | "youtubeAnalyzer"
     | "geminiApiKey"
@@ -52,18 +54,29 @@ export function buildHandlers(
         ? createGeminiVideoAnalyzer({ apiKey: config.geminiApiKey ?? "", model: config.geminiModel })
         : createStubVideoAnalyzer();
   }
+  const summaryOpts = { apiKey: config.geminiApiKey ?? "", model: config.geminiSummaryModel };
   const handlers: Handlers = {
     source_ingest: createIngestHandler({
       store: createPgIngestStore(db),
       reader,
-      summarizer: config.summaryProvider === "stub" ? createStubSummaryProvider() : undefined,
+      summarizer:
+        config.summaryProvider === "stub"
+          ? createStubSummaryProvider()
+          : config.summaryProvider === "gemini"
+            ? createGeminiSummaryProvider(summaryOpts)
+            : undefined,
       youtube: analyzer
         ? {
             analyzer,
             store: createPgYoutubeStore(db),
-            // 영상 요약은 프로젝트 요약과 같은 공급자 설정을 따른다(지금은 스텁만, 실호출은 task-015)
+            // 영상 요약은 프로젝트 요약과 같은 공급자 설정을 따른다
             summary:
-              config.summaryProvider === "stub" ? { provider: createStubVideoSummaryProvider(), store: createPgVideoSummaryStore(db) } : undefined,
+              config.summaryProvider === "none"
+                ? undefined
+                : {
+                    provider: config.summaryProvider === "gemini" ? createGeminiVideoSummaryProvider(summaryOpts) : createStubVideoSummaryProvider(),
+                    store: createPgVideoSummaryStore(db),
+                  },
           }
         : undefined,
       log,

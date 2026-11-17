@@ -1,7 +1,8 @@
 # NOW — 재진입 스냅샷 (30줄 이내, 매 작업 끝에 덮어쓴다)
 
 - 갱신: 2026-11-17
-- 현재 작업: 2026-11-17 로컬 실행 정비 — 전용 Supabase(`knowflow-ai-dev`, 56521~56524)에 마이그레이션 20개 첫 적용, Worker Supabase Storage 리더 구현(미구현이라 PDF 처리 불가였음), 등록 60초+ 멈춤(Next fetch tee + `await reader.cancel()`) 수정. 브라우저 E2E 통과: 가입·로그인·프로젝트·PDF 업로드→처리 완료(청크 4)·유튜브 스텁→요약·장면 카드·S-10. 실행법 `docs/runbooks/local-dev.md`. 브랜치 `wip/task-004`
+- 현재 작업: 2026-11-18 사용자 요청 ①대시보드 "자료부터 시작하기"(PDF·유튜브 → 자료 이름으로 프로젝트 자동 생성, 실패 시 재조회 후 0건만 정리) ②Worker 요약 Gemini 공급자(`WORKER_SUMMARY_PROVIDER=gemini`, 출력 2048토큰·thinking 0·60초·재시도 없음). challenger REVISE 반영, codex-reviewer(code) 둘 다 ACCEPT·reviewer(security) ACCEPT. web 355·worker 230(+1 skip). Gemini 실호출은 사용자가 키를 넣은 뒤 확인. 남은 Should: 요약 호출에 lease signal 전달, 응답 상한·본문 읽기 타임아웃 테스트 보강, 사용자별 요약 호출 한도.
+- 이전 작업: 2026-11-17 로컬 실행 정비 — 전용 Supabase(`knowflow-ai-dev`, 56521~56524)에 마이그레이션 20개 첫 적용, Worker Supabase Storage 리더 구현(미구현이라 PDF 처리 불가였음), 등록 60초+ 멈춤(Next fetch tee + `await reader.cancel()`) 수정. 브라우저 E2E 통과: 가입·로그인·프로젝트·PDF 업로드→처리 완료(청크 4)·유튜브 스텁→요약·장면 카드·S-10. 실행법 `docs/runbooks/local-dev.md`. 브랜치 `wip/task-004`
 - 다음: 사용자 결정에 따라 task-009(URL 가져오기) 또는 W3(task-013~). 유튜브·캡처 활성화는 task-025 실측(L1 포함)·task-026 법무(전사·프레임 저장) 판정 뒤.
 - 우선순위(사용자 결정): W2·WY 계속 → 029 → 030 → W3. 설치형 앱(WA, task-033~035)은 task-024 뒤.
 - 검증(2026-11-17, Node 26.13.0 스크래치 · 호스트 Node 26.13.1에서 worker 196 통과 재확인): web 345, worker 196(+1 skip), db 200(14파일), typecheck·lint. 리뷰: 029·030 각각 codex-reviewer(code)+reviewer(security/contract) 🔴 전부 반영.

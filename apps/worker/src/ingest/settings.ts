@@ -25,6 +25,21 @@ export const SUMMARY_SETTINGS = {
   maxQuestionChars: 200,
 } as const;
 
+/**
+ * Gemini 요약 공급자(프로젝트 요약·영상 요약 공용). 키는 env GEMINI_API_KEY, 모델은 env GEMINI_SUMMARY_MODEL로만 받는다(config.ts).
+ * 공급자 안에서는 재시도하지 않는다(후행 단계 실패는 로그만).
+ */
+export const SUMMARY_GEMINI_SETTINGS = {
+  defaultModel: "gemini-3.5-flash",
+  /** 호출 신호가 없어도 공급자가 스스로 거는 타임아웃 */
+  requestTimeoutMs: 60_000,
+  maxOutputTokens: 2048,
+  thinkingBudget: 0,
+  temperature: 0.2,
+  /** 응답 본문 상한(바이트). 넘으면 읽기를 끊는다 */
+  maxResponseBytes: 256 * 1024,
+} as const;
+
 /** 원본 읽기 상한(PRD 8-1: PDF 1개 50MB) */
 export const SOURCE_MAX_BYTES = 50 * 1024 * 1024;
 
