@@ -5,6 +5,29 @@ import { Pin, PinOff, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+/** 입력 중에는 단축키를 무시한다 */
+function isTyping(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) return false;
+  return target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName);
+}
+
+/** O 키로 원문 카드를 연다·닫는다(enabled일 때만, 입력 중·조합키 제외) */
+export function useOriginalShortcut(enabled: boolean, toggle: () => void) {
+  const toggleRef = useRef(toggle);
+  useEffect(() => {
+    toggleRef.current = toggle;
+  });
+  useEffect(() => {
+    if (!enabled) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() !== "o" || e.metaKey || e.ctrlKey || e.altKey || isTyping(e.target)) return;
+      toggleRef.current();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [enabled]);
+}
+
 // 원문 카드(Readray ③ 원문 뷰어): 큰 반경·그림자의 떠 있는 카드. 머리줄 "원문 [O]" + 고정·닫기.
 // pinned면 3단 그리드의 왼쪽 열로 들어가고(데스크톱만), 아니면 화면 위에 떠 있다. Esc로 닫는다.
 export function OriginalCard({
@@ -14,7 +37,8 @@ export function OriginalCard({
   children,
 }: {
   pinned: boolean;
-  onTogglePin: () => void;
+  /** 없으면 고정 버튼을 숨긴다(고정 열이 없는 화면) */
+  onTogglePin?: () => void;
   onClose: () => void;
   children: ReactNode;
 }) {
@@ -48,6 +72,7 @@ export function OriginalCard({
           </kbd>
         </h2>
         <div className="flex items-center gap-1">
+          {onTogglePin ? (
           <Button
             type="button"
             variant="ghost"
@@ -59,6 +84,7 @@ export function OriginalCard({
           >
             {pinned ? <PinOff aria-hidden /> : <Pin aria-hidden />}
           </Button>
+          ) : null}
           <Button type="button" variant="ghost" size="icon-sm" aria-label="원문 닫기" onClick={onClose}>
             <X aria-hidden />
           </Button>

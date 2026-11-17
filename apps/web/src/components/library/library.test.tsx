@@ -6,7 +6,6 @@ const refresh = vi.fn();
 const push = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh, push }), usePathname: () => "/sources" }));
 
-import { ImportDialog } from "@/components/import/import-dialog";
 import { FolderActions, NewFolderButton } from "./folder-dialogs";
 import { formatLibraryDate, SourceLibrary } from "./source-library";
 
@@ -114,29 +113,5 @@ describe("폴더 다이얼로그", () => {
     await waitFor(() => expect(push).toHaveBeenCalledWith("/sources"));
     const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
     expect([url, init.method]).toEqual([`/api/projects/${FOLDER}`, "DELETE"]);
-  });
-});
-
-describe("가져오기 다이얼로그", () => {
-  it("폴더 선택은 기본 폴더(받은 자료)가 먼저이고 같은 이름 폴더는 목록에서 뺀다", () => {
-    render(
-      <ImportDialog
-        folders={[
-          { id: FOLDER, name: "시장 조사" },
-          { id: OTHER, name: "받은 자료" },
-        ]}
-      />,
-    );
-    fireEvent.click(screen.getByRole("button", { name: "가져오기" }));
-    const select = screen.getByLabelText(/폴더/) as HTMLSelectElement;
-    expect(Array.from(select.options).map((o) => o.textContent)).toEqual(["받은 자료 (기본)", "시장 조사"]);
-    expect(select.value).toBe("");
-    expect(screen.getByRole("button", { name: "PDF" })).toBeTruthy();
-  });
-
-  it("폴더 보기에서 열면 그 폴더가 선택돼 있다", () => {
-    render(<ImportDialog folders={[{ id: FOLDER, name: "시장 조사" }]} defaultFolderId={FOLDER} />);
-    fireEvent.click(screen.getByRole("button", { name: "가져오기" }));
-    expect((screen.getByLabelText(/폴더/) as HTMLSelectElement).value).toBe(FOLDER);
   });
 });

@@ -45,16 +45,19 @@ export function YoutubePanel({
   title,
   originalUrl,
   startSeconds,
+  autoplay = false,
 }: {
   sourceId: string;
   videoId: string | null;
   title: string;
   originalUrl: string | null;
   startSeconds: number | null;
+  /** 처음부터 startSeconds에서 재생한다(자료 결과 화면의 인용 칩: 플레이어를 새로 열며 그 시각으로 이동) */
+  autoplay?: boolean;
 }) {
   const [state, setState] = useState<MomentsState>({ kind: "loading" });
-  // 처음에는 인용 위치에서 멈춘 채로 열고, 사용자가 시각을 누르면 그때 자동 재생한다
-  const [seek, setSeek] = useState<Seek>({ seconds: startSeconds, autoplay: false, nonce: 0 });
+  // 처음에는 인용 위치에서 멈춘 채로 열고(autoplay면 바로 재생), 사용자가 시각을 누르면 그때 자동 재생한다
+  const [seek, setSeek] = useState<Seek>({ seconds: startSeconds, autoplay, nonce: 0 });
   const playerRef = useRef<HTMLDivElement>(null);
   const captures = useCaptures(sourceId, true);
   const capturesFull = captures.state.kind === "ok" && captures.state.data.items.length >= captures.state.data.limit;

@@ -61,8 +61,8 @@ describe("앱 셸", () => {
     const current = screen.getAllByRole("link", { name: "자료" })[0];
     expect(current.getAttribute("aria-current")).toBe("page");
     // Lilys 구조: 가져오기·생성물, 새 프로젝트·대시보드 메뉴 없음
-    expect(screen.getAllByRole("button", { name: "가져오기" }).length).toBeGreaterThan(0);
-    expect(screen.getAllByRole("link", { name: "생성물" })[0]!.getAttribute("href")).toBe("/reports");
+    expect(screen.getAllByRole("link", { name: "자료 가져오기" }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("link", { name: "작업물" })[0]!.getAttribute("href")).toBe("/reports");
     expect(screen.queryByRole("link", { name: "대시보드" })).toBeNull();
     expect(screen.queryByRole("link", { name: "새 프로젝트" })).toBeNull();
     expect(screen.getByRole("button", { name: "메뉴 열기" })).toBeTruthy();

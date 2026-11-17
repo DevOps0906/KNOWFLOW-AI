@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ReportShell } from "@/components/report/report-shell";
+import { DigestShell } from "@/components/digest/digest-shell";
 import type { ReportFolder } from "@/components/report/types";
 import { ErrorState } from "@/components/states/error-state";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,8 @@ export const dynamic = "force-dynamic";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
-// 자료 결과 화면(DESIGN.md §2-1). 메타는 A-07 핸들러, 폴더 요약·추천 질문은 A-03 핸들러(둘 다 RLS 세션)로 서버에서 읽는다.
+// 자료 결과 화면(docs/digest-contract.md §1): (reader) 레이아웃이라 앱 사이드바 없이 전체 폭(DigestShell). 다이제스트는 클라이언트가 /digest로 읽는다.
+//메타는 A-07 핸들러, 폴더 요약·추천 질문은 A-03 핸들러(둘 다 RLS 세션)로 서버에서 읽는다.
 // 원문 청크는 원문 카드가 /chunks로 이어 읽고, 처리 중이면 클라이언트가 A-07을 폴링한다.
 export default async function SourceResultPage({
   params,
@@ -39,7 +40,7 @@ export default async function SourceResultPage({
   const pageHref = `/sources/${sourceId}${initialChunkId ? `?chunk=${encodeURIComponent(initialChunkId)}` : ""}`;
   if (!res.ok) {
     return (
-      <div className="mx-auto flex max-w-4xl min-w-0 flex-col gap-4 p-4 md:p-6">
+      <div className="mx-auto flex max-w-reading min-w-0 flex-col gap-4 p-4 md:p-6">
         <ErrorState title="자료를 불러오지 못했습니다" />
         <Button asChild variant="outline" size="sm" className="self-start">
           <Link href={pageHref}>다시 시도</Link>
@@ -63,5 +64,5 @@ export default async function SourceResultPage({
     };
   }
 
-  return <ReportShell key={`${source.id}:${initialChunkId ?? ""}`} initialSource={source} folder={folder} initialChunkId={initialChunkId} youtubeEnabled={isYoutubeEnabled()} />;
+  return <DigestShell key={`${source.id}:${initialChunkId ?? ""}`} initialSource={source} folder={folder} initialChunkId={initialChunkId} youtubeEnabled={isYoutubeEnabled()} />;
 }

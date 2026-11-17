@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpenText, FileText, Folder, Library, MessagesSquare, Search } from "lucide-react";
-import { ImportDialog } from "@/components/import/import-dialog";
+import { BookOpenText, FileText, Folder, Library, MessagesSquare, Plus, Search } from "lucide-react";
+import { importHref } from "@/components/import/import-href";
 import { NewFolderButton } from "@/components/library/folder-dialogs";
 import { Progress } from "@/components/ui/progress";
 import type { FolderOption } from "@/lib/projects/folders";
@@ -14,7 +14,7 @@ export type SidebarUser = { name: string; email: string };
 export type SidebarUsage = { used: number; limit: number };
 
 const ROW =
-  "flex min-h-(--size-touch) items-center gap-3 rounded-row px-3 outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring md:max-desk:justify-center md:max-desk:px-0";
+  "flex min-h-(--size-touch) items-center gap-3 rounded-row px-3 text-nav font-medium outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring md:max-desk:justify-center md:max-desk:px-0";
 
 function NavLink({ href, label, Icon, active }: { href: string; label: string; Icon: typeof Library; active: boolean }) {
   return (
@@ -23,7 +23,7 @@ function NavLink({ href, label, Icon, active }: { href: string; label: string; I
       title={label}
       aria-label={label}
       aria-current={active ? "page" : undefined}
-      className={cn(ROW, "flex-1", active ? "bg-accent font-semibold text-accent-foreground" : "text-muted-foreground hover:bg-muted")}
+      className={cn(ROW, "flex-1", active ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-accent/60")}
     >
       <Icon aria-hidden className="size-[1.125rem] shrink-0" />
       <span className="md:max-desk:hidden">{label}</span>
@@ -31,7 +31,7 @@ function NavLink({ href, label, Icon, active }: { href: string; label: string; I
   );
 }
 
-// Lilys 구조(DESIGN.md §2-1): 로고·검색 → + 가져오기 → 자료(하위 폴더 + 폴더 추가) → 대화(준비 중) → 생성물 · 하단 사용량·계정.
+// Lilys 구조(DESIGN.md §2-1·§2-2): 로고·검색 → + 자료 가져오기(/new/source 화면) → 자료(하위 폴더 + 폴더 추가) → 채팅(준비 중) → 작업물 · 하단 사용량·계정.
 // 데스크톱(1200~)은 전체, 태블릿(768~1199)은 아이콘만(폴더 목록 숨김). 모바일은 Sheet 안에서 전체로 쓴다.
 export function SidebarContent({
   user,
@@ -63,7 +63,7 @@ export function SidebarContent({
           <Search aria-hidden className="size-[1.125rem]" />
         </Link>
       </div>
-      <ImportDialog variant="sidebar" folders={folders} youtubeEnabled={youtubeEnabled} />
+      <div className="flex"><NavLink href={importHref(youtubeEnabled)} label="자료 가져오기" Icon={Plus} active={within("/new/source")} /></div>
       <nav aria-label="주 메뉴" className="mt-3 flex flex-col gap-0.5">
         <div className="flex items-center gap-1">
           <NavLink href="/sources" label="자료" Icon={Library} active={within("/sources")} />
@@ -86,12 +86,12 @@ export function SidebarContent({
             ))}
           </ul>
         ) : null}
-        <span aria-disabled="true" title="대화 (준비 중)" className={cn(ROW, "cursor-not-allowed text-muted-foreground opacity-60")}>
+        <span aria-disabled="true" title="채팅 (준비 중)" className={cn(ROW, "cursor-not-allowed text-muted-foreground opacity-60")}>
           <MessagesSquare aria-hidden className="size-[1.125rem] shrink-0" />
-          <span className="md:max-desk:hidden">대화</span>
+          <span className="md:max-desk:hidden">채팅</span>
           <span className="ml-auto text-caption md:max-desk:hidden">준비 중</span>
         </span>
-        <NavLink href="/reports" label="생성물" Icon={FileText} active={within("/reports")} />
+        <div className="flex"><NavLink href="/reports" label="작업물" Icon={FileText} active={within("/reports")} /></div>
       </nav>
       {usage ? (
         <div className="mt-auto rounded-row bg-muted px-3 py-3 md:max-desk:hidden">

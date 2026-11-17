@@ -4,6 +4,7 @@ const PROTECTED_PREFIXES = [
   "/onboarding",
   "/projects",
   "/sources",
+  "/new",
   "/reports",
   "/settings",
   "/api/projects",

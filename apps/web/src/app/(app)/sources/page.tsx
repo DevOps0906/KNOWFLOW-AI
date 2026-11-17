@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Folder, Inbox, Search } from "lucide-react";
-import { ImportDialog } from "@/components/import/import-dialog";
+import { Folder, Inbox, Plus, Search } from "lucide-react";
+import { importHref } from "@/components/import/import-href";
 import { FolderActions, NewFolderButton } from "@/components/library/folder-dialogs";
 import { SourceLibrary } from "@/components/library/source-library";
 import { EmptyState } from "@/components/states/empty-state";
@@ -59,7 +59,12 @@ export default async function SourcesPage({ searchParams }: { searchParams: Sear
         </div>
         <div className="flex items-center gap-1">
           {folder ? <FolderActions folder={folder} /> : null}
-          <ImportDialog folders={folders ?? []} defaultFolderId={params.folder ?? undefined} youtubeEnabled={youtubeEnabled} />
+          <Button asChild>
+            <Link href={importHref(youtubeEnabled, folder?.id)}>
+              <Plus aria-hidden />
+              가져오기
+            </Link>
+          </Button>
         </div>
       </header>
 
@@ -117,7 +122,12 @@ export default async function SourcesPage({ searchParams }: { searchParams: Sear
             title={params.folder ? "이 폴더에 자료가 없습니다" : "아직 가져온 자료가 없습니다"}
             description="PDF나 유튜브 영상을 가져오면 매체 이름으로 등록하고 분석을 시작합니다."
           >
-            <ImportDialog folders={folders ?? []} defaultFolderId={params.folder ?? undefined} youtubeEnabled={youtubeEnabled} />
+            <Button asChild>
+              <Link href={importHref(youtubeEnabled, folder?.id)}>
+                <Plus aria-hidden />
+                가져오기
+              </Link>
+            </Button>
           </EmptyState>
         )
       ) : (

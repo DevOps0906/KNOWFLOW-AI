@@ -37,7 +37,7 @@ export function AppShell({
     <div className="flex h-dvh">
       <aside
         aria-label="사이드바"
-        className="hidden shrink-0 border-r border-border bg-sidebar text-sidebar-foreground md:block md:w-16 desk:w-60"
+        className="hidden shrink-0 border-r border-border bg-sidebar text-sidebar-foreground md:block md:w-16 desk:w-(--size-sidebar)"
       >
         <SidebarContent user={user} usage={usage} folders={folders} youtubeEnabled={youtubeEnabled} />
       </aside>

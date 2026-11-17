@@ -258,7 +258,8 @@ describe("S-10 HTML 주입 금지", () => {
     // vitest 루트는 apps/web
     const dirs = [
       join(process.cwd(), "src/components/workspace/viewer"),
-      join(process.cwd(), "src/app/(app)/sources/[sourceId]"),
+      join(process.cwd(), "src/app/(reader)/sources/[sourceId]"),
+      join(process.cwd(), "src/components/digest"),
       join(process.cwd(), "src/components/youtube"),
       join(process.cwd(), "src/app/api/sources/[sourceId]/moments"),
     ];

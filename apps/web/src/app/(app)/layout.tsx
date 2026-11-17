@@ -1,5 +1,4 @@
 import { AppShell } from "@/components/app-shell/app-shell";
-import { ThemeProvider } from "@/components/app-shell/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { loadFolders } from "@/lib/projects/folders";
 import { isYoutubeEnabled } from "@/server/youtube/service";
@@ -8,11 +7,11 @@ import { isYoutubeEnabled } from "@/server/youtube/service";
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const folders = (await loadFolders()) ?? [];
   return (
-    <ThemeProvider>
+    <>
       <AppShell folders={folders} youtubeEnabled={isYoutubeEnabled()}>
         {children}
       </AppShell>
       <Toaster />
-    </ThemeProvider>
+    </>
   );
 }

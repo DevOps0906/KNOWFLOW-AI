@@ -1,15 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { Check, CircleAlert, LoaderCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ensureInboxFolder, importDestination } from "@/lib/projects/quick-start";
-import { browserUploadDeps } from "@/lib/storage/browser";
-import { MAX_FILES_PER_REQUEST } from "@/lib/storage/files";
-import { clientFileProblem, uploadPdfs, type FileState, type UploadDeps } from "@/lib/storage/upload-flow";
+import type { FileState, UploadDeps } from "@/lib/storage/upload-flow";
+import { usePdfImport, useYoutubeImport } from "./use-source-import";
 
 type Tab = "pdf" | "youtube" | "url";
 
@@ -42,108 +39,24 @@ export function AddSourceForm({
   /** 테스트에서 대체한다. */
   deps?: UploadDeps;
 }) {
-  const router = useRouter();
   const [tab, setTab] = useState<Tab>("pdf");
-  const [files, setFiles] = useState<File[]>([]);
-  const [states, setStates] = useState<FileState[]>([]);
-  const [pending, setPending] = useState(false);
-  const [notice, setNotice] = useState<string>();
-  const input = useRef<HTMLInputElement>(null);
-  const [videoUrl, setVideoUrl] = useState("");
-  const [videoState, setVideoState] = useState<{ status: "checking" | "done" | "error"; message?: string }>();
-  // 같은 주소를 다시 보내면 같은 멱등 키를 쓴다(네트워크 재시도에서 중복 등록 방지)
-  const videoKey = useRef<string | null>(null);
-  const [partial, setPartial] = useState<string>();
-  const tabs: Tab[] = youtubeEnabled ? ["pdf", "youtube", "url"] : ["pdf", "url"];
   const navigate = !projectId || openResult;
-
-  function onPick(event: React.ChangeEvent<HTMLInputElement>) {
-    const picked = Array.from(event.target.files ?? []);
-    setNotice(undefined);
-    setFiles(picked);
-    setStates(
-      picked.map((f) => {
-        const problem = clientFileProblem(f);
-        return problem ? { name: f.name, status: "error" as const, message: problem } : { name: f.name, status: "waiting" as const };
-      }),
-    );
-    if (picked.length > MAX_FILES_PER_REQUEST) setNotice("한 번에 최대 10개까지 올릴 수 있습니다.");
-  }
-
-  /** 넣을 폴더 id. 고른 폴더가 없으면 기본 폴더를 찾거나 만든다. 실패하면 오류 문구. */
-  async function resolveFolder(): Promise<{ id: string } | { error: string }> {
-    if (projectId) return { id: projectId };
-    const inbox = await ensureInboxFolder();
-    return inbox.ok && inbox.id ? { id: inbox.id } : { error: inbox.message ?? "기본 폴더를 준비하지 못했습니다." };
-  }
-
-  async function submitYoutube() {
-    const url = videoUrl.trim();
-    if (!url) return setVideoState({ status: "error", message: "유튜브 영상 주소를 넣어 주세요." });
-    const d = deps ?? browserUploadDeps();
-    videoKey.current ??= d.newKey();
-    setPending(true);
-    setVideoState({ status: "checking" });
-    try {
-      const folder = await resolveFolder();
-      if ("error" in folder) return setVideoState({ status: "error", message: folder.error });
-      const response = await d.fetch(`/api/projects/${folder.id}/sources`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Idempotency-Key": videoKey.current },
-        body: JSON.stringify({ source_type: "youtube", url }),
-      });
-      const data = (await response.json().catch(() => ({}))) as { sourceId?: unknown; error?: { message?: string } };
-      if (response.ok) {
-        setVideoState({ status: "done" });
-        setVideoUrl("");
-        videoKey.current = null;
-        if (navigate) {
-          router.push(importDestination(typeof data.sourceId === "string" ? [data.sourceId] : [], folder.id));
-        } else {
-          router.refresh();
-        }
-        onDone?.();
-      } else {
-        setVideoState({ status: "error", message: data.error?.message ?? "등록하지 못했습니다." });
-      }
-    } catch {
-      setVideoState({ status: "error", message: "네트워크 연결을 확인하고 다시 시도해 주세요." });
-    } finally {
-      setPending(false);
-    }
-  }
+  const input = useRef<HTMLInputElement>(null);
+  const clearInput = () => {
+    if (input.current) input.current.value = "";
+  };
+  const pdf = usePdfImport({ projectId, navigate, deps, onDone, clearInput });
+  const video = useYoutubeImport({ projectId, navigate, deps, onDone });
+  const { states, notice, partial } = pdf;
+  const pending = pdf.pending || video.pending;
+  const videoState = video.state;
+  const tabs: Tab[] = youtubeEnabled ? ["pdf", "youtube", "url"] : ["pdf", "url"];
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (tab === "youtube") return submitYoutube();
-    if (files.length === 0) return setNotice("올릴 PDF 파일을 선택해 주세요.");
-    setPending(true);
-    setNotice(undefined);
-    setPartial(undefined);
-    const folder = await resolveFolder();
-    if ("error" in folder) {
-      setPending(false);
-      return setNotice(folder.error);
-    }
-    const { accepted, sourceIds } = await uploadPdfs(folder.id, files, deps ?? browserUploadDeps(), setStates);
-    setPending(false);
-    if (accepted === 0) return;
-    if (navigate && accepted === files.length) {
-      router.push(importDestination(sourceIds, folder.id));
-      onDone?.();
-      return;
-    }
-    router.refresh();
-    if (accepted < files.length) {
-      if (navigate) setPartial(`/sources?folder=${encodeURIComponent(folder.id)}`);
-      return;
-    }
-    setFiles([]);
-    if (input.current) input.current.value = "";
-    onDone?.();
+    if (tab === "youtube") return video.submit();
+    return pdf.submit();
   }
-
-  const blocked = states.some((s) => s.status === "error" && s.message) && !pending;
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
@@ -171,7 +84,7 @@ export function AddSourceForm({
               type="file"
               accept="application/pdf,.pdf"
               multiple
-              onChange={onPick}
+              onChange={(e) => pdf.pick(Array.from(e.target.files ?? []))}
               disabled={pending}
               className="h-auto py-2"
             />
@@ -206,12 +119,8 @@ export function AddSourceForm({
               type="url"
               inputMode="url"
               placeholder="https://www.youtube.com/watch?v=..."
-              value={videoUrl}
-              onChange={(e) => {
-                setVideoUrl(e.target.value);
-                setVideoState(undefined);
-                videoKey.current = null;
-              }}
+              value={video.url}
+              onChange={(e) => video.setUrl(e.target.value)}
               disabled={pending}
               aria-describedby="youtube-help"
             />
@@ -269,8 +178,8 @@ export function AddSourceForm({
           type="submit"
           disabled={
             tab === "youtube"
-              ? pending || videoUrl.trim().length === 0
-              : tab !== "pdf" || pending || files.length === 0 || files.length > MAX_FILES_PER_REQUEST || blocked
+              ? pending || video.url.trim().length === 0
+              : tab !== "pdf" || !pdf.canSubmit
           }
           aria-busy={pending}
         >
