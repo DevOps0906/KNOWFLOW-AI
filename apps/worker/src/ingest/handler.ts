@@ -98,6 +98,8 @@ export function createIngestHandler(deps: IngestDeps): Handler {
     // url 본문 추출은 task-009 완료 뒤 연결한다
     if (source.source_type !== "pdf") throw fail(INGEST_ERROR_CODES.unsupportedSourceType);
     if (!source.storage_path || !source.content_hash) throw fail(INGEST_ERROR_CODES.invalidSource);
+    // 원본은 소유자 폴더(<user_id>/...) 안에만 있어야 한다(다른 사용자 객체를 서비스 키로 읽지 않게)
+    if (!source.storage_path.startsWith(`${source.user_id}/`)) throw fail(INGEST_ERROR_CODES.sourcePathInvalid);
 
     const bytes = await deps.reader.read(source.storage_path, signal);
     signal.throwIfAborted();

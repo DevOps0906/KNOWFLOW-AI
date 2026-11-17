@@ -44,3 +44,14 @@ export const INGEST_ERROR_CODES = {
   invalidChunks: "invalid_chunks",
   embeddingModelMismatch: "embedding_model_mismatch",
 } as const;
+
+/** Supabase Storage 원본 읽기(서비스 키). 시간 초과는 재시도 대상이다. */
+export const STORAGE_SETTINGS = {
+  bucket: "sources",
+  /** 요청 시작부터 응답 헤더까지 */
+  headerTimeoutMs: 30_000,
+  /** 요청 시작부터 본문 전체 수신까지 */
+  bodyTimeoutMs: 120_000,
+  /** 오류 응답 본문은 분류에만 쓰고 이 크기까지만 읽는다(로그 금지) */
+  errorBodyMaxBytes: 4096,
+} as const;

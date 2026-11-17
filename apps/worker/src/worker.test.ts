@@ -267,6 +267,9 @@ describe("verifyDbIdentity", () => {
   });
 });
 
+// storage 원본 읽기(기본값)에 필요한 값
+const STORAGE_ENV = { SUPABASE_URL: "https://abc.supabase.co/", SUPABASE_SERVICE_ROLE_KEY: "service-test" };
+
 describe("config · log", () => {
   it("DATABASE_URL이 없으면 거부하고 범위를 벗어난 값도 거부한다", () => {
     expect(() => loadConfig({})).toThrow(/DATABASE_URL/);
@@ -275,7 +278,7 @@ describe("config · log", () => {
     expect(() => loadConfig({ DATABASE_URL: "postgres://x", WORKER_DB_ROLE: "x; drop table y" })).toThrow(/WORKER_DB_ROLE/);
   });
   it("기본값을 채운다", () => {
-    expect(loadConfig({ DATABASE_URL: "postgres://x" })).toMatchObject({ dbRole: "service_role", leaseSeconds: 120, dummyHandlers: false });
+    expect(loadConfig({ DATABASE_URL: "postgres://x", ...STORAGE_ENV })).toMatchObject({ dbRole: "service_role", leaseSeconds: 120, dummyHandlers: false });
   });
   it("더미 핸들러는 compose db·loopback DB에서만 허용한다", () => {
     for (const host of ["db", "localhost", "127.0.0.1", "[::1]"]) {
@@ -284,12 +287,12 @@ describe("config · log", () => {
     for (const url of ["postgres://u:p@db.abc.supabase.co:5432/k", "postgres://u:p@10.0.0.5:5432/k", "not a url"]) {
       expect(() => loadConfig({ DATABASE_URL: url, WORKER_DUMMY_HANDLERS: "1" })).toThrow(/DATABASE_URL 형식|더미 핸들러/);
     }
-    expect(loadConfig({ DATABASE_URL: "postgres://u:p@db.abc.supabase.co:5432/k" }).dummyHandlers).toBe(false);
+    expect(loadConfig({ DATABASE_URL: "postgres://u:p@db.abc.supabase.co:5432/k", ...STORAGE_ENV }).dummyHandlers).toBe(false);
   });
   it("고정 파일 어댑터·스텁 요약은 로컬 DB에서만, 기본값은 storage·none", () => {
     const local = "postgres://u:p@db:5432/k";
     const remote = "postgres://u:p@db.abc.supabase.co:5432/k";
-    expect(loadConfig({ DATABASE_URL: remote })).toMatchObject({ sourceReader: "storage", fixtureDir: null, summaryProvider: "none" });
+    expect(loadConfig({ DATABASE_URL: remote, ...STORAGE_ENV })).toMatchObject({ sourceReader: "storage", fixtureDir: null, summaryProvider: "none" });
     expect(loadConfig({ DATABASE_URL: local, WORKER_SOURCE_READER: "fixture", WORKER_FIXTURE_DIR: "/fixtures", WORKER_SUMMARY_PROVIDER: "stub" })).toMatchObject({
       sourceReader: "fixture",
       fixtureDir: "/fixtures",
@@ -299,6 +302,51 @@ describe("config · log", () => {
     expect(() => loadConfig({ DATABASE_URL: remote, WORKER_SOURCE_READER: "fixture", WORKER_FIXTURE_DIR: "/f" })).toThrow(/고정 파일 어댑터/);
     expect(() => loadConfig({ DATABASE_URL: remote, WORKER_SUMMARY_PROVIDER: "stub" })).toThrow(/스텁 요약/);
     expect(() => loadConfig({ DATABASE_URL: local, WORKER_SUMMARY_PROVIDER: "openai" })).toThrow(/WORKER_SUMMARY_PROVIDER/);
+  });
+  it("storage 원본 읽기는 더미 핸들러가 아닐 때만 SUPABASE_URL·SUPABASE_SERVICE_ROLE_KEY가 필요하다", () => {
+    const remote = "postgres://u:p@db.abc.supabase.co:5432/k";
+    expect(loadConfig({ DATABASE_URL: remote, ...STORAGE_ENV })).toMatchObject({ supabaseUrl: "https://abc.supabase.co", supabaseServiceRoleKey: "service-test" });
+    expect(() => loadConfig({ DATABASE_URL: remote })).toThrow(/SUPABASE_URL/);
+    expect(() => loadConfig({ DATABASE_URL: remote, SUPABASE_URL: STORAGE_ENV.SUPABASE_URL })).toThrow(/SUPABASE_SERVICE_ROLE_KEY/);
+    // 더미 핸들러·고정 파일 어댑터는 값을 요구하지도 들고 있지도 않는다
+    const local = "postgres://u:p@db:5432/k";
+    expect(loadConfig({ DATABASE_URL: local, WORKER_DUMMY_HANDLERS: "1", ...STORAGE_ENV })).toMatchObject({ supabaseUrl: null, supabaseServiceRoleKey: null });
+    expect(loadConfig({ DATABASE_URL: local, WORKER_SOURCE_READER: "fixture", WORKER_FIXTURE_DIR: "/f" })).toMatchObject({ supabaseUrl: null });
+  });
+  it("SUPABASE_URL은 https(loopback만 http)이고 사용자 정보·쿼리·해시를 거부한다(메시지에 값 없음)", () => {
+    const env = (url: string) => ({ DATABASE_URL: "postgres://x", SUPABASE_URL: url, SUPABASE_SERVICE_ROLE_KEY: "k" });
+    expect(loadConfig(env("http://127.0.0.1:54321/")).supabaseUrl).toBe("http://127.0.0.1:54321");
+    expect(loadConfig(env("http://localhost:54321")).supabaseUrl).toBe("http://localhost:54321");
+    expect(loadConfig(env("http://[::1]:54321")).supabaseUrl).toBe("http://[::1]:54321");
+    expect(loadConfig(env("https://abc.supabase.co//")).supabaseUrl).toBe("https://abc.supabase.co");
+    for (const bad of [
+      "http://abc.supabase.co",
+      "http://10.0.0.5:54321",
+      "ftp://abc.supabase.co",
+      "https://user:s3cret@abc.supabase.co",
+      "https://abc.supabase.co/?s3cret=1",
+      "https://abc.supabase.co/#s3cret",
+      "not a url s3cret",
+    ]) {
+      try {
+        loadConfig(env(bad));
+        expect.unreachable(bad);
+      } catch (e) {
+        expect((e as Error).message).toMatch(/SUPABASE_URL 형식/);
+        expect((e as Error).message).not.toContain("s3cret");
+      }
+    }
+  });
+  it("SUPABASE_SERVICE_ROLE_KEY는 출력 가능한 ASCII만 허용한다(메시지에 키 없음)", () => {
+    for (const bad of ["", "s3cret key", "s3cret\nX-Injected: 1", "s3cret한글"]) {
+      try {
+        loadConfig({ DATABASE_URL: "postgres://x", SUPABASE_URL: "https://abc.supabase.co", SUPABASE_SERVICE_ROLE_KEY: bad });
+        expect.unreachable();
+      } catch (e) {
+        expect((e as Error).message).toMatch(/SUPABASE_SERVICE_ROLE_KEY/);
+        expect((e as Error).message).not.toContain("s3cret");
+      }
+    }
   });
   it("설정 오류 메시지에 연결 문자열이 들어가지 않는다", () => {
     try {

@@ -14,7 +14,8 @@
     "verify:secrets": "node scripts/verify-secrets.mjs",
     "verify:ingest": "node scripts/verify-ingest.mjs",
     "verify:parser-sandbox": "node scripts/verify-parser-sandbox.mjs",
-    "verify:youtube": "node scripts/verify-youtube.mjs"
+    "verify:youtube": "node scripts/verify-youtube.mjs",
+    "verify:storage": "node --env-file=.env.local scripts/verify-storage.mjs"
   },
   "dependencies": {
     "citations": "workspace:*",

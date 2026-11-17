@@ -53,7 +53,8 @@ async function readHeadViaSignedUrl(supabase: SupabaseClient, path: string) {
     chunks.push(value);
     received += value.length;
   }
-  await reader.cancel().catch(() => {});
+  // 취소 완료를 기다리지 않는다: Next가 감싼 fetch는 본문을 tee해 두어 한쪽 취소가 다른 쪽 정리 전까지 끝나지 않는다(등록이 수십 초~수 분 멈춤)
+  void reader.cancel().catch(() => {});
   const head = new Uint8Array(Math.min(received, HEAD_BYTES));
   let offset = 0;
   for (const chunk of chunks) {

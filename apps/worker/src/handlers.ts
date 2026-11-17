@@ -26,6 +26,8 @@ export function buildHandlers(
     | "dummyHandlers"
     | "sourceReader"
     | "fixtureDir"
+    | "supabaseUrl"
+    | "supabaseServiceRoleKey"
     | "summaryProvider"
     | "youtubeEnabled"
     | "youtubeAnalyzer"
@@ -39,7 +41,9 @@ export function buildHandlers(
 ): Handlers {
   if (config.dummyHandlers) return { source_ingest: dummyHandler, report_generate: dummyHandler };
   const reader =
-    config.sourceReader === "fixture" && config.fixtureDir ? createFixtureSourceReader(config.fixtureDir) : createStorageSourceReader();
+    config.sourceReader === "fixture" && config.fixtureDir
+      ? createFixtureSourceReader(config.fixtureDir)
+      : createStorageSourceReader({ url: config.supabaseUrl ?? "", serviceRoleKey: config.supabaseServiceRoleKey ?? "" });
   // 플래그가 꺼지면 유튜브 처리를 등록하지 않는다(들어온 유튜브 작업은 youtube_disabled로 영구 실패)
   let analyzer: VideoAnalyzer | undefined;
   if (config.youtubeEnabled) {

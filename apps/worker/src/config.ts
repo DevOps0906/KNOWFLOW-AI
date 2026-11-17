@@ -13,9 +13,13 @@ export interface WorkerConfig {
   shutdownGraceMs: number;
   metricsIntervalMs: number;
   dummyHandlers: boolean;
-  /** 원본 읽기 어댑터. fixture는 로컬 검증 전용(마운트한 폴더), storage는 미구현 */
+  /** 원본 읽기 어댑터. fixture는 로컬 검증 전용(마운트한 폴더), storage는 Supabase Storage REST */
   sourceReader: "fixture" | "storage";
   fixtureDir: string | null;
+  /** storage 어댑터용 Supabase URL(정규화, 끝 슬래시 없음). storage가 아니거나 더미 핸들러면 null */
+  supabaseUrl: string | null;
+  /** storage 어댑터용 서비스 키. 로그에 남기지 않는다. storage가 아니거나 더미 핸들러면 null */
+  supabaseServiceRoleKey: string | null;
   /** 후행 요약 공급자. stub은 로컬 검증 전용, none이면 요약하지 않는다 */
   summaryProvider: "stub" | "none";
   /** 유튜브 처리 기능 플래그(YOUTUBE_ENABLED=1, 기본 꺼짐). 꺼지면 유튜브 처리를 등록하지 않는다 */
@@ -79,6 +83,27 @@ function assertLocalDb(databaseUrl: string, what: string) {
   if (!isLocalDbUrl(databaseUrl)) throw new Error(`${what}는 compose db·loopback DB에서만 쓸 수 있습니다`);
 }
 
+const LOOPBACK_HOSTS = new Set(["localhost", "[::1]"]);
+
+/**
+ * SUPABASE_URL 검증·정규화. https만, 단 loopback·localhost는 http 허용. 사용자 정보·쿼리·해시 거부, 끝 슬래시 제거.
+ * 오류 메시지에 값을 넣지 않는다.
+ */
+export function parseSupabaseUrl(raw: string): string {
+  const fail = () => new Error("SUPABASE_URL 형식이 올바르지 않습니다");
+  let u: URL;
+  try {
+    u = new URL(raw);
+  } catch {
+    throw fail();
+  }
+  const host = u.hostname.toLowerCase();
+  const loopback = LOOPBACK_HOSTS.has(host) || /^127(\.\d{1,3}){3}$/.test(host);
+  if (!(u.protocol === "https:" || (u.protocol === "http:" && loopback))) throw fail();
+  if (u.username || u.password || u.search || u.hash || raw.includes("?") || raw.includes("#") || raw.includes("@")) throw fail();
+  return `${u.protocol}//${u.host}${u.pathname.replace(/\/+$/, "")}`;
+}
+
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): WorkerConfig {
   const databaseUrl = env.DATABASE_URL;
   if (!databaseUrl) throw new Error("DATABASE_URL이 필요합니다");
@@ -118,6 +143,17 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): WorkerConfig {
       throw new Error("YOUTUBE_METADATA_PROVIDER=youtube에는 올바른 YOUTUBE_WORKER_API_KEY가 필요합니다");
     }
   }
+  let supabaseUrl: string | null = null;
+  let supabaseServiceRoleKey: string | null = null;
+  if (sourceReader === "storage" && !dummyHandlers) {
+    if (!env.SUPABASE_URL) throw new Error("WORKER_SOURCE_READER=storage에는 SUPABASE_URL이 필요합니다");
+    supabaseUrl = parseSupabaseUrl(env.SUPABASE_URL);
+    supabaseServiceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+    // 헤더에 그대로 실리므로 출력 가능한 ASCII만 허용한다(값은 메시지에 넣지 않는다)
+    if (!/^[\x21-\x7e]{1,4096}$/.test(supabaseServiceRoleKey)) {
+      throw new Error("WORKER_SOURCE_READER=storage에는 올바른 SUPABASE_SERVICE_ROLE_KEY가 필요합니다");
+    }
+  }
   return {
     databaseUrl,
     dbRole,
@@ -130,6 +166,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): WorkerConfig {
     dummyHandlers,
     sourceReader,
     fixtureDir,
+    supabaseUrl,
+    supabaseServiceRoleKey,
     summaryProvider,
     youtubeEnabled,
     youtubeAnalyzer,

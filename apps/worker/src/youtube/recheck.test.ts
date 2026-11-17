@@ -14,6 +14,8 @@ import { createPgRecheckStore, type RecheckResult, type RecheckStore, type Reche
 const VIDEO_ID = "abcDEF12345";
 const LOCAL = "postgres://u:p@localhost:5432/k";
 const REMOTE = "postgres://u:p@db.abc.supabase.co:5432/k";
+// 기본 원본 읽기(storage)에 필요한 값. 이 파일의 설정 검증은 storage와 무관하다
+const STORAGE_ENV = { SUPABASE_URL: "https://abc.supabase.co", SUPABASE_SERVICE_ROLE_KEY: "service-test" };
 
 const video = (o: Partial<{ title: string; channelTitle: string; durationSeconds: number | null; privacyStatus: string; uploadStatus: string }> = {}) => ({
   title: "제목", channelTitle: "채널", durationSeconds: 600, privacyStatus: "public", uploadStatus: "processed", ...o,
@@ -271,7 +273,7 @@ function fakePool(failOn?: string) {
 
 describe("buildHandlers · pg 재확인 저장소", () => {
   const base = {
-    dummyHandlers: false, sourceReader: "storage", fixtureDir: null, summaryProvider: "none", youtubeAnalyzer: "stub", geminiApiKey: null, geminiModel: "gemini-test",
+    dummyHandlers: false, sourceReader: "storage", fixtureDir: null, supabaseUrl: null, supabaseServiceRoleKey: null, summaryProvider: "none", youtubeAnalyzer: "stub", geminiApiKey: null, geminiModel: "gemini-test",
     youtubeMetadataProvider: "stub", youtubeWorkerApiKey: null,
   } as const;
 
@@ -309,12 +311,12 @@ describe("buildHandlers · pg 재확인 저장소", () => {
 
 describe("config · 재확인 공급자", () => {
   it("기본은 스텁이고, 꺼져 있으면 키를 들고 있지 않는다", () => {
-    expect(loadConfig({ DATABASE_URL: LOCAL, YOUTUBE_WORKER_API_KEY: "k" })).toMatchObject({ youtubeMetadataProvider: "stub", youtubeWorkerApiKey: null });
-    expect(() => loadConfig({ DATABASE_URL: LOCAL, YOUTUBE_METADATA_PROVIDER: "other" })).toThrow(/YOUTUBE_METADATA_PROVIDER/);
+    expect(loadConfig({ ...STORAGE_ENV, DATABASE_URL: LOCAL, YOUTUBE_WORKER_API_KEY: "k" })).toMatchObject({ youtubeMetadataProvider: "stub", youtubeWorkerApiKey: null });
+    expect(() => loadConfig({ ...STORAGE_ENV, DATABASE_URL: LOCAL, YOUTUBE_METADATA_PROVIDER: "other" })).toThrow(/YOUTUBE_METADATA_PROVIDER/);
   });
 
   it("youtube 공급자는 올바른 YOUTUBE_WORKER_API_KEY가 필요하다(메시지에 키 없음)", () => {
-    const env = { DATABASE_URL: LOCAL, YOUTUBE_ENABLED: "1", YOUTUBE_METADATA_PROVIDER: "youtube" };
+    const env = { ...STORAGE_ENV, DATABASE_URL: LOCAL, YOUTUBE_ENABLED: "1", YOUTUBE_METADATA_PROVIDER: "youtube" };
     expect(() => loadConfig(env)).toThrow(/YOUTUBE_WORKER_API_KEY/);
     try {
       loadConfig({ ...env, YOUTUBE_WORKER_API_KEY: "bad key\nX-Injected: 1" });
@@ -328,7 +330,7 @@ describe("config · 재확인 공급자", () => {
   });
 
   it("운영에서 플래그를 켜면 스텁 메타데이터 공급자는 거부한다", () => {
-    expect(() => loadConfig({ DATABASE_URL: REMOTE, YOUTUBE_ENABLED: "1", YOUTUBE_ANALYZER: "gemini", GEMINI_API_KEY: "g" })).toThrow(/스텁 메타데이터/);
+    expect(() => loadConfig({ ...STORAGE_ENV, DATABASE_URL: REMOTE, YOUTUBE_ENABLED: "1", YOUTUBE_ANALYZER: "gemini", GEMINI_API_KEY: "g" })).toThrow(/스텁 메타데이터/);
   });
 });
 
@@ -354,12 +356,12 @@ describe("config · 로컬 DB 가드(pg 해석기 기준)", () => {
 
   it("가드를 쓰는 모든 설정(더미·고정 파일·스텁 요약·스텁 분석기·스텁 메타데이터)이 우회 URL을 거부한다", () => {
     const bypass = "postgres://u:p@localhost/k?host=db.remote";
-    expect(() => loadConfig({ DATABASE_URL: bypass, WORKER_DUMMY_HANDLERS: "1" })).toThrow(/더미 핸들러/);
-    expect(() => loadConfig({ DATABASE_URL: bypass, WORKER_SOURCE_READER: "fixture", WORKER_FIXTURE_DIR: "/f" })).toThrow(/고정 파일 어댑터/);
-    expect(() => loadConfig({ DATABASE_URL: bypass, WORKER_SUMMARY_PROVIDER: "stub" })).toThrow(/스텁 요약/);
-    expect(() => loadConfig({ DATABASE_URL: bypass, YOUTUBE_ENABLED: "1" })).toThrow(/스텁 영상 분석기/);
+    expect(() => loadConfig({ ...STORAGE_ENV, DATABASE_URL: bypass, WORKER_DUMMY_HANDLERS: "1" })).toThrow(/더미 핸들러/);
+    expect(() => loadConfig({ ...STORAGE_ENV, DATABASE_URL: bypass, WORKER_SOURCE_READER: "fixture", WORKER_FIXTURE_DIR: "/f" })).toThrow(/고정 파일 어댑터/);
+    expect(() => loadConfig({ ...STORAGE_ENV, DATABASE_URL: bypass, WORKER_SUMMARY_PROVIDER: "stub" })).toThrow(/스텁 요약/);
+    expect(() => loadConfig({ ...STORAGE_ENV, DATABASE_URL: bypass, YOUTUBE_ENABLED: "1" })).toThrow(/스텁 영상 분석기/);
     expect(() =>
-      loadConfig({ DATABASE_URL: bypass, YOUTUBE_ENABLED: "1", YOUTUBE_ANALYZER: "gemini", GEMINI_API_KEY: "g" }),
+      loadConfig({ ...STORAGE_ENV, DATABASE_URL: bypass, YOUTUBE_ENABLED: "1", YOUTUBE_ANALYZER: "gemini", GEMINI_API_KEY: "g" }),
     ).toThrow(/스텁 메타데이터/);
     // 로컬이면 모두 허용
     expect(

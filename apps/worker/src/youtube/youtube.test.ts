@@ -20,6 +20,8 @@ import { createStubVideoSummaryProvider, type SummarySentence, type VideoSummary
 const VIDEO_ID = "dQw4w9WgXcQ";
 const LOCAL = "postgres://u:p@db:5432/k";
 const REMOTE = "postgres://u:p@db.abc.supabase.co:5432/k";
+// 기본 원본 읽기(storage)에 필요한 값. 이 파일의 설정 검증은 storage와 무관하다
+const STORAGE_ENV = { SUPABASE_URL: "https://abc.supabase.co", SUPABASE_SERVICE_ROLE_KEY: "service-test" };
 
 async function codeOf(p: Promise<unknown> | (() => unknown)) {
   const e = await (typeof p === "function" ? Promise.resolve().then(p) : p).then(() => undefined, (err: unknown) => err);
@@ -563,7 +565,7 @@ function fakePool(failOn?: string) {
 
 describe("buildHandlers · pg 유튜브 저장소", () => {
   const base = {
-    dummyHandlers: false, sourceReader: "storage", fixtureDir: null, summaryProvider: "none", youtubeAnalyzer: "stub", geminiApiKey: null, geminiModel: "gemini-test",
+    dummyHandlers: false, sourceReader: "storage", fixtureDir: null, supabaseUrl: null, supabaseServiceRoleKey: null, summaryProvider: "none", youtubeAnalyzer: "stub", geminiApiKey: null, geminiModel: "gemini-test",
     youtubeMetadataProvider: "stub", youtubeWorkerApiKey: null,
   } as const;
 
@@ -591,34 +593,34 @@ describe("buildHandlers · pg 유튜브 저장소", () => {
 
 describe("config · 유튜브 플래그", () => {
   it("기본은 꺼짐·스텁이고, 꺼져 있으면 키를 들고 있지 않는다", () => {
-    expect(loadConfig({ DATABASE_URL: REMOTE, GEMINI_API_KEY: "k" })).toMatchObject({ youtubeEnabled: false, youtubeAnalyzer: "stub", geminiApiKey: null });
-    expect(loadConfig({ DATABASE_URL: LOCAL, YOUTUBE_ENABLED: "1" })).toMatchObject({ youtubeEnabled: true, youtubeAnalyzer: "stub" });
-    expect(() => loadConfig({ DATABASE_URL: LOCAL, YOUTUBE_ANALYZER: "openai" })).toThrow(/YOUTUBE_ANALYZER/);
+    expect(loadConfig({ ...STORAGE_ENV, DATABASE_URL: REMOTE, GEMINI_API_KEY: "k" })).toMatchObject({ youtubeEnabled: false, youtubeAnalyzer: "stub", geminiApiKey: null });
+    expect(loadConfig({ ...STORAGE_ENV, DATABASE_URL: LOCAL, YOUTUBE_ENABLED: "1" })).toMatchObject({ youtubeEnabled: true, youtubeAnalyzer: "stub" });
+    expect(() => loadConfig({ ...STORAGE_ENV, DATABASE_URL: LOCAL, YOUTUBE_ANALYZER: "openai" })).toThrow(/YOUTUBE_ANALYZER/);
   });
 
   it("운영에서 플래그 켜짐 + 스텁 선택, 또는 gemini인데 키가 없으면 기동을 거부한다(메시지에 키 없음)", () => {
-    expect(() => loadConfig({ DATABASE_URL: REMOTE, YOUTUBE_ENABLED: "1" })).toThrow(/스텁 영상 분석기/);
-    expect(() => loadConfig({ DATABASE_URL: REMOTE, YOUTUBE_ENABLED: "1", YOUTUBE_ANALYZER: "stub" })).toThrow(/스텁 영상 분석기/);
-    expect(() => loadConfig({ DATABASE_URL: REMOTE, YOUTUBE_ENABLED: "1", YOUTUBE_ANALYZER: "gemini" })).toThrow(/GEMINI_API_KEY/);
+    expect(() => loadConfig({ ...STORAGE_ENV, DATABASE_URL: REMOTE, YOUTUBE_ENABLED: "1" })).toThrow(/스텁 영상 분석기/);
+    expect(() => loadConfig({ ...STORAGE_ENV, DATABASE_URL: REMOTE, YOUTUBE_ENABLED: "1", YOUTUBE_ANALYZER: "stub" })).toThrow(/스텁 영상 분석기/);
+    expect(() => loadConfig({ ...STORAGE_ENV, DATABASE_URL: REMOTE, YOUTUBE_ENABLED: "1", YOUTUBE_ANALYZER: "gemini" })).toThrow(/GEMINI_API_KEY/);
     const badKey = "bad key\nX-Injected: 1";
     try {
-      loadConfig({ DATABASE_URL: REMOTE, YOUTUBE_ENABLED: "1", YOUTUBE_ANALYZER: "gemini", GEMINI_API_KEY: badKey });
+      loadConfig({ ...STORAGE_ENV, DATABASE_URL: REMOTE, YOUTUBE_ENABLED: "1", YOUTUBE_ANALYZER: "gemini", GEMINI_API_KEY: badKey });
       expect.unreachable();
     } catch (e) {
       expect((e as Error).message).toMatch(/GEMINI_API_KEY/);
       expect((e as Error).message).not.toContain("bad key");
     }
     // 운영은 재확인용 videos.list도 실제 공급자(027d)여야 한다
-    expect(() => loadConfig({ DATABASE_URL: REMOTE, YOUTUBE_ENABLED: "1", YOUTUBE_ANALYZER: "gemini", GEMINI_API_KEY: "AIza-ok" })).toThrow(/스텁 메타데이터/);
+    expect(() => loadConfig({ ...STORAGE_ENV, DATABASE_URL: REMOTE, YOUTUBE_ENABLED: "1", YOUTUBE_ANALYZER: "gemini", GEMINI_API_KEY: "AIza-ok" })).toThrow(/스텁 메타데이터/);
     expect(loadConfig({
-      DATABASE_URL: REMOTE, YOUTUBE_ENABLED: "1", YOUTUBE_ANALYZER: "gemini", GEMINI_API_KEY: "AIza-ok",
+      ...STORAGE_ENV, DATABASE_URL: REMOTE, YOUTUBE_ENABLED: "1", YOUTUBE_ANALYZER: "gemini", GEMINI_API_KEY: "AIza-ok",
       YOUTUBE_METADATA_PROVIDER: "youtube", YOUTUBE_WORKER_API_KEY: "AIza-worker",
     })).toMatchObject({
       youtubeEnabled: true,
       youtubeAnalyzer: "gemini",
       geminiApiKey: "AIza-ok",
     });
-    expect(() => loadConfig({ DATABASE_URL: REMOTE, GEMINI_MODEL: "x/y" })).toThrow(/GEMINI_MODEL/);
+    expect(() => loadConfig({ ...STORAGE_ENV, DATABASE_URL: REMOTE, GEMINI_MODEL: "x/y" })).toThrow(/GEMINI_MODEL/);
   });
 });
 
@@ -694,7 +696,7 @@ describe("source_ingest 핸들러 · 영상 요약", () => {
     const { pool, sql } = fakePool();
     const handlers = buildHandlers(
       {
-        dummyHandlers: false, sourceReader: "storage", fixtureDir: null, summaryProvider: "stub", youtubeAnalyzer: "stub", geminiApiKey: null,
+        dummyHandlers: false, sourceReader: "storage", fixtureDir: null, supabaseUrl: null, supabaseServiceRoleKey: null, summaryProvider: "stub", youtubeAnalyzer: "stub", geminiApiKey: null,
         geminiModel: "gemini-test", youtubeMetadataProvider: "stub", youtubeWorkerApiKey: null, youtubeEnabled: true,
       },
       pool,

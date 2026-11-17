@@ -11,7 +11,7 @@ import { chunkPages, type ChunkDraft } from "./chunking.js";
 import { createMockEmbeddingProvider, embedChunks } from "./embedding.js";
 import { createIngestHandler } from "./handler.js";
 import { CHUNK_SETTINGS, INGEST_ERROR_CODES, SUMMARY_SETTINGS } from "./settings.js";
-import { assertSafeStoragePath, createFixtureSourceReader } from "./source-reader.js";
+import { assertSafeStoragePath, createFixtureSourceReader, type SourceReader } from "./source-reader.js";
 import type { IngestSource, IngestStore, UsageEvent } from "./store.js";
 import { buildSummaryPrompt, createStubSummaryProvider, SummaryValidationError, validateSummary, type SummaryProvider } from "./summary.js";
 
@@ -189,7 +189,7 @@ const baseSource: IngestSource = {
   user_id: "u1",
   source_type: "pdf",
   title: "샘플",
-  storage_path: SAMPLE_PATH,
+  storage_path: "u1/knowflow-sample.pdf",
   content_hash: sha256Hex(SAMPLE),
   deleted: false,
 };
@@ -229,7 +229,9 @@ const runIngest = (job: Job, deps: Parameters<typeof createIngestHandler>[0], lo
   });
 
 describe("source_ingest 핸들러", () => {
-  const reader = createFixtureSourceReader(FIXTURES);
+  // 소유자 폴더 경로(u1/...)를 픽스처 위치(sample/...)로 옮겨 읽는다
+  const fixtures = createFixtureSourceReader(FIXTURES);
+  const reader: SourceReader = { read: (p, s) => fixtures.read(p.replace(/^u1\//, "sample/"), s) };
 
   it("고정 PDF를 추출·청킹해 교체+완료하고, 첫 자료 요약을 저장한다(로그에 본문 없음)", async () => {
     const jobState = { attempt: 1, status: "running" };
@@ -318,6 +320,17 @@ describe("source_ingest 핸들러", () => {
       const q = queueFor(jobFor(1));
       expect(await runOnce({ queue: q, handlers: { source_ingest: createIngestHandler({ store, reader }) }, leaseSeconds: 120, heartbeatSeconds: 30, log: () => {} })).toBe("failed");
       expect(q.calls.at(-1)).toBe(`fail:${code}:false`);
+    }
+  });
+
+  it("소유자 폴더 밖 storage_path는 읽기 전에 source_path_invalid로 최종 실패한다", async () => {
+    for (const storage_path of ["u2/knowflow-sample.pdf", "u1x/knowflow-sample.pdf", "sample/knowflow-sample.pdf"]) {
+      const { store } = memoryStore({ ...baseSource, storage_path }, { attempt: 1, status: "running" });
+      const read = vi.fn(reader.read);
+      const q = queueFor(jobFor(1));
+      expect(await runOnce({ queue: q, handlers: { source_ingest: createIngestHandler({ store, reader: { read } }) }, leaseSeconds: 120, heartbeatSeconds: 30, log: () => {} })).toBe("failed");
+      expect(q.calls.at(-1)).toBe(`fail:${INGEST_ERROR_CODES.sourcePathInvalid}:false`);
+      expect(read).not.toHaveBeenCalled();
     }
   });
 });
