@@ -7,6 +7,8 @@ import { serverSupabaseOrNull } from "@/lib/projects/server";
 import { listProcessingSources, type ProcessingSourceItem } from "@/lib/sources/processing";
 import { EmptyProjects, ProjectList } from "../projects/project-list";
 import { NewProjectButton } from "../projects/project-dialogs";
+import { AddSourceForm } from "@/components/sources/add-source-form";
+import { isYoutubeEnabled } from "@/server/youtube/service";
 import { ProcessingSources } from "./processing-sources";
 
 export const metadata: Metadata = { title: "대시보드 · KNOWFLOW-AI" };
@@ -34,6 +36,18 @@ export default async function DashboardPage() {
         <h1 className="text-h1 font-bold">대시보드</h1>
         <NewProjectButton />
       </header>
+
+      <section aria-labelledby="quick-start-title" className="flex flex-col gap-3 rounded-lg border p-4 md:p-6">
+        <div className="flex flex-col gap-1">
+          <h2 id="quick-start-title" className="text-h2 font-semibold">
+            자료부터 시작하기
+          </h2>
+          <p className="text-caption text-muted-foreground break-keep">
+            PDF나 유튜브 주소를 넣으면 자료 이름으로 새 프로젝트를 만들고 분석을 시작합니다.
+          </p>
+        </div>
+        <AddSourceForm youtubeEnabled={isYoutubeEnabled()} />
+      </section>
 
       <section aria-labelledby="recent-title" className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-3">

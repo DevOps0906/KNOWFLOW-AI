@@ -1,10 +1,20 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { Check, CircleAlert, LoaderCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  cleanupAfterFailure,
+  createProjectNamed,
+  leftoverMessage,
+  projectNameFromPdf,
+  projectNameFromYoutubeId,
+  renameFromFirstSource,
+  youtubeVideoIdFromUrl,
+} from "@/lib/projects/quick-start";
 import { browserUploadDeps } from "@/lib/storage/browser";
 import { MAX_FILES_PER_REQUEST } from "@/lib/storage/files";
 import { clientFileProblem, uploadPdfs, type FileState, type UploadDeps } from "@/lib/storage/upload-flow";
@@ -23,13 +33,14 @@ const STATUS_TEXT: Record<FileState["status"], string> = {
 
 // S-09 자료 추가: PDF 탭(여러 개) + 유튜브 탭(영상 1건, 기능 플래그) + URL 탭(수집 기능은 task-009에서 연결).
 // 등록 성공은 "분석 완료"가 아니라 "대기"다.
+// projectId가 없으면(S-06 자료부터 넣기) 자료 이름으로 프로젝트를 먼저 만들고, 등록이 실패하면 그 프로젝트를 지운다.
 export function AddSourceForm({
   projectId,
   onDone,
   deps,
   youtubeEnabled = false,
 }: {
-  projectId: string;
+  projectId?: string;
   onDone?: () => void;
   /** 서버가 기능 플래그(YOUTUBE_ENABLED)를 읽어 넘긴다. 꺼지면 유튜브 탭을 그리지 않는다. */
   youtubeEnabled?: boolean;
@@ -47,6 +58,7 @@ export function AddSourceForm({
   const [videoState, setVideoState] = useState<{ status: "checking" | "done" | "error"; message?: string }>();
   // 같은 주소를 다시 보내면 같은 멱등 키를 쓴다(네트워크 재시도에서 중복 등록 방지)
   const videoKey = useRef<string | null>(null);
+  const [leftover, setLeftover] = useState<{ id: string; message: string }>();
   const tabs: Tab[] = youtubeEnabled ? ["pdf", "youtube", "url"] : ["pdf", "url"];
 
   function onPick(event: React.ChangeEvent<HTMLInputElement>) {
@@ -62,15 +74,36 @@ export function AddSourceForm({
     if (picked.length > MAX_FILES_PER_REQUEST) setNotice("한 번에 최대 10개까지 올릴 수 있습니다.");
   }
 
+  // 등록 실패 뒤: 자료 0건이 확인될 때만 프로젝트를 지우고, 아니면 남기고 링크를 안내한다.
+  async function settle(id: string) {
+    videoKey.current = null;
+    const message = leftoverMessage(await cleanupAfterFailure(id));
+    if (message) setLeftover({ id, message });
+  }
+
   async function submitYoutube() {
     const url = videoUrl.trim();
     if (!url) return setVideoState({ status: "error", message: "유튜브 영상 주소를 넣어 주세요." });
     const d = deps ?? browserUploadDeps();
+    const videoId = projectId ? null : youtubeVideoIdFromUrl(url);
+    if (!projectId && !videoId) return setVideoState({ status: "error", message: "올바른 유튜브 영상 주소를 넣어 주세요." });
     videoKey.current ??= d.newKey();
     setPending(true);
+    setLeftover(undefined);
     setVideoState({ status: "checking" });
+    let target = projectId;
+    let created = false;
     try {
-      const response = await d.fetch(`/api/projects/${projectId}/sources`, {
+      if (!target) {
+        const made = await createProjectNamed(projectNameFromYoutubeId(videoId!));
+        if (!made.ok || !made.id) {
+          setVideoState({ status: "error", message: made.message ?? "프로젝트를 만들지 못했습니다." });
+          return;
+        }
+        target = made.id;
+        created = true;
+      }
+      const response = await d.fetch(`/api/projects/${target}/sources`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "Idempotency-Key": videoKey.current },
         body: JSON.stringify({ source_type: "youtube", url }),
@@ -80,12 +113,19 @@ export function AddSourceForm({
         setVideoState({ status: "done" });
         setVideoUrl("");
         videoKey.current = null;
+        if (created) {
+          await renameFromFirstSource(target);
+          router.push(`/projects/${target}`);
+          return;
+        }
         router.refresh();
         onDone?.();
       } else {
+        if (created) await settle(target);
         setVideoState({ status: "error", message: data.error?.message ?? "등록하지 못했습니다." });
       }
     } catch {
+      if (created && target) await settle(target);
       setVideoState({ status: "error", message: "네트워크 연결을 확인하고 다시 시도해 주세요." });
     } finally {
       setPending(false);
@@ -98,8 +138,29 @@ export function AddSourceForm({
     if (files.length === 0) return setNotice("올릴 PDF 파일을 선택해 주세요.");
     setPending(true);
     setNotice(undefined);
-    const { accepted } = await uploadPdfs(projectId, files, deps ?? browserUploadDeps(), setStates);
+    setLeftover(undefined);
+    let target = projectId;
+    let created = false;
+    if (!target) {
+      const made = await createProjectNamed(projectNameFromPdf(files[0]!.name));
+      if (!made.ok || !made.id) {
+        setPending(false);
+        return setNotice(made.message ?? "프로젝트를 만들지 못했습니다.");
+      }
+      target = made.id;
+      created = true;
+    }
+    const { accepted } = await uploadPdfs(target, files, deps ?? browserUploadDeps(), setStates);
+    if (created && accepted === 0) await settle(target);
     setPending(false);
+    if (created && accepted === files.length) {
+      router.push(`/projects/${target}`);
+      return;
+    }
+    if (created && accepted > 0) {
+      setLeftover({ id: target, message: "일부 파일만 등록되었습니다. 실패한 파일은 프로젝트에서 다시 추가할 수 있습니다." });
+      return;
+    }
     if (accepted > 0) {
       router.refresh();
       if (accepted === files.length) {
@@ -133,7 +194,7 @@ export function AddSourceForm({
         <>
           <label className="flex flex-col gap-2 text-body font-semibold">
             PDF 파일 (여러 개 선택 가능)
-            <Input
+            <Input key="pdf"
               ref={input}
               type="file"
               accept="application/pdf,.pdf"
@@ -169,7 +230,7 @@ export function AddSourceForm({
         <>
           <label className="flex flex-col gap-2 text-body font-semibold">
             유튜브 영상 주소
-            <Input
+            <Input key="youtube"
               type="url"
               inputMode="url"
               placeholder="https://www.youtube.com/watch?v=..."
@@ -203,7 +264,7 @@ export function AddSourceForm({
       ) : (
         <label className="flex flex-col gap-2 text-body font-semibold">
           웹 페이지 주소 (URL)
-          <Input type="url" placeholder="https://" disabled aria-describedby="url-soon" />
+          <Input key="url" type="url" placeholder="https://" disabled aria-describedby="url-soon" />
           <span id="url-soon" className="text-caption font-normal text-muted-foreground break-keep">
             URL 가져오기는 곧 지원됩니다.
           </span>
@@ -215,6 +276,15 @@ export function AddSourceForm({
           ? "지원 예정: 오디오 · Office · HWP 등. 지금은 PDF · 유튜브 · 웹 페이지를 다룹니다."
           : "지원 예정: YouTube · 오디오 · Office · HWP 등. 지금은 PDF와 웹 페이지만 다룹니다."}
       </p>
+
+      {leftover ? (
+        <p role="alert" className="flex flex-wrap items-center gap-2 text-caption text-destructive break-keep">
+          <span>{leftover.message}</span>
+          <Link href={`/projects/${leftover.id}`} className="font-semibold underline">
+            프로젝트로 이동
+          </Link>
+        </p>
+      ) : null}
 
       {notice ? (
         <p role="alert" className="text-caption text-destructive">
